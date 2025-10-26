@@ -11,8 +11,13 @@ const validate = (req, res, next) => {
 
 // Validation rules for authentication
 const loginValidation = [
-  body('username').notEmpty().withMessage('Tên đăng nhập là bắt buộc'),
   body('password').notEmpty().withMessage('Mật khẩu là bắt buộc'),
+  body().custom((value, { req }) => {
+    if (!req.body.username && !req.body.email) {
+      throw new Error('Vui lòng nhập tên đăng nhập hoặc email');
+    }
+    return true;
+  }),
   validate
 ];
 

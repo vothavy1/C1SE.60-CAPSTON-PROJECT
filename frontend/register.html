@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Đăng ký - Hệ thống thi</title>
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+</head>
+<body class="fade-enter">
+<main class="auth-page">
+<section class="auth-card">
+<div class="left">
+<h1>Đăng ký</h1>
+<p class="muted">Tạo tài khoản và lưu ảnh khuôn mặt để đăng nhập nhanh</p>
+
+
+<input id="fullName" class="input" placeholder="Họ và tên" />
+<input id="email" class="input" placeholder="Email" />
+<input id="pwd" type="password" class="input" placeholder="Mật khẩu" />
+
+<!-- Chọn vai trò -->
+<div style="margin: 10px 0 4px; color: var(--muted); font-size: 14px;">Vai trò</div>
+<div style="display:flex; gap:16px; align-items:center; margin-bottom:8px;">
+  <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+    <input type="radio" name="role" id="roleCandidate" value="candidate" checked />
+    Ứng viên (Candidate)
+  </label>
+  <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+    <input type="radio" name="role" id="roleRecruiter" value="recruiter" />
+    Nhà tuyển dụng (Recruiter)
+  </label>
+  <span class="muted" style="font-size:12px;">(Recruiter có thể quản lý đề thi, ứng viên...)</span>
+  </div>
+
+
+<div class="cam-wrap">
+<video id="regCam" autoplay playsinline muted></video>
+<div class="cam-overlay">Chụp ảnh</div>
+</div>
+
+
+<div class="actions">
+<button id="snapBtn" class="btn primary">Quét &amp; Lưu khuôn mặt</button>
+<button id="registerSubmit" class="btn ghost">Hoàn tất đăng ký</button>
+<p class="note">Đã có tài khoản? <a href="index.html">Đăng nhập</a></p>
+</div>
+</div>
+
+
+<div class="right">
+<div class="panel">
+<h3>Lưu ý bảo mật</h3>
+<p class="muted">Dữ liệu demo lưu trên localStorage. Trong hệ thống thật, gửi ảnh/embedding lên server mã hóa.</p>
+</div>
+</div>
+</section>
+</main>
+
+
+<script>
+const regCam = document.getElementById('regCam');
+const snapBtn = document.getElementById('snapBtn');
+const camWrap = document.querySelector('.cam-wrap');
+
+// Ẩn camera khi mới vào trang
+camWrap.style.display = 'none';
+
+// Khi nhấn quét khuôn mặt mới bật camera
+snapBtn.addEventListener('click', async () => {
+  camWrap.style.display = 'block';
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    regCam.srcObject = s;
+  } catch (e) {
+    alert('Không thể truy cập camera. Vui lòng kiểm tra quyền truy cập!');
+    console.warn(e);
+    return;
+  }
+
+  // chụp ảnh demo sau 1 giây nếu cam oke
+  setTimeout(() => {
+    const c = document.createElement('canvas');
+    c.width = regCam.videoWidth || 640;
+    c.height = regCam.videoHeight || 480;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(regCam, 0, 0, c.width, c.height);
+    const data = c.toDataURL('image/jpeg', 0.8);
+    localStorage.setItem('faceSnapshot', data);
+    alert('Ảnh khuôn mặt đã được lưu (demo).');
+  }, 1000);
+});
+
+// Nút hoàn tất đăng ký - Kết nối backend API
+document.getElementById('registerSubmit').addEventListener('click', async () => {
+  const full_name = document.getElementById('fullName').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('pwd').value;
+
+  if (!full_name || !email || !password) {
+    alert('Vui lòng nhập đầy đủ thông tin!');
+    return;
+  }
+
+  // Tạo username từ email (phần trước @)
+  const username = email.split('@')[0];
+
+  try {
+    // Xác định role_id: recruiter=2, candidate=4
+    const selectedRole = document.getElementById('roleRecruiter').checked ? 'recruiter' : 'candidate';
+    const role_id = selectedRole === 'recruiter' ? 2 : 4;
+
+    // Gọi API register
+    const response = await apiCall('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        username,
+        email,
+        password,
+        full_name,
+        role_id
+      })
+    });
+
+    alert('Đăng ký thành công! Về trang đăng nhập để tiếp tục.');
+    document.body.classList.remove('fade-enter');
+    document.body.classList.add('fade-exit');
+    setTimeout(() => location.href = 'index.html', 350);
+  } catch (error) {
+    alert('Đăng ký thất bại: ' + error.message);
+    console.error('Register error:', error);
+  }
+});
+</script>
+</body>
+</html>

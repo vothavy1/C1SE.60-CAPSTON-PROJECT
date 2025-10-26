@@ -1,3 +1,4 @@
+// ...existing code...
 const express = require('express');
 const router = express.Router();
 const testController = require('../controllers/test.controller');
@@ -6,15 +7,54 @@ const { authenticate, authorize } = require('../middlewares/auth.middleware');
 // All routes require authentication
 router.use(authenticate);
 
-// Test routes
-router.get('/', authorize(['TEST_MANAGEMENT']), testController.getAllTests);
-router.get('/:id', authorize(['TEST_MANAGEMENT']), testController.getTestById);
-router.post('/', authorize(['TEST_MANAGEMENT']), testController.createTest);
-router.put('/:id', authorize(['TEST_MANAGEMENT']), testController.updateTest);
-router.delete('/:id', authorize(['TEST_MANAGEMENT']), testController.deleteTest);
+// ==========================================
+// PUBLIC ROUTES - All authenticated users (including candidates)
+// ==========================================
+// View all tests
+router.get('/', testController.getAllTests);
 
-// Test questions management
-router.post('/:id/questions', authorize(['TEST_MANAGEMENT']), testController.addQuestionsToTest);
-router.delete('/:testId/questions/:questionId', authorize(['TEST_MANAGEMENT']), testController.removeQuestionFromTest);
+// View test details
+router.get('/:id', testController.getTestById);
+
+// View test questions (for taking test)
+router.get('/:id/questions', testController.getTestQuestions);
+
+// ==========================================
+// RESTRICTED ROUTES - Only RECRUITER and ADMIN
+// ==========================================
+// Create new test
+router.post(
+  '/',
+  authorize([], { allowedRoles: ['recruiter', 'admin'] }),
+  testController.createTest
+);
+
+// Update test
+router.put(
+  '/:id',
+  authorize([], { allowedRoles: ['recruiter', 'admin'] }),
+  testController.updateTest
+);
+
+// Delete test
+router.delete(
+  '/:id',
+  authorize([], { allowedRoles: ['recruiter', 'admin'] }),
+  testController.deleteTest
+);
+
+// Add questions to test
+router.post(
+  '/:id/questions',
+  authorize([], { allowedRoles: ['recruiter', 'admin'] }),
+  testController.addQuestionsToTest
+);
+
+// Remove question from test
+router.delete(
+  '/:testId/questions/:questionId',
+  authorize([], { allowedRoles: ['recruiter', 'admin'] }),
+  testController.removeQuestionFromTest
+);
 
 module.exports = router;

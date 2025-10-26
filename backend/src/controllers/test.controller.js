@@ -1,10 +1,43 @@
-const { Test, Question, TestQuestion, User, sequelize } = require('../models');
+const { Test, Question, TestQuestion, QuestionOption, User, CandidateTest, sequelize } = require('../models');
 const logger = require('../utils/logger');
+// Updated: Fixed deleteTest with transaction and proper error handling
 
-/**
- * Test management controller
- */
 const testController = {
+  // Lấy danh sách câu hỏi của một bài test
+  getTestQuestions: async (req, res) => {
+    try {
+      const testId = req.params.id;
+      
+      // Lấy danh sách test-question
+      const testQuestions = await TestQuestion.findAll({
+        where: { test_id: testId },
+        include: [{
+          model: Question,
+          include: [{
+            model: QuestionOption,
+            as: 'QuestionOptions'
+          }]
+        }],
+        order: [['question_order', 'ASC']]
+      });
+      
+      if (!testQuestions || testQuestions.length === 0) {
+        return res.json({ questions: [] });
+      }
+      
+      // Format response: merge question data with test_question data (score_weight, order)
+      const questions = testQuestions.map(tq => ({
+        ...tq.Question.toJSON(),
+        score_weight: tq.score_weight,
+        question_order: tq.question_order
+      }));
+      
+      res.json({ questions });
+    } catch (error) {
+      logger.error(`Get test questions error: ${error.message}`);
+      res.status(500).json({ message: 'Lỗi lấy câu hỏi của bài test', error: error.message });
+    }
+  },
   /**
    * Get all tests with pagination and filters
    */
@@ -12,30 +45,38 @@ const testController = {
     try {
       const {
         page = 1,
-        limit = 10,
+        limit = 100,
         search,
         isActive
       } = req.query;
-      
+
       const offset = (page - 1) * limit;
-      
-      // Build where conditions
       const whereConditions = {};
       if (isActive !== undefined) whereConditions.is_active = isActive === 'true';
-      
-      // Add search condition if provided
       if (search) {
         whereConditions[sequelize.Op.or] = [
           { test_name: { [sequelize.Op.like]: `%${search}%` } },
           { description: { [sequelize.Op.like]: `%${search}%` } }
         ];
       }
-      
-      // Get tests with pagination
+
       const { count, rows: tests } = await Test.findAndCountAll({
         where: whereConditions,
         limit: parseInt(limit),
         offset: parseInt(offset),
+        attributes: [
+          'test_id',
+          'test_name',
+          'description',
+          'duration_minutes',
+          'difficulty_level',
+          'status',
+          'passing_score',
+          'is_active',
+          'created_by',
+          'created_at',
+          'updated_at'
+        ],
         include: [
           {
             model: User,
@@ -45,10 +86,9 @@ const testController = {
         ],
         order: [['created_at', 'DESC']]
       });
-      
-      // Calculate total pages
+
       const totalPages = Math.ceil(count / limit);
-      
+
       return res.status(200).json({
         success: true,
         data: {
@@ -61,7 +101,6 @@ const testController = {
           }
         }
       });
-      
     } catch (error) {
       logger.error(`Get all tests error: ${error.message}`);
       return res.status(500).json({ success: false, message: 'Đã xảy ra lỗi khi lấy danh sách bài test' });
@@ -119,67 +158,81 @@ const testController = {
    */
   createTest: async (req, res) => {
     const transaction = await sequelize.transaction();
-    
     try {
       const {
         test_name,
         description,
         duration_minutes,
+        difficulty_level,
+        status,
         passing_score,
         questions
       } = req.body;
-      
+
       // Validate input
       if (!test_name) {
         await transaction.rollback();
         return res.status(400).json({ success: false, message: 'Tên bài test là bắt buộc' });
       }
-      
       if (!duration_minutes || isNaN(duration_minutes) || duration_minutes <= 0) {
         await transaction.rollback();
         return res.status(400).json({ success: false, message: 'Thời gian làm bài phải lớn hơn 0' });
       }
-      
-      // Create test
+
+      // Tạo bài test
       const newTest = await Test.create({
         test_name,
         description,
         duration_minutes,
+        difficulty_level: difficulty_level || 'MEDIUM',
+        status: status || 'ACTIVE',
         passing_score: passing_score || null,
         is_active: true,
         created_by: req.user.user_id,
         created_at: new Date(),
         updated_at: new Date()
       }, { transaction });
-      
-      // Add questions if provided
+
+      // Nếu có danh sách câu hỏi mới nhập
       if (questions && questions.length > 0) {
-        // Validate questions
-        const questionIds = questions.map(q => q.question_id);
-        const existingQuestions = await Question.findAll({
-          where: { question_id: questionIds }
-        });
-        
-        if (existingQuestions.length !== questionIds.length) {
-          await transaction.rollback();
-          return res.status(400).json({ success: false, message: 'Một số câu hỏi không tồn tại' });
-        }
-        
-        // Add questions to test
-        await Promise.all(questions.map((question, index) => {
-          return TestQuestion.create({
+        // Tạo từng câu hỏi mới
+        for (let i = 0; i < questions.length; i++) {
+          const q = questions[i];
+          // Tạo câu hỏi
+          const question = await Question.create({
+            question_text: q.question_text,
+            question_type: q.question_type,
+            difficulty_level: q.difficulty_level || 'MEDIUM',
+            is_active: true,
+            created_by: req.user.user_id,
+            created_at: new Date(),
+            updated_at: new Date()
+          }, { transaction });
+
+          // Nếu có đáp án (MULTIPLE_CHOICE/SINGLE_CHOICE), tạo option và đánh dấu đáp án đúng
+          if ((q.question_type === 'MULTIPLE_CHOICE' || q.question_type === 'SINGLE_CHOICE') && Array.isArray(q.options)) {
+            for (let j = 0; j < q.options.length; j++) {
+              await QuestionOption.create({
+                question_id: question.question_id,
+                option_text: q.options[j],
+                is_correct: j === q.correct_option
+              }, { transaction });
+            }
+          }
+
+          // Tạo bản ghi test_questions
+          await TestQuestion.create({
             test_id: newTest.test_id,
             question_id: question.question_id,
-            question_order: question.question_order || index + 1,
-            score_weight: question.score_weight || 1
+            question_order: i + 1,
+            score_weight: q.score_weight || 1
           }, { transaction });
-        }));
+        }
       }
-      
-      // Commit transaction
+
       await transaction.commit();
       
-      // Get the created test with all details
+      // Lấy lại thông tin bài test vừa tạo
       const createdTest = await Test.findByPk(newTest.test_id, {
         include: [
           {
@@ -201,11 +254,8 @@ const testController = {
         message: 'Tạo bài test mới thành công',
         data: createdTest
       });
-      
     } catch (error) {
-      // Rollback transaction in case of error
       await transaction.rollback();
-      
       logger.error(`Create test error: ${error.message}`);
       return res.status(500).json({ success: false, message: 'Đã xảy ra lỗi khi tạo bài test mới' });
     }
@@ -223,7 +273,12 @@ const testController = {
         test_name,
         description,
         duration_minutes,
+        difficulty_level,
+        status,
         passing_score,
+        max_attempts,
+        is_randomized,
+        show_results,
         is_active,
         questions
       } = req.body;
@@ -241,7 +296,12 @@ const testController = {
         test_name: test_name || test.test_name,
         description: description !== undefined ? description : test.description,
         duration_minutes: duration_minutes || test.duration_minutes,
+        difficulty_level: difficulty_level || test.difficulty_level,
+        status: status || test.status,
         passing_score: passing_score !== undefined ? passing_score : test.passing_score,
+        max_attempts: max_attempts || test.max_attempts,
+        is_randomized: is_randomized !== undefined ? is_randomized : test.is_randomized,
+        show_results: show_results !== undefined ? show_results : test.show_results,
         is_active: is_active !== undefined ? is_active : test.is_active,
         updated_at: new Date()
       }, { transaction });
@@ -318,6 +378,8 @@ const testController = {
    * Delete test
    */
   deleteTest: async (req, res) => {
+    const transaction = await sequelize.transaction();
+    
     try {
       const testId = req.params.id;
       
@@ -325,6 +387,7 @@ const testController = {
       const test = await Test.findByPk(testId);
       
       if (!test) {
+        await transaction.rollback();
         return res.status(404).json({ success: false, message: 'Không tìm thấy bài test' });
       }
       
@@ -334,14 +397,24 @@ const testController = {
       });
       
       if (candidateTestCount > 0) {
+        await transaction.rollback();
         return res.status(400).json({
           success: false,
           message: 'Không thể xóa bài test đã được gán cho ứng viên'
         });
       }
       
-      // Delete test (test questions will be cascade deleted)
-      await test.destroy();
+      // Delete test questions first (manual delete for better control)
+      await TestQuestion.destroy({
+        where: { test_id: testId },
+        transaction
+      });
+      
+      // Delete test
+      await test.destroy({ transaction });
+      
+      // Commit transaction
+      await transaction.commit();
       
       return res.status(200).json({
         success: true,
@@ -349,8 +422,13 @@ const testController = {
       });
       
     } catch (error) {
-      logger.error(`Delete test error: ${error.message}`);
-      return res.status(500).json({ success: false, message: 'Đã xảy ra lỗi khi xóa bài test' });
+      await transaction.rollback();
+      logger.error(`Delete test error: ${error.message}`, error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Đã xảy ra lỗi khi xóa bài test',
+        error: error.message 
+      });
     }
   },
   

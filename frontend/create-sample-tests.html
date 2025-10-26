@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm tra Database</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>� Kiểm tra Database và API</h2>
+        
+        <div class="alert alert-info">
+            <strong>Mục đích:</strong> Kiểm tra xem database có dữ liệu không và API có hoạt động tốt không.
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>Trạng thái Authentication</h5>
+            </div>
+            <div class="card-body">
+                <div id="authStatus">Đang kiểm tra...</div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>Kiểm tra Database</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong>🗄️ Database đã có sẵn dữ liệu</strong><br>
+                    Từ phpMyAdmin thấy có 6 đề thi trong bảng `tests` (ID: 11-18).<br>
+                    Không cần tạo thêm mock data.
+                </div>
+                <button class="btn btn-primary" onclick="testDatabaseConnection()">Kiểm tra kết nối Database</button>
+                <div id="createResult" class="mt-3"></div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a href="exam.html" class="btn btn-primary">Về trang Danh sách đề thi</a>
+            <a href="test-list.html" class="btn btn-secondary">Quản lý đề thi (Recruiter)</a>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+
+        function getAuthHeaders() {
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            return {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+            };
+        }
+
+        function checkAuth() {
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            const userStr = localStorage.getItem('session_user');
+            
+            const statusDiv = document.getElementById('authStatus');
+            
+            if (token && userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    const role = user.role ? user.role.toUpperCase() : 'UNKNOWN';
+                    
+                    if (role === 'RECRUITER' || role === 'ADMIN') {
+                        statusDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <strong>✅ Có quyền tạo đề thi</strong><br>
+                                User: ${user.name || user.username || 'Unknown'}<br>
+                                Role: ${role}
+                            </div>
+                        `;
+                    } else {
+                        statusDiv.innerHTML = `
+                            <div class="alert alert-warning">
+                                <strong>⚠️ Không có quyền tạo đề thi</strong><br>
+                                Role hiện tại: ${role}<br>
+                                Cần role RECRUITER hoặc ADMIN
+                            </div>
+                        `;
+                    }
+                } catch (e) {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>❌ Lỗi đọc thông tin user</strong><br>
+                            ${e.message}
+                        </div>
+                    `;
+                }
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>❌ Chưa đăng nhập</strong><br>
+                        Vui lòng <a href="index.html">đăng nhập</a> với tài khoản RECRUITER hoặc ADMIN
+                    </div>
+                `;
+            }
+        }
+
+        async function createSampleTests() {
+            const resultDiv = document.getElementById('createResult');
+            resultDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <strong>ℹ️ Không cần tạo dữ liệu mẫu</strong><br>
+                    Database đã có sẵn ${getDatabaseTestCount()} đề thi. <br>
+                    Hãy kiểm tra tại sao frontend không hiển thị được dữ liệu.
+                </div>
+            `;
+            return;
+        }
+
+        function getDatabaseTestCount() {
+            return "6"; // From phpMyAdmin screenshot
+        }
+
+        async function testDatabaseConnection() {
+            const resultDiv = document.getElementById('createResult');
+            resultDiv.innerHTML = '<div class="spinner-border" role="status"></div> Đang kiểm tra database...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/tests`, {
+                    headers: getAuthHeaders()
+                });
+
+                console.log('Database test response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('Database test result:', result);
+
+                // Process result
+                let tests = [];
+                if (result.success && result.data && result.data.tests) {
+                    tests = result.data.tests;
+                } else if (Array.isArray(result.data)) {
+                    tests = result.data;
+                } else if (Array.isArray(result)) {
+                    tests = result;
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <strong>✅ Database kết nối thành công!</strong><br>
+                        <strong>Số đề thi tìm thấy:</strong> ${tests.length}<br>
+                        <strong>Danh sách đề thi:</strong>
+                        <ul class="mt-2 mb-0">
+                            ${tests.slice(0, 5).map(test => 
+                                `<li>ID: ${test.test_id || test.id} - ${test.test_name || test.name}</li>`
+                            ).join('')}
+                            ${tests.length > 5 ? `<li><em>... và ${tests.length - 5} đề thi khác</em></li>` : ''}
+                        </ul>
+                        <a href="exam.html" class="btn btn-primary mt-3">Xem trang danh sách đề thi</a>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Database test error:', error);
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>❌ Lỗi kết nối Database</strong><br>
+                        <strong>Chi tiết:</strong> ${error.message}<br>
+                        <strong>Có thể do:</strong>
+                        <ul class="mt-2 mb-0">
+                            <li>Chưa đăng nhập hoặc token hết hạn</li>
+                            <li>Backend server không hoạt động</li>
+                            <li>Database connection lỗi</li>
+                            <li>CORS hoặc API endpoint sai</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+
+
+
+        // Auto check auth on load
+        document.addEventListener('DOMContentLoaded', checkAuth);
+    </script>
+</body>
+</html>

@@ -48,8 +48,8 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-// Middleware to check for required permissions
-const authorize = (requiredPermissions = []) => {
+// Middleware to check for required permissions and allowed roles
+const authorize = (requiredPermissions = [], options = {}) => {
   return async (req, res, next) => {
     try {
       if (!req.user) {
@@ -61,21 +61,27 @@ const authorize = (requiredPermissions = []) => {
         return next();
       }
 
+      // Check allowed roles if provided
+      if (options.allowedRoles && Array.isArray(options.allowedRoles)) {
+        const userRole = req.user.Role.role_name?.toUpperCase();
+        const allowedRoles = options.allowedRoles.map(r => r.toUpperCase());
+        if (!allowedRoles.includes(userRole)) {
+          return res.status(403).json({ success: false, message: 'Không có quyền truy cập chức năng này' });
+        }
+      }
+
       // Get user permissions from loaded relationship
       const userPermissions = req.user.Role.Permissions.map(p => p.permission_name);
-      
       // Check if user has any of the required permissions
       const hasPermission = requiredPermissions.some(permission => 
         userPermissions.includes(permission)
       );
-
       if (!hasPermission && requiredPermissions.length > 0) {
         return res.status(403).json({ 
           success: false, 
           message: 'Không có quyền truy cập chức năng này' 
         });
       }
-
       next();
     } catch (error) {
       logger.error(`Authorization error: ${error.message}`);

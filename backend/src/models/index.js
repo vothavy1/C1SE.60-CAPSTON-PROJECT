@@ -54,7 +54,7 @@ QuestionCategory.hasMany(Question, { foreignKey: 'category_id' });
 Question.belongsTo(QuestionCategory, { foreignKey: 'category_id' });
 
 // Question - QuestionOption
-Question.hasMany(QuestionOption, { foreignKey: 'question_id' });
+Question.hasMany(QuestionOption, { foreignKey: 'question_id', as: 'QuestionOptions' });
 QuestionOption.belongsTo(Question, { foreignKey: 'question_id' });
 
 // Question - CodingQuestionTemplate
@@ -68,6 +68,14 @@ Test.belongsTo(User, { foreignKey: 'created_by', as: 'Creator' });
 // Test - Question
 Test.belongsToMany(Question, { through: TestQuestion, foreignKey: 'test_id', otherKey: 'question_id' });
 Question.belongsToMany(Test, { through: TestQuestion, foreignKey: 'question_id', otherKey: 'test_id' });
+
+// TestQuestion - Question (for direct include)
+TestQuestion.belongsTo(Question, { foreignKey: 'question_id' });
+Question.hasMany(TestQuestion, { foreignKey: 'question_id' });
+
+// TestQuestion - Test
+TestQuestion.belongsTo(Test, { foreignKey: 'test_id' });
+Test.hasMany(TestQuestion, { foreignKey: 'test_id' });
 
 // User - JobPosition
 User.hasMany(JobPosition, { foreignKey: 'created_by', as: 'CreatedPositions' });

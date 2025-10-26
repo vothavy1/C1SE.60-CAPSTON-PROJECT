@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách bài test tuyển dụng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-800 min-h-screen text-white font-sans">
+    <!-- Header -->
+    <header class="bg-white/10 backdrop-blur-md shadow-lg sticky top-0 z-10 border-b border-purple-400/30">
+        <div class="max-w-6xl mx-auto flex justify-between items-center py-4 px-6">
+            <h1 class="text-3xl font-bold text-white tracking-wide">Danh sách bài test tuyển dụng</h1>
+            <div class="flex items-center gap-4">
+                <span id="userInfo" class="font-medium text-purple-200">Đang tải...</span>
+                <button id="loginBtn" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+                    Đăng nhập
+                </button>
+                <button id="logoutBtn" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition" style="display: none;">
+                    Đăng xuất
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Debug Panel -->
+    <div class="max-w-6xl mx-auto mt-6 p-4">
+        <div id="debugPanel" class="bg-yellow-500/20 border border-yellow-400 rounded-lg p-4 mb-6">
+            <h3 class="font-semibold text-yellow-200 mb-2">🔧 Debug Info:</h3>
+            <div id="debugContent">Đang kiểm tra...</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto mt-6 p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-white">📝 Danh sách bài test từ Database</h2>
+            <button id="refreshBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition">
+                🔄 Refresh
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            <p class="text-white mt-2">Đang tải danh sách bài test...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="bg-red-500/20 border border-red-400 rounded-lg p-6 text-center" style="display: none;">
+            <h3 class="text-red-200 text-lg font-semibold mb-2">❌ Lỗi tải dữ liệu</h3>
+            <p id="errorMessage" class="text-red-300 mb-4"></p>
+            <button onclick="loadTests()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">
+                Thử lại
+            </button>
+        </div>
+
+        <!-- Tests Grid -->
+        <div id="testsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" style="display: none;">
+            <!-- Tests will be rendered here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="bg-gray-500/20 border border-gray-400 rounded-lg p-6 text-center" style="display: none;">
+            <h3 class="text-gray-200 text-lg font-semibold mb-2">📋 Chưa có bài test nào</h3>
+            <p class="text-gray-300">Database chưa có dữ liệu bài test.</p>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        let isLoggedIn = false;
+
+        // DOM Elements
+        const debugContent = document.getElementById('debugContent');
+        const userInfo = document.getElementById('userInfo');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const errorMessage = document.getElementById('errorMessage');
+        const testsGrid = document.getElementById('testsGrid');
+        const emptyState = document.getElementById('emptyState');
+
+        // Utility Functions
+        function getAuthHeaders() {
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            return {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+            };
+        }
+
+        function showState(state) {
+            // Hide all states
+            loadingState.style.display = 'none';
+            errorState.style.display = 'none';
+            testsGrid.style.display = 'none';
+            emptyState.style.display = 'none';
+            
+            // Show selected state
+            document.getElementById(state).style.display = 'block';
+        }
+
+        function updateDebugInfo() {
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            const user = localStorage.getItem('session_user');
+            
+            let userObj = null;
+            try {
+                userObj = user ? JSON.parse(user) : null;
+            } catch (e) {
+                console.error('Error parsing user data:', e);
+            }
+            
+            debugContent.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <strong>Token:</strong> 
+                        <span class="${token ? 'text-green-300' : 'text-red-300'}">
+                            ${token ? '✅ EXISTS' : '❌ MISSING'}
+                        </span>
+                    </div>
+                    <div>
+                        <strong>User:</strong> 
+                        <span class="${userObj ? 'text-green-300' : 'text-red-300'}">
+                            ${userObj ? `✅ ${userObj.name || userObj.email}` : '❌ MISSING'}
+                        </span>
+                    </div>
+                    <div>
+                        <strong>Role:</strong> 
+                        <span class="text-blue-300">
+                            ${userObj?.role || 'N/A'}
+                        </span>
+                    </div>
+                </div>
+            `;
+
+            // Update login state
+            isLoggedIn = !!(token && userObj);
+            
+            if (isLoggedIn) {
+                userInfo.textContent = `Xin chào, ${userObj.name || userObj.email}!`;
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'block';
+            } else {
+                userInfo.textContent = 'Chưa đăng nhập';
+                loginBtn.style.display = 'block';
+                logoutBtn.style.display = 'none';
+            }
+        }
+
+        async function performLogin() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'havy@test.com',
+                        password: '123456'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success && result.data.token) {
+                    localStorage.setItem('auth_token', result.data.token);
+                    localStorage.setItem('session_user', JSON.stringify(result.data.user));
+                    
+                    updateDebugInfo();
+                    loadTests();
+                    
+                    alert('✅ Đăng nhập thành công!');
+                } else {
+                    alert(`❌ Đăng nhập thất bại: ${result.message || 'Lỗi không xác định'}`);
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert(`❌ Lỗi đăng nhập: ${error.message}`);
+            }
+        }
+
+        function performLogout() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('session_user');
+            updateDebugInfo();
+            showState('emptyState');
+            emptyState.innerHTML = `
+                <h3 class="text-gray-200 text-lg font-semibold mb-2">👋 Đã đăng xuất</h3>
+                <p class="text-gray-300">Vui lòng đăng nhập để xem danh sách bài test.</p>
+            `;
+        }
+
+        async function loadTests() {
+            console.log('🔄 Loading tests...');
+            showState('loadingState');
+
+            if (!isLoggedIn) {
+                showState('errorState');
+                errorMessage.textContent = 'Vui lòng đăng nhập trước khi xem danh sách bài test.';
+                return;
+            }
+
+            try {
+                const headers = getAuthHeaders();
+                console.log('📤 Request headers:', headers);
+
+                const response = await fetch(`${API_BASE_URL}/tests`, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                console.log('📥 Response status:', response.status);
+
+                if (!response.ok) {
+                    let errorMsg = `HTTP ${response.status}`;
+                    if (response.status === 401) {
+                        errorMsg = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                        performLogout();
+                    } else if (response.status === 403) {
+                        errorMsg = 'Bạn không có quyền truy cập danh sách bài test.';
+                    } else if (response.status === 404) {
+                        errorMsg = 'API endpoint không tồn tại.';
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                const result = await response.json();
+                console.log('📦 API Response:', result);
+
+                // Parse tests data
+                let tests = [];
+                if (result.success && result.data && result.data.tests) {
+                    tests = result.data.tests;
+                } else if (Array.isArray(result.data)) {
+                    tests = result.data;
+                } else if (Array.isArray(result)) {
+                    tests = result;
+                }
+
+                console.log(`📊 Found ${tests.length} tests`);
+
+                if (tests.length === 0) {
+                    showState('emptyState');
+                    return;
+                }
+
+                renderTests(tests);
+                showState('testsGrid');
+
+            } catch (error) {
+                console.error('❌ Load tests error:', error);
+                showState('errorState');
+                errorMessage.textContent = error.message;
+            }
+        }
+
+        function renderTests(tests) {
+            console.log('🎨 Rendering tests:', tests);
+            
+            testsGrid.innerHTML = '';
+
+            tests.forEach(test => {
+                const testName = test.test_name || test.name || 'Bài test không có tên';
+                const testDesc = test.description || 'Không có mô tả';
+                const testId = test.test_id || test.id;
+                const duration = test.duration_minutes || 60;
+                const difficulty = test.difficulty_level || 'MEDIUM';
+                const status = test.status || 'ACTIVE';
+
+                // Only show active tests
+                if (status !== 'ACTIVE') return;
+
+                const testCard = document.createElement('div');
+                testCard.className = 'bg-gradient-to-br from-purple-800/40 to-indigo-800/40 border border-purple-400/30 rounded-xl p-6 hover:shadow-2xl hover:scale-[1.02] transition';
+                
+                testCard.innerHTML = `
+                    <div class="mb-4">
+                        <h3 class="text-lg font-semibold text-white mb-2">${testName}</h3>
+                        <p class="text-purple-200 text-sm mb-3">${testDesc}</p>
+                        <div class="flex flex-wrap gap-2 text-xs mb-4">
+                            <span class="bg-blue-500/30 text-blue-200 px-2 py-1 rounded">⏱️ ${duration} phút</span>
+                            <span class="bg-purple-500/30 text-purple-200 px-2 py-1 rounded">📊 ${difficulty}</span>
+                            <span class="bg-green-500/30 text-green-200 px-2 py-1 rounded">✅ ${status}</span>
+                        </div>
+                    </div>
+                    <button 
+                        class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition w-full"
+                        onclick="startTest('${testId}', '${testName.replace(/'/g, "\\'")}')"
+                    >
+                        🚀 Bắt đầu làm bài
+                    </button>
+                `;
+
+                testsGrid.appendChild(testCard);
+            });
+        }
+
+        function startTest(testId, testName) {
+            if (!testId) {
+                alert('❌ Lỗi: Không tìm thấy ID bài test');
+                return;
+            }
+            
+            if (confirm(`Bạn có muốn bắt đầu làm bài test "${testName}"?\n\n⚠️ Lưu ý: Sau khi bắt đầu, bạn không thể thoát giữa chừng.`)) {
+                // Redirect to test page
+                window.location.href = `test.html?testId=${testId}`;
+            }
+        }
+
+        // Event Listeners
+        loginBtn.addEventListener('click', performLogin);
+        logoutBtn.addEventListener('click', performLogout);
+        refreshBtn.addEventListener('click', loadTests);
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📱 Page loaded, initializing...');
+            updateDebugInfo();
+            
+            if (isLoggedIn) {
+                loadTests();
+            } else {
+                showState('errorState');
+                errorMessage.textContent = 'Vui lòng đăng nhập để xem danh sách bài test.';
+            }
+        });
+    </script>
+</body>
+</html>

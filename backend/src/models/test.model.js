@@ -24,6 +24,28 @@ const Test = sequelize.define('Test', {
     type: DataTypes.INTEGER,
     allowNull: true
   },
+  difficulty_level: {
+    type: DataTypes.ENUM('EASY', 'MEDIUM', 'HARD', 'EXPERT'),
+    allowNull: true,
+    defaultValue: 'MEDIUM'
+  },
+  status: {
+    type: DataTypes.ENUM('DRAFT', 'ACTIVE', 'ARCHIVED'),
+    defaultValue: 'DRAFT'
+  },
+  max_attempts: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 1
+  },
+  is_randomized: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  show_results: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
   is_active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true

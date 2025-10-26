@@ -63,7 +63,7 @@ db.authenticate()
     logger.info('Database connection established successfully.');
     
     app.listen(PORT, () => {
-      logger.info(`Server running on http://localhost:${PORT}`);
+      console.log('Server is running on port 5000');
     });
   })
   .catch(err => {

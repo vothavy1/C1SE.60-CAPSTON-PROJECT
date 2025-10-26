@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recruiter Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-800 via-indigo-900 to-slate-900 min-h-screen text-white">
+  <script>
+    // Guard: yêu cầu đăng nhập và phải là RECRUITER
+    (function guardRole() {
+      try {
+        const session = JSON.parse(localStorage.getItem('session_user') || 'null');
+        if (!session) {
+          location.replace('index.html');
+          return;
+        }
+        const role = String(session.role || '').toUpperCase();
+        if (role !== 'RECRUITER') {
+          // Ứng viên/các vai trò khác chuyển về trang thi
+          location.replace('exam.html');
+          return;
+        }
+      } catch (_) {
+        location.replace('index.html');
+      }
+    })();
+  </script>
+
+  <!-- Header -->
+  <header class="bg-white/10 backdrop-blur-md shadow-lg sticky top-0 z-10 border-b border-indigo-400/30">
+    <div class="max-w-6xl mx-auto flex justify-between items-center py-4 px-6">
+      <h1 class="text-2xl md:text-3xl font-bold tracking-wide">Recruiter Dashboard</h1>
+      <div class="flex items-center gap-4">
+        <span id="userName" class="font-medium text-indigo-200">Xin chào, Recruiter!</span>
+        <button id="logoutBtn" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+          Đăng xuất
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-6xl mx-auto mt-10 p-6 grid gap-6 md:grid-cols-2">
+    <!-- Card: Tests -->
+    <section class="rounded-2xl p-6 bg-white/10 border border-white/20 hover:bg-white/15 transition">
+      <h2 class="text-xl font-semibold mb-2">Quản lý đề thi</h2>
+      <p class="text-indigo-200 mb-4">Tạo, chỉnh sửa, và phân bổ bài thi cho ứng viên.</p>
+      <div class="flex gap-3 flex-wrap">
+        <a class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition" href="create-test.html">Tạo đề thi</a>
+        <a class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition" href="test-list.html">Danh sách đề thi</a>
+      </div>
+    </section>
+
+    <!-- Card: Questions -->
+    <section class="rounded-2xl p-6 bg-white/10 border border-white/20 hover:bg-white/15 transition">
+      <h2 class="text-xl font-semibold mb-2">Quản lý câu hỏi</h2>
+      <p class="text-indigo-200 mb-4">Thêm câu hỏi trắc nghiệm, tự luận, hoặc coding.</p>
+      <div class="flex gap-3 flex-wrap">
+        <a class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition" href="#">Thêm câu hỏi</a>
+        <a class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition" href="#">Danh sách câu hỏi</a>
+      </div>
+    </section>
+
+    <!-- Card: Candidates -->
+    <section class="rounded-2xl p-6 bg-white/10 border border-white/20 hover:bg-white/15 transition">
+      <h2 class="text-xl font-semibold mb-2">Quản lý ứng viên</h2>
+      <p class="text-indigo-200 mb-4">Xem hồ sơ, gán bài test, theo dõi trạng thái.</p>
+      <div class="flex gap-3 flex-wrap">
+        <a class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition" href="#">Thêm ứng viên</a>
+        <a class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition" href="#">Danh sách ứng viên</a>
+      </div>
+    </section>
+
+    <!-- Card: Reports -->
+    <section class="rounded-2xl p-6 bg-white/10 border border-white/20 hover:bg-white/15 transition">
+      <h2 class="text-xl font-semibold mb-2">Báo cáo</h2>
+      <p class="text-indigo-200 mb-4">Hiệu quả tuyển dụng, tỷ lệ pass bài thi, tiến độ pipeline.</p>
+      <div class="flex gap-3 flex-wrap">
+        <a class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition" href="#">Xem báo cáo</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-center py-6 text-indigo-200 mt-10 border-t border-indigo-400/30">
+    © 2025 CS60 Recruitment
+  </footer>
+
+  <script>
+    // Hiển thị tên người dùng và setup logout
+    (function initUser() {
+      try {
+        const session = JSON.parse(localStorage.getItem('session_user') || 'null');
+        if (session && session.name) {
+          const nameEl = document.getElementById('userName');
+          if (nameEl) nameEl.textContent = `Xin chào, ${session.name}!`;
+        }
+      } catch(_) {}
+    })();
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      try {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('session_user');
+      } catch(_) {}
+      location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>
