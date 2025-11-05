@@ -74,7 +74,7 @@ db.authenticate()
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   logger.error('Unhandled Promise Rejection:', err);
-  process.exit(1);
+  // Do not exit process, just log error
 });
 
 module.exports = app;

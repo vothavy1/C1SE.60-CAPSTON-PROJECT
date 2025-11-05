@@ -16,6 +16,10 @@ const Question = sequelize.define('Question', {
       key: 'category_id'
     }
   },
+  question_title: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
   question_text: {
     type: DataTypes.TEXT,
     allowNull: false

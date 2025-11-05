@@ -18,7 +18,7 @@ const sequelize = new Sequelize(
       typeCast: true,
     },
     pool: {
-      max: 5,
+      max: 1500,
       min: 0,
       acquire: 30000,
       idle: 10000,

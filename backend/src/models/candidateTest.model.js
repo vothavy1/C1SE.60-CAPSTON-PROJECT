@@ -24,6 +24,14 @@ const CandidateTest = sequelize.define('CandidateTest', {
       key: 'test_id'
     }
   },
+  application_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'candidate_job_applications',
+      key: 'application_id'
+    }
+  },
   start_time: {
     type: DataTypes.DATE,
     allowNull: true
@@ -33,27 +41,26 @@ const CandidateTest = sequelize.define('CandidateTest', {
     allowNull: true
   },
   status: {
-    type: DataTypes.ENUM('PENDING', 'IN_PROGRESS', 'COMPLETED', 'EXPIRED'),
+    type: DataTypes.ENUM('ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'EXPIRED'),
     allowNull: false,
-    defaultValue: 'PENDING'
+    defaultValue: 'ASSIGNED'
   },
   score: {
-    type: DataTypes.DECIMAL(5, 2),
+    type: DataTypes.INTEGER,
     allowNull: true
   },
-  access_token: {
-    type: DataTypes.STRING(255),
-    allowNull: true
+  passing_status: {
+    type: DataTypes.ENUM('PASSED', 'FAILED', 'PENDING'),
+    allowNull: true,
+    defaultValue: 'PENDING'
   },
-  access_token_expiry: {
-    type: DataTypes.DATE,
-    allowNull: true
+  is_result_visible: {
+    type: DataTypes.BOOLEAN,
+    allowNull: true,
+    defaultValue: 0,
+    field: 'is_result_visible'
   },
   created_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
-  },
-  updated_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
   }
@@ -61,7 +68,7 @@ const CandidateTest = sequelize.define('CandidateTest', {
   tableName: 'candidate_tests',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: false  // Disable updatedAt since the table doesn't have this column
 });
 
 module.exports = CandidateTest;

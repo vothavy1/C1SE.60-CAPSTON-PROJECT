@@ -8,6 +8,18 @@ const testController = {
     try {
       const testId = req.params.id;
       
+      // Lấy thông tin test trước
+      const test = await Test.findByPk(testId, {
+        attributes: ['test_id', 'test_name', 'description', 'duration_minutes', 'passing_score', 'difficulty_level']
+      });
+
+      if (!test) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Không tìm thấy bài test' 
+        });
+      }
+      
       // Lấy danh sách test-question
       const testQuestions = await TestQuestion.findAll({
         where: { test_id: testId },
@@ -15,14 +27,21 @@ const testController = {
           model: Question,
           include: [{
             model: QuestionOption,
-            as: 'QuestionOptions'
+            as: 'QuestionOptions',
+            attributes: ['option_id', 'option_text', 'is_correct']
           }]
         }],
         order: [['question_order', 'ASC']]
       });
       
       if (!testQuestions || testQuestions.length === 0) {
-        return res.json({ questions: [] });
+        return res.json({ 
+          success: true,
+          data: {
+            test,
+            questions: [] 
+          }
+        });
       }
       
       // Format response: merge question data with test_question data (score_weight, order)
@@ -32,10 +51,20 @@ const testController = {
         question_order: tq.question_order
       }));
       
-      res.json({ questions });
+      res.json({ 
+        success: true,
+        data: {
+          test,
+          questions 
+        }
+      });
     } catch (error) {
       logger.error(`Get test questions error: ${error.message}`);
-      res.status(500).json({ message: 'Lỗi lấy câu hỏi của bài test', error: error.message });
+      res.status(500).json({ 
+        success: false,
+        message: 'Lỗi lấy câu hỏi của bài test', 
+        error: error.message 
+      });
     }
   },
   /**

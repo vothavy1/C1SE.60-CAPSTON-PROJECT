@@ -24,51 +24,38 @@ const CandidateTestAnswer = sequelize.define('CandidateTestAnswer', {
       key: 'question_id'
     }
   },
-  selected_option_id: {
-    type: DataTypes.INTEGER,
+  selected_options: {
+    type: DataTypes.STRING(255),
     allowNull: true,
-    references: {
-      model: 'question_options',
-      key: 'option_id'
-    }
+    field: 'selected_options'
   },
   text_answer: {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  code_answer: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
   is_correct: {
     type: DataTypes.BOOLEAN,
-    allowNull: true
-  },
-  score: {
-    type: DataTypes.DECIMAL(5, 2),
-    allowNull: true
-  },
-  reviewer_id: {
-    type: DataTypes.INTEGER,
     allowNull: true,
-    references: {
-      model: 'users',
-      key: 'user_id'
-    }
+    defaultValue: 0
   },
-  reviewed_at: {
-    type: DataTypes.DATE,
-    allowNull: true
+  score_earned: {
+    type: DataTypes.DECIMAL(5, 2),
+    allowNull: true,
+    field: 'score_earned'
   },
-  created_at: {
+  submitted_at: {
     type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
-  },
-  updated_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
+    allowNull: true,
+    defaultValue: DataTypes.NOW,
+    field: 'submitted_at'
   }
 }, {
   tableName: 'candidate_test_answers',
-  timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  timestamps: false  // No timestamps in this table
 });
 
 module.exports = CandidateTestAnswer;

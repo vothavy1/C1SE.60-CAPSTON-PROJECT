@@ -22,6 +22,7 @@ const CandidateTest = require('./candidateTest.model');
 const CandidateTestAnswer = require('./candidateTestAnswer.model');
 const TestFraudLog = require('./testFraudLog.model');
 const CandidateTestResult = require('./candidateTestResult.model');
+const RecruitmentReport = require('./recruitmentReport.model');
 
 // ===== Thiết lập quan hệ giữa các bảng =====
 
@@ -149,6 +150,10 @@ CandidateTestResult.belongsTo(CandidateTest, { foreignKey: 'candidate_test_id' }
 User.hasMany(CandidateTestResult, { foreignKey: 'reviewed_by', as: 'ReviewedResults' });
 CandidateTestResult.belongsTo(User, { foreignKey: 'reviewed_by', as: 'Reviewer' });
 
+// User - RecruitmentReport
+User.hasMany(RecruitmentReport, { foreignKey: 'created_by', as: 'CreatedReports' });
+RecruitmentReport.belongsTo(User, { foreignKey: 'created_by', as: 'Creator' });
+
 // ===== Xuất đối tượng DB =====
 const db = {
   sequelize,
@@ -173,7 +178,8 @@ const db = {
   CandidateTest,
   CandidateTestAnswer,
   TestFraudLog,
-  CandidateTestResult
+  CandidateTestResult,
+  RecruitmentReport
 };
 
 module.exports = db;

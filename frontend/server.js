@@ -28,9 +28,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  let filePath = '.' + req.url;
-  if (filePath === './') {
-    filePath = './index.html';
+  // Always serve files from FE directory
+  const feDir = __dirname;
+  let filePath = path.join(feDir, req.url.split('?')[0]);
+  if (req.url === '/' || req.url === '') {
+    filePath = path.join(feDir, 'index.html');
   }
 
   const extname = String(path.extname(filePath)).toLowerCase();

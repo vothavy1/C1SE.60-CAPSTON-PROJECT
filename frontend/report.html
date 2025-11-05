@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Báo Cáo & Thống Kê - ExamPro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .stat-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    .tab-button {
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .tab-button.active {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+    }
+    .tab-button.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #fbbf24;
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-800 min-h-screen text-white font-sans">
+
+  <!-- Navigation Header -->
+  <header class="bg-white/10 backdrop-blur-md shadow-lg border-b border-purple-400/30">
+    <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
+      <h1 class="text-2xl font-bold text-white tracking-wide">📊 Báo Cáo & Thống Kê</h1>
+      <div class="flex items-center gap-4">
+        <button id="refreshBtn" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+          🔄 Làm Mới
+        </button>
+        <a href="recruiter.html" class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+          ← Quay Lại
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto p-6">
+
+    <!-- Statistics Overview Cards -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="stat-card bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex justify-between items-start mb-4">
+          <h3 class="text-white/80 text-sm font-medium">Tổng Số Bài Thi</h3>
+          <span class="text-3xl">📝</span>
+        </div>
+        <p id="totalTests" class="text-4xl font-bold text-white">0</p>
+        <p class="text-blue-200 text-sm mt-2">Tất cả các bài thi</p>
+      </div>
+
+      <div class="stat-card bg-gradient-to-br from-green-500 to-emerald-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex justify-between items-start mb-4">
+          <h3 class="text-white/80 text-sm font-medium">Hoàn Thành</h3>
+          <span class="text-3xl">✅</span>
+        </div>
+        <p id="completedTests" class="text-4xl font-bold text-white">0</p>
+        <p class="text-green-200 text-sm mt-2">Đã nộp bài</p>
+      </div>
+
+      <div class="stat-card bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-6 shadow-xl">
+        <div class="flex justify-between items-start mb-4">
+          <h3 class="text-white/80 text-sm font-medium">Vi Phạm</h3>
+          <span class="text-3xl">⚠️</span>
+        </div>
+        <p id="totalViolations" class="text-4xl font-bold text-white">0</p>
+        <p class="text-orange-200 text-sm mt-2">Tổng số vi phạm</p>
+      </div>
+
+      <div class="stat-card bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 shadow-xl">
+        <div class="flex justify-between items-start mb-4">
+          <h3 class="text-white/80 text-sm font-medium">Điểm Trung Bình</h3>
+          <span class="text-3xl">📈</span>
+        </div>
+        <p id="avgScore" class="text-4xl font-bold text-white">0.0</p>
+        <p class="text-purple-200 text-sm mt-2">Trên tổng số 100</p>
+      </div>
+    </section>
+
+    <!-- Charts Section - Combined Chart -->
+    <section class="mb-8">
+      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-400/30">
+        <h3 class="text-xl font-semibold text-white mb-6">📊 Phân Bố Trạng Thái & Điểm Số</h3>
+        <div class="max-w-4xl mx-auto">
+          <canvas id="combinedChart" class="max-h-96"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab Navigation - Only Violations and Notifications -->
+    <div class="bg-white/10 backdrop-blur-md rounded-t-2xl border-b border-purple-400/30">
+      <div class="flex gap-2 px-6 pt-4">
+        <button class="tab-button active px-6 py-3 rounded-t-lg font-medium" data-tab="violations">
+          ⚠️ Vi Phạm
+        </button>
+        <button class="tab-button px-6 py-3 rounded-t-lg font-medium" data-tab="notifications">
+          📧 Thông Báo
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="bg-white/10 backdrop-blur-md rounded-b-2xl rounded-tr-2xl p-6 border border-t-0 border-purple-400/30 min-h-[500px]">
+      
+      <!-- Violations Tab - Enhanced Table -->
+      <div id="violationsTab" class="tab-content">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-white flex items-center gap-2">
+            <span class="text-2xl">⚠️</span>
+            Báo Cáo Vi Phạm
+          </h3>
+          <div class="flex gap-2">
+            <select id="violationTypeFilter" class="bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30 hover:border-orange-400/50 transition cursor-pointer">
+              <option value="">Tất cả loại vi phạm</option>
+              <option value="tab_switch">🔄 Chuyển tab</option>
+              <option value="camera_off">📷 Tắt camera</option>
+              <option value="lost_focus">👁️ Mất focus</option>
+              <option value="other">⚠️ Khác</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Violations Table -->
+        <div class="overflow-x-auto rounded-lg border border-orange-400/20">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-gradient-to-r from-orange-500/30 to-red-500/30 text-orange-100">
+              <tr>
+                <th class="px-4 py-3 font-semibold">ID</th>
+                <th class="px-4 py-3 font-semibold">Tên Ứng Viên</th>
+                <th class="px-4 py-3 font-semibold">Bài Thi</th>
+                <th class="px-4 py-3 font-semibold">Ngày Giờ</th>
+                <th class="px-4 py-3 font-semibold">Loại Vi Phạm</th>
+                <th class="px-4 py-3 font-semibold">Điểm Số</th>
+                <th class="px-4 py-3 font-semibold">Kết Quả</th>
+              </tr>
+            </thead>
+            <tbody id="violationsList" class="text-white bg-purple-900/20">
+              <tr>
+                <td colspan="7" class="text-center text-purple-300 py-8">
+                  <div class="flex flex-col items-center gap-2">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400"></div>
+                    <span>Đang tải dữ liệu vi phạm...</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Notifications Tab -->
+      <div id="notificationsTab" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-white">Gửi Thông Báo</h3>
+        </div>
+        
+        <!-- Send Notification Form -->
+        <div class="bg-purple-900/30 rounded-xl p-6 mb-6 border border-purple-400/20">
+          <h4 class="text-lg font-semibold text-white mb-4">📤 Gửi Thông Báo Mới</h4>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-purple-200 text-sm mb-2">Ứng Viên</label>
+              <select id="notifyCandidateId" class="w-full bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30">
+                <option value="">Chọn ứng viên...</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-purple-200 text-sm mb-2">Bài Thi</label>
+              <select id="notifyTestId" class="w-full bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30">
+                <option value="">Chọn bài thi...</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-purple-200 text-sm mb-2">Loại Thông Báo</label>
+              <select id="notifyType" class="w-full bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30">
+                <option value="violation_warning">⚠️ Cảnh báo vi phạm</option>
+                <option value="test_reminder">📅 Nhắc nhở làm bài</option>
+                <option value="result_available">✅ Kết quả đã có</option>
+                <option value="general">💬 Thông báo chung</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-purple-200 text-sm mb-2">Nội Dung</label>
+              <textarea id="notifyMessage" rows="4" class="w-full bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30" placeholder="Nhập nội dung thông báo..."></textarea>
+            </div>
+            <button id="sendNotificationBtn" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition">
+              📧 Gửi Thông Báo
+            </button>
+          </div>
+        </div>
+
+        <!-- Notifications List -->
+        <div>
+          <h4 class="text-lg font-semibold text-white mb-4">📬 Lịch Sử Thông Báo</h4>
+          <div id="notificationsList" class="space-y-3 max-h-96 overflow-y-auto">
+            <div class="text-center text-purple-300 py-8">Đang tải...</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    // API Configuration
+    const API_BASE_URL = 'http://localhost:5000/api';
+    
+    // Get token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Vui lòng đăng nhập để xem báo cáo');
+      window.location.href = 'login.html';
+    }
+    
+    // Get user info to check role
+    const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+    if (userInfo.role === 'CANDIDATE') {
+      alert('❌ Chỉ có Nhà tuyển dụng (RECRUITER) và Quản trị viên (ADMIN) mới được xem báo cáo.\n\nỨng viên không có quyền truy cập trang này.');
+      window.location.href = 'index.html';
+    }
+
+    // Chart instances
+    let combinedChart;
+
+    // ========== TAB NAVIGATION ==========
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const tabName = button.dataset.tab;
+        
+        // Update active button
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Show corresponding content
+        tabContents.forEach(content => content.classList.add('hidden'));
+        document.getElementById(`${tabName}Tab`).classList.remove('hidden');
+        
+        // Load data for active tab
+        loadTabData(tabName);
+      });
+    });
+
+    // ========== LOAD STATISTICS ==========
+    async function loadStatistics() {
+      try {
+        console.log('📊 Loading statistics from API...');
+        const response = await fetch(`${API_BASE_URL}/reports/statistics`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        console.log('📊 Statistics API Response Status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Statistics API Error:', errorText);
+          throw new Error('Failed to load statistics');
+        }
+
+        const result = await response.json();
+        console.log('📊 Statistics Data:', result);
+        
+        const stats = result.data;
+
+        if (!stats) {
+          console.warn('⚠️ No statistics data returned');
+          return;
+        }
+
+        console.log('📊 Processing statistics:', {
+          totalTests: stats.totalTests,
+          completedTests: stats.completedTests,
+          totalViolations: stats.totalViolations,
+          avgScore: stats.averageScore
+        });
+
+        // Update stat cards
+        document.getElementById('totalTests').textContent = stats.totalTests || 0;
+        document.getElementById('completedTests').textContent = stats.completedTests || 0;
+        document.getElementById('totalViolations').textContent = stats.totalViolations || 0;
+        document.getElementById('avgScore').textContent = (stats.averageScore || 0).toFixed(1);
+
+        // Update combined chart
+        updateCombinedChart(stats.statusDistribution || {}, stats.scoreDistribution || {});
+
+        console.log('✅ Statistics loaded successfully');
+
+      } catch (error) {
+        console.error('❌ Error loading statistics:', error);
+        console.error('Error details:', error.message, error.stack);
+        
+        // Show default values instead of error message
+        document.getElementById('totalTests').textContent = '0';
+        document.getElementById('completedTests').textContent = '0';
+        document.getElementById('totalViolations').textContent = '0';
+        document.getElementById('avgScore').textContent = '0.0';
+      }
+    }
+
+    // ========== CHARTS ==========
+    function updateCombinedChart(statusData, scoreData) {
+      const ctx = document.getElementById('combinedChart').getContext('2d');
+      
+      if (combinedChart) {
+        combinedChart.destroy();
+      }
+
+      combinedChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Hoàn Thành', 'Đang Làm', 'Chưa Làm', '0-20đ', '21-40đ', '41-60đ', '61-80đ', '81-100đ'],
+          datasets: [
+            {
+              label: 'Trạng Thái',
+              data: [
+                statusData.completed || 0,
+                statusData.in_progress || 0,
+                statusData.not_started || 0,
+                null, null, null, null, null
+              ],
+              backgroundColor: 'rgba(34, 197, 94, 0.7)',
+              borderColor: 'rgba(34, 197, 94, 1)',
+              borderWidth: 2,
+              borderRadius: 5
+            },
+            {
+              label: 'Phân Bố Điểm',
+              data: [
+                null, null, null,
+                scoreData['0-20'] || 0,
+                scoreData['21-40'] || 0,
+                scoreData['41-60'] || 0,
+                scoreData['61-80'] || 0,
+                scoreData['81-100'] || 0
+              ],
+              backgroundColor: 'rgba(139, 92, 246, 0.7)',
+              borderColor: 'rgba(139, 92, 246, 1)',
+              borderWidth: 2,
+              borderRadius: 5
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { 
+                color: 'white', 
+                stepSize: 1,
+                font: { size: 12 }
+              },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' },
+              title: {
+                display: true,
+                text: 'Số Lượng',
+                color: 'white',
+                font: { size: 14, weight: 'bold' }
+              }
+            },
+            x: {
+              ticks: { 
+                color: 'white',
+                font: { size: 11 }
+              },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' }
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { 
+                color: 'white', 
+                font: { size: 13, weight: 'bold' },
+                padding: 15,
+                usePointStyle: true
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: 'white',
+              bodyColor: 'white',
+              borderColor: 'rgba(139, 92, 246, 0.5)',
+              borderWidth: 1,
+              padding: 12,
+              displayColors: true
+            }
+          }
+        }
+      });
+    }
+
+    // ========== LOAD VIOLATIONS ==========
+    async function loadViolations() {
+      try {
+        console.log('⚠️ Loading violations from API...');
+        const filter = document.getElementById('violationTypeFilter').value;
+        let url = `${API_BASE_URL}/reports/violations`;
+        if (filter) url += `?violationType=${filter}`;
+
+        console.log('⚠️ Fetching from:', url);
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        console.log('⚠️ Violations API Response Status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Violations API Error:', errorText);
+          throw new Error('Failed to load violations');
+        }
+
+        const result = await response.json();
+        console.log('⚠️ Violations Data:', result);
+        
+        const violations = result.data || [];
+        console.log(`⚠️ Found ${violations.length} violations`);
+
+        const violationsList = document.getElementById('violationsList');
+        
+        if (violations.length === 0) {
+          console.log('ℹ️ No violations found, showing empty message');
+          violationsList.innerHTML = `
+            <tr>
+              <td colspan="7" class="text-center text-purple-300 py-12">
+                <div class="flex flex-col items-center gap-3">
+                  <span class="text-5xl">✅</span>
+                  <span class="text-lg font-semibold">Không có vi phạm nào được ghi nhận</span>
+                  <span class="text-sm text-purple-400">Tất cả ứng viên đang tuân thủ quy định</span>
+                </div>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        violationsList.innerHTML = violations.map(v => {
+          const timestamp = new Date(v.reported_at || v.timestamp).toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          
+          // Determine result badge based on score or status
+          let resultBadge = '';
+          const score = parseInt(v.score) || 0;
+          if (v.result === 'passed' || v.passed || score >= 50) {
+            resultBadge = '<span class="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-xs font-semibold">✅ Đạt</span>';
+          } else if (v.result === 'failed' || v.passed === false || score < 50) {
+            resultBadge = '<span class="px-3 py-1 bg-red-500/20 text-red-300 rounded-full text-xs font-semibold">❌ Không đạt</span>';
+          } else {
+            resultBadge = '<span class="px-3 py-1 bg-gray-500/20 text-gray-300 rounded-full text-xs font-semibold">⏳ Đang làm</span>';
+          }
+
+          // Format violation type display with color coding
+          const typeDisplay = {
+            'tab_switch': '<span class="px-2 py-1 bg-orange-500/20 text-orange-300 rounded text-xs">🔄 Chuyển tab</span>',
+            'camera_off': '<span class="px-2 py-1 bg-red-500/20 text-red-300 rounded text-xs">📷 Tắt camera</span>',
+            'lost_focus': '<span class="px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded text-xs">👁️ Mất focus</span>',
+            'other': '<span class="px-2 py-1 bg-gray-500/20 text-gray-300 rounded text-xs">⚠️ Khác</span>'
+          }[v.violation_type] || `<span class="px-2 py-1 bg-gray-500/20 text-gray-300 rounded text-xs">${v.violation_type || 'N/A'}</span>`;
+          
+          return `
+            <tr class="border-b border-orange-400/10 hover:bg-orange-500/10 transition-colors">
+              <td class="px-4 py-3 font-mono text-sm text-purple-300">#${v.candidateId || v.candidate_id || 'N/A'}</td>
+              <td class="px-4 py-3 font-medium">${v.candidate_name || 'Unknown'}</td>
+              <td class="px-4 py-3 text-sm text-purple-300 max-w-xs truncate" title="${v.test_name || 'N/A'}">${v.test_name || 'N/A'}</td>
+              <td class="px-4 py-3 text-xs text-purple-300">${timestamp}</td>
+              <td class="px-4 py-3">${typeDisplay}</td>
+              <td class="px-4 py-3 font-bold text-center ${score >= 50 ? 'text-green-300' : 'text-red-300'}">${score}</td>
+              <td class="px-4 py-3 text-center">${resultBadge}</td>
+            </tr>
+          `;
+        }).join('');
+
+        console.log('✅ Violations loaded and displayed in table');
+
+      } catch (error) {
+        console.error('❌ Error loading violations:', error);
+        console.error('Error details:', error.message, error.stack);
+        document.getElementById('violationsList').innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center text-red-300 py-12">
+              <div class="flex flex-col items-center gap-3">
+                <span class="text-5xl">⚠️</span>
+                <span class="text-lg font-semibold">Không thể tải danh sách vi phạm</span>
+                <span class="text-sm text-red-400">${error.message}</span>
+                <button onclick="loadViolations()" class="mt-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition">
+                  🔄 Thử lại
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // ========== LOAD ACTIVITY LOGS ==========
+    async function loadActivityLogs() {
+      try {
+        console.log('📋 Loading activity logs from API...');
+        const filter = document.getElementById('activityTypeFilter').value;
+        let url = `${API_BASE_URL}/reports/activity`;
+        if (filter) url += `?activityType=${filter}`;
+
+        console.log('📋 Fetching from:', url);
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        console.log('📋 Activity API Response Status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Activity API Error:', errorText);
+          throw new Error('Failed to load activity logs');
+        }
+
+        const result = await response.json();
+        console.log('📋 Activity Data:', result);
+        
+        const activities = result.data || [];
+        console.log(`📋 Found ${activities.length} activities`);
+
+        const activityLogsList = document.getElementById('activityLogsList');
+        
+        if (activities.length === 0) {
+          console.log('ℹ️ No activities found');
+          activityLogsList.innerHTML = `
+            <div class="text-center text-purple-300 py-8">
+              <p>Không có hoạt động nào</p>
+            </div>
+          `;
+          return;
+        }
+
+        activityLogsList.innerHTML = activities.map(a => {
+          const timestamp = new Date(a.event_time || a.logged_at || a.timestamp).toLocaleString('vi-VN');
+          const typeIcons = {
+            'test_start': '▶️',
+            'test_submit': '✅',
+            'question_answered': '✏️',
+            'violation': '⚠️'
+          };
+          
+          return `
+            <div class="bg-purple-900/30 p-4 rounded-lg border border-purple-400/20 hover:border-purple-400/50 transition">
+              <div class="flex justify-between items-start mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-xl">${typeIcons[a.event_type] || '📋'}</span>
+                  <span class="font-semibold text-white">${a.event_type || 'N/A'}</span>
+                </div>
+                <span class="text-purple-300 text-sm">${timestamp}</span>
+              </div>
+              <p class="text-white text-sm mb-2">${a.description || 'No description'}</p>
+              <div class="flex items-center gap-2 text-sm text-purple-300">
+                <span>� Test #${a.candidate_test_id}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        console.log('✅ Activity logs loaded and displayed');
+
+      } catch (error) {
+        console.error('❌ Error loading activity logs:', error);
+        console.error('Error details:', error.message, error.stack);
+        document.getElementById('activityLogsList').innerHTML = `
+          <div class="text-center text-red-300 py-8">
+            <p>⚠️ Không thể tải nhật ký hoạt động</p>
+            <p class="text-sm mt-2">${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // ========== LOAD NOTIFICATIONS ==========
+    async function loadNotifications() {
+      try {
+        console.log('📧 Loading notifications from API...');
+        const response = await fetch(`${API_BASE_URL}/reports/notifications`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        console.log('📧 Notifications API Response Status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Notifications API Error:', errorText);
+          throw new Error('Failed to load notifications');
+        }
+
+        const result = await response.json();
+        console.log('📧 Notifications Data:', result);
+        
+        const notifications = result.data || [];
+        console.log(`📧 Found ${notifications.length} notifications`);
+
+        const notificationsList = document.getElementById('notificationsList');
+        
+        if (notifications.length === 0) {
+          console.log('ℹ️ No notifications found');
+          notificationsList.innerHTML = `
+            <div class="text-center text-purple-300 py-8">
+              <p>Chưa có thông báo nào</p>
+            </div>
+          `;
+          return;
+        }
+
+        notificationsList.innerHTML = notifications.map(n => {
+          const timestamp = new Date(n.sent_at || n.timestamp).toLocaleString('vi-VN');
+          const typeIcons = {
+            'violation_warning': '⚠️',
+            'test_reminder': '📅',
+            'result_available': '✅',
+            'general': '💬'
+          };
+          
+          return `
+            <div class="bg-purple-900/30 p-4 rounded-lg border border-purple-400/20">
+              <div class="flex justify-between items-start mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-xl">${typeIcons[n.type] || '💬'}</span>
+                  <span class="font-semibold text-white">${n.test_name || 'N/A'}</span>
+                  <span class="text-xs ${n.passed ? 'bg-green-500/30 text-green-300' : 'bg-red-500/30 text-red-300'} px-2 py-1 rounded">${n.status || 'sent'}</span>
+                </div>
+                <span class="text-purple-300 text-sm">${timestamp}</span>
+              </div>
+              <p class="text-white text-sm mb-2">${n.message}</p>
+              <div class="flex items-center gap-2 text-sm text-purple-300">
+                <span>👤 ${n.candidate_name}</span>
+                <span>•</span>
+                <span>📧 ${n.candidate_email}</span>
+                <span>•</span>
+                <span>Điểm: ${n.score || 'N/A'}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        console.log('✅ Notifications loaded and displayed');
+
+      } catch (error) {
+        console.error('❌ Error loading notifications:', error);
+        console.error('Error details:', error.message, error.stack);
+        document.getElementById('notificationsList').innerHTML = `
+          <div class="text-center text-red-300 py-8">
+            <p>⚠️ Không thể tải thông báo</p>
+            <p class="text-sm mt-2">${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // ========== LOAD CANDIDATES & TESTS FOR NOTIFICATION FORM ==========
+    async function loadCandidatesAndTests() {
+      try {
+        console.log('👥 Loading candidates and tests for notification form...');
+        // Load candidates from statistics
+        const statsResponse = await fetch(`${API_BASE_URL}/reports/statistics`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (statsResponse.ok) {
+          const result = await statsResponse.json();
+          const tests = result.data.testsList || []; // Use testsList instead of topTests
+          console.log(`👥 Found ${tests.length} tests for notifications`);
+          
+          const candidateSelect = document.getElementById('notifyCandidateId');
+          const testSelect = document.getElementById('notifyTestId');
+          
+          // Extract unique candidate IDs and names
+          const uniqueCandidates = [...new Map(tests.map(t => [t.candidateId, t])).values()];
+          
+          candidateSelect.innerHTML = '<option value="">Chọn ứng viên...</option>' + 
+            uniqueCandidates.map(t => `<option value="${t.candidateId}">${t.candidateName || `Ứng viên #${t.candidateId}`}</option>`).join('');
+          
+          testSelect.innerHTML = '<option value="">Chọn bài thi...</option>' + 
+            tests.map(t => `<option value="${t.testId}">Test #${t.id || t.testId}</option>`).join('');
+          
+          console.log('✅ Candidates and tests loaded for notification form');
+        }
+
+      } catch (error) {
+        console.error('❌ Error loading candidates and tests:', error);
+      }
+    }
+
+    // ========== SEND NOTIFICATION ==========
+    async function sendNotification() {
+      const candidateId = document.getElementById('notifyCandidateId').value;
+      const testId = document.getElementById('notifyTestId').value;
+      const type = document.getElementById('notifyType').value;
+      const message = document.getElementById('notifyMessage').value.trim();
+
+      if (!candidateId || !message) {
+        alert('Vui lòng chọn ứng viên và nhập nội dung thông báo');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/reports/notify-candidate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            candidateId: parseInt(candidateId),
+            testId: testId ? parseInt(testId) : undefined,
+            type: type,
+            message: message
+          })
+        });
+
+        if (!response.ok) throw new Error('Failed to send notification');
+
+        alert('✅ Đã gửi thông báo thành công!');
+        
+        // Clear form
+        document.getElementById('notifyMessage').value = '';
+        
+        // Reload notifications
+        loadNotifications();
+
+      } catch (error) {
+        console.error('Error sending notification:', error);
+        alert('⚠️ Không thể gửi thông báo. Vui lòng thử lại.');
+      }
+    }
+
+    // ========== LOAD TESTS LIST ==========
+    // ========== LOAD TAB DATA ==========
+    function loadTabData(tabName) {
+      switch(tabName) {
+        case 'violations':
+          loadViolations();
+          break;
+        case 'notifications':
+          loadNotifications();
+          loadCandidatesAndTests();
+          break;
+      }
+    }
+
+    // ========== EVENT LISTENERS ==========
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      loadStatistics();
+      const activeTab = document.querySelector('.tab-button.active').dataset.tab;
+      loadTabData(activeTab);
+    });
+
+    document.getElementById('violationTypeFilter').addEventListener('change', loadViolations);
+    document.getElementById('sendNotificationBtn').addEventListener('click', sendNotification);
+
+    // ========== INITIAL LOAD ==========
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStatistics();
+      loadViolations(); // Load first tab by default
+    });
+  </script>
+
+</body>
+</html>

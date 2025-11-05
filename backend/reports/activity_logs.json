@@ -1,0 +1,28 @@
+[
+  {
+    "id": 1762186474064,
+    "candidate_test_id": "22",
+    "event_type": "test_submit",
+    "description": "Test completed by User -",
+    "event_time": "2025-11-03T16:14:33.978Z",
+    "event_data": {
+      "score": 0,
+      "percentage": "0.00",
+      "passed": false,
+      "test_name": "FPT Shop"
+    }
+  },
+  {
+    "id": 1762189120937,
+    "candidate_test_id": "23",
+    "event_type": "test_submit",
+    "description": "Test completed by User -",
+    "event_time": "2025-11-03T16:58:40.838Z",
+    "event_data": {
+      "score": 0,
+      "percentage": "0.00",
+      "passed": false,
+      "test_name": "FPT Shop"
+    }
+  }
+]

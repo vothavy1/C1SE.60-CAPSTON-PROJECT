@@ -281,16 +281,127 @@
     }
 
     // Start test function
-    function startTest(testId, testName) {
+    async function startTest(testId, testName) {
       if (!testId) {
         alert('Lỗi: Không tìm thấy ID đề thi');
         return;
       }
       
       // Confirm before starting test
-      if (confirm(`Bạn có chắc muốn bắt đầu làm đề thi "${testName}"?\n\nLưu ý: Sau khi bắt đầu, bạn không thể thoát giữa chừng.`)) {
-        // Redirect to test page with test ID
-        window.location.href = `test.html?testId=${testId}`;
+      if (!confirm(`Bạn có chắc muốn bắt đầu làm đề thi "${testName}"?\n\nLưu ý: Sau khi bắt đầu, bạn không thể thoát giữa chừng.`)) {
+        return;
+      }
+
+      try {
+        // Get current user info - CHỈ check userId (chuẩn hóa)
+        const session = JSON.parse(localStorage.getItem('session_user') || 'null');
+        const authToken = localStorage.getItem('auth_token');
+        
+        if (!session || !session.userId || !authToken) {
+          alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+          localStorage.clear(); // Clear all data
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        console.log('✅ Session valid:', session.userId, session.role);
+
+        // Check if user has a candidate profile - Dùng userId
+        let candidateId;
+        const candidateResponse = await fetch(`${API_BASE_URL}/candidates/by-user/${session.userId}`, {
+          headers: getAuthHeaders()
+        });
+
+        if (candidateResponse.ok) {
+          const candidateData = await candidateResponse.json();
+          candidateId = candidateData.data?.candidate_id;
+          console.log('✅ Found existing candidate:', candidateId);
+        } else if (candidateResponse.status === 404) {
+          // Candidate profile not found, create one automatically
+          console.log('📝 Creating candidate profile for user:', session.userId);
+          
+          const createCandidateResponse = await fetch(`${API_BASE_URL}/candidates/self-register`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              user_id: session.userId,
+              first_name: session.fullName || session.username || 'User',
+              last_name: '-',
+              email: session.email || '',
+              status: 'NEW'
+            })
+          });
+
+          if (createCandidateResponse.ok) {
+            const newCandidate = await createCandidateResponse.json();
+            candidateId = newCandidate.data?.candidate_id;
+            console.log('✅ Created candidate profile:', candidateId);
+          } else {
+            // Log chi tiết lỗi
+            const errorData = await createCandidateResponse.json().catch(() => ({}));
+            console.error('❌ Failed to create candidate:', createCandidateResponse.status, errorData);
+            
+            // Nếu lỗi là "already exists", thử lấy lại
+            if (errorData.message?.includes('already has a candidate profile')) {
+              console.log('🔄 Candidate exists, fetching again...');
+              const retryResponse = await fetch(`${API_BASE_URL}/candidates/by-user/${session.userId}`, {
+                headers: getAuthHeaders()
+              });
+              if (retryResponse.ok) {
+                const retryData = await retryResponse.json();
+                candidateId = retryData.data?.candidate_id;
+                console.log('✅ Got candidate on retry:', candidateId);
+              }
+            }
+          }
+        } else {
+          // Log lỗi API khác
+          console.error('❌ Error fetching candidate:', candidateResponse.status);
+        }
+
+        if (!candidateId) {
+          alert('Không thể khởi tạo hồ sơ ứng viên. Vui lòng đăng xuất và đăng nhập lại.');
+          btn.disabled = false;
+          btn.innerHTML = '🚀 Làm bài thi';
+          return;
+        }
+
+        // Create candidate_test entry using self-assign route
+        console.log('🎯 Self-assigning test:', testId, 'for candidate:', candidateId);
+        const assignResponse = await fetch(`${API_BASE_URL}/candidate-tests/self-assign`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            candidate_id: candidateId,
+            test_id: testId
+          })
+        });
+
+        if (!assignResponse.ok) {
+          const errorData = await assignResponse.json().catch(() => ({}));
+          console.error('❌ Failed to assign test:', assignResponse.status, errorData);
+          
+          // If test already assigned, the API returns 200 with existing test data
+          // So if we get here, it's a real error
+          throw new Error(errorData.message || 'Không thể khởi tạo bài thi');
+        }
+
+        const assignResult = await assignResponse.json();
+        const candidateTestId = assignResult.data?.candidate_test_id;
+
+        if (!candidateTestId) {
+          throw new Error('Không nhận được ID bài thi');
+        }
+
+        // Redirect to test page with both IDs
+        window.location.href = `test.html?testId=${testId}&candidateTestId=${candidateTestId}`;
+
+      } catch (error) {
+        console.error('Error starting test:', error);
+        alert('Có lỗi xảy ra: ' + error.message);
+        const btn = event.target;
+        btn.disabled = false;
+        btn.innerHTML = '🚀 Làm bài thi';
       }
     }
 

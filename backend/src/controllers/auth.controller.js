@@ -51,7 +51,7 @@ async function register(req, res) {
       success: true,
       message: `Đăng ký tài khoản thành công với vai trò ${finalRoleId === 2 ? 'Recruiter' : 'Candidate'}`,
       user: {
-        id: newUser.user_id,
+        userId: newUser.user_id,  // Chuẩn hóa key thành userId
         username: newUser.username,
         email: newUser.email,
         role_id: newUser.role_id
@@ -105,7 +105,7 @@ async function login(req, res) {
       success: true,
       data: {
         user: {
-          id: user.user_id,
+          userId: user.user_id,  // Chuẩn hóa key thành userId
           username: user.username,
           email: user.email,
           fullName: user.full_name,
@@ -158,7 +158,7 @@ async function getProfile(req, res) {
     return res.status(200).json({
       success: true,
       data: {
-        id: user.user_id,
+        userId: user.user_id,  // Chuẩn hóa key thành userId
         username: user.username,
         email: user.email,
         fullName: user.full_name,

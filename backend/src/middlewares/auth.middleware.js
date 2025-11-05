@@ -32,8 +32,12 @@ const authenticate = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
     }
 
-    // Add user info to request
-    req.user = user;
+    // Add user info to request with standardized userId
+    req.user = {
+      ...user.toJSON(),
+      userId: user.user_id,  // Standardize key
+      user_id: user.user_id  // Keep for backward compatibility
+    };
     next();
   } catch (error) {
     logger.error(`Authentication error: ${error.message}`);

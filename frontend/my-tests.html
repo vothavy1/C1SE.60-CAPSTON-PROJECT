@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài Test Của Tôi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .test-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        .test-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-in-progress { background: #dbeafe; color: #1e40af; }
+        .status-completed { background: #d1fae5; color: #065f46; }
+        .status-expired { background: #fee2e2; color: #991b1b; }
+        .score-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+        }
+        .score-pass { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .score-fail { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .score-pending { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); }
+    </style>
+</head>
+<body class="text-gray-800">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-8 shadow-lg">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-white mb-2">📋 Bài Test Của Tôi</h1>
+                    <p class="text-white/80">Xem lịch sử và kết quả các bài test đã làm</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="exam.html" class="bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-white/90 transition shadow-lg">
+                        ← Quay lại
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter -->
+        <div class="bg-white rounded-xl p-4 mb-6 shadow-lg">
+            <div class="flex gap-4 flex-wrap">
+                <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="PENDING">Chờ làm bài</option>
+                    <option value="IN_PROGRESS">Đang làm</option>
+                    <option value="COMPLETED">Hoàn thành</option>
+                    <option value="EXPIRED">Hết hạn</option>
+                </select>
+                <div class="flex-grow"></div>
+                <div id="statsInfo" class="text-sm text-gray-600 flex items-center gap-4">
+                    <span>Tổng: <strong id="totalTests">0</strong></span>
+                    <span>Hoàn thành: <strong id="completedTests">0</strong></span>
+                    <span>Đang làm: <strong id="inProgressTests">0</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loadingIndicator" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+            <p class="text-white mt-4">Đang tải dữ liệu...</p>
+        </div>
+
+        <!-- Tests List -->
+        <div id="testsList"></div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden bg-white rounded-xl p-12 text-center shadow-lg">
+            <div class="text-6xl mb-4">📝</div>
+            <h3 class="text-2xl font-bold text-gray-700 mb-2">Chưa có bài test nào</h3>
+            <p class="text-gray-500 mb-6">Bạn chưa được giao bài test nào. Vui lòng liên hệ nhà tuyển dụng.</p>
+            <a href="exam.html" class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition">
+                Quay lại trang chủ
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        let allTests = [];
+
+        // Get auth headers
+        function getAuthHeaders() {
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            return {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+            };
+        }
+
+        // Load my tests
+        async function loadMyTests() {
+            try {
+                document.getElementById('loadingIndicator').style.display = 'block';
+                document.getElementById('testsList').innerHTML = '';
+                document.getElementById('emptyState').classList.add('hidden');
+
+                const response = await fetch(`${API_BASE_URL}/candidate-tests/my-tests`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('auth_token');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error('Không thể tải dữ liệu');
+                }
+
+                const result = await response.json();
+                allTests = result.data || [];
+
+                document.getElementById('loadingIndicator').style.display = 'none';
+
+                if (allTests.length === 0) {
+                    document.getElementById('emptyState').classList.remove('hidden');
+                } else {
+                    renderTests(allTests);
+                    updateStats(allTests);
+                }
+
+            } catch (error) {
+                console.error('Error loading tests:', error);
+                document.getElementById('loadingIndicator').style.display = 'none';
+                document.getElementById('testsList').innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                        <h3 class="text-red-800 font-bold mb-2">Lỗi tải dữ liệu</h3>
+                        <p class="text-red-600">${error.message}</p>
+                        <button onclick="loadMyTests()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                            Thử lại
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Render tests
+        function renderTests(tests) {
+            const container = document.getElementById('testsList');
+            
+            container.innerHTML = tests.map(test => {
+                // Simplified status - only 2 states
+                let status;
+                if (test.status === 'COMPLETED') {
+                    status = { label: 'Hoàn thành', class: 'status-completed' };
+                } else {
+                    // PENDING, IN_PROGRESS, and any other status show as "Chờ làm bài"
+                    status = { label: 'Chờ làm bài', class: 'status-pending' };
+                }
+                const testName = test.Test?.test_name || 'Không có tên';
+                const description = test.Test?.description || 'Không có mô tả';
+                const duration = test.Test?.duration_minutes || 0;
+                const passingScore = test.Test?.passing_score || 60;
+
+                // Score display - respect is_result_visible
+                let scoreHtml = '';
+                if (test.status === 'COMPLETED' && test.is_result_visible && test.CandidateTestResult) {
+                    // Show score only if results are visible
+                    const result = test.CandidateTestResult;
+                    const passed = result.passed;
+                    const scoreClass = passed ? 'score-pass' : 'score-fail';
+                    scoreHtml = `
+                        <div class="score-circle ${scoreClass}">
+                            ${result.total_score}
+                        </div>
+                    `;
+                } else if (test.status === 'COMPLETED' && !test.is_result_visible) {
+                    // Test completed but results not visible yet
+                    scoreHtml = `
+                        <div class="score-circle score-pending">
+                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    `;
+                } else {
+                    // Not completed yet
+                    scoreHtml = `
+                        <div class="score-circle score-pending">
+                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    `;
+                }
+
+                // Action button
+                let actionButton = '';
+                if (test.status === 'COMPLETED') {
+                    if (test.is_result_visible) {
+                        actionButton = `<a href="test-result.html?id=${test.candidate_test_id}" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition font-semibold">
+                            � Xem kết quả chi tiết
+                        </a>`;
+                    } else {
+                        actionButton = `<button disabled class="bg-gray-400 text-white px-6 py-2 rounded-lg cursor-not-allowed font-semibold" title="Kết quả đang được xem xét">
+                            ⏳ Đang chờ kết quả
+                        </button>`;
+                    }
+                } else if (test.status === 'IN_PROGRESS') {
+                    actionButton = `<a href="test.html?candidateTestId=${test.candidate_test_id}" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-semibold">
+                        ⏱️ Tiếp tục làm bài
+                    </a>`;
+                } else {
+                    // PENDING
+                    actionButton = `<a href="test.html?testId=${test.Test.test_id}" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition font-semibold">
+                        � Bắt đầu làm bài
+                    </a>`;
+                }
+
+                // Time info
+                let timeInfo = '';
+                if (test.start_time) {
+                    timeInfo = `<p class="text-sm text-gray-500">
+                        <strong>Bắt đầu:</strong> ${formatDate(test.start_time)}
+                    </p>`;
+                }
+                if (test.end_time && test.status === 'COMPLETED') {
+                    timeInfo += `<p class="text-sm text-gray-500">
+                        <strong>Hoàn thành:</strong> ${formatDate(test.end_time)}
+                    </p>`;
+                }
+
+                return `
+                    <div class="test-card">
+                        <div class="flex items-start gap-6">
+                            <!-- Score Circle -->
+                            <div class="flex-shrink-0">
+                                ${scoreHtml}
+                            </div>
+
+                            <!-- Test Info -->
+                            <div class="flex-grow">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div>
+                                        <h3 class="text-xl font-bold text-gray-800 mb-1">${testName}</h3>
+                                        <p class="text-gray-600 mb-2">${description}</p>
+                                    </div>
+                                    <span class="status-badge ${status.class}">${status.label}</span>
+                                </div>
+
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                    <div class="bg-gray-50 p-3 rounded-lg">
+                                        <p class="text-xs text-gray-500 mb-1">Thời gian</p>
+                                        <p class="font-semibold text-gray-800">⏱️ ${duration} phút</p>
+                                    </div>
+                                    <div class="bg-gray-50 p-3 rounded-lg">
+                                        <p class="text-xs text-gray-500 mb-1">Điểm đạt</p>
+                                        <p class="font-semibold text-gray-800">🎯 ${passingScore}%</p>
+                                    </div>
+                                    ${test.status === 'COMPLETED' && test.is_result_visible && test.CandidateTestResult ? `
+                                        <div class="bg-gray-50 p-3 rounded-lg">
+                                            <p class="text-xs text-gray-500 mb-1">Điểm số</p>
+                                            <p class="font-semibold text-gray-800">${test.CandidateTestResult.total_score}/${test.CandidateTestResult.max_possible_score || 100}</p>
+                                        </div>
+                                        <div class="bg-gray-50 p-3 rounded-lg">
+                                            <p class="text-xs text-gray-500 mb-1">Kết quả</p>
+                                            <p class="font-semibold ${test.CandidateTestResult.passed ? 'text-green-600' : 'text-red-600'}">
+                                                ${test.CandidateTestResult.passed ? '✅ Đạt' : '❌ Không đạt'}
+                                            </p>
+                                        </div>
+                                    ` : test.status === 'COMPLETED' && !test.is_result_visible ? `
+                                        <div class="bg-gray-50 p-3 rounded-lg">
+                                            <p class="text-xs text-gray-500 mb-1">Trạng thái</p>
+                                            <p class="font-semibold text-yellow-600">⏳ Đang chờ kết quả</p>
+                                        </div>
+                                    ` : ''}
+                                </div>
+
+                                ${timeInfo}
+
+                                <div class="mt-4">
+                                    ${actionButton}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update stats
+        function updateStats(tests) {
+            document.getElementById('totalTests').textContent = tests.length;
+            document.getElementById('completedTests').textContent = tests.filter(t => t.status === 'COMPLETED').length;
+            document.getElementById('inProgressTests').textContent = tests.filter(t => t.status === 'IN_PROGRESS').length;
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Filter by status
+        document.getElementById('statusFilter').addEventListener('change', (e) => {
+            const status = e.target.value;
+            if (status) {
+                const filtered = allTests.filter(t => t.status === status);
+                renderTests(filtered);
+            } else {
+                renderTests(allTests);
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadMyTests);
+    </script>
+</body>
+</html>

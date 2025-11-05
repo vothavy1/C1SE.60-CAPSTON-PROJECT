@@ -138,15 +138,18 @@
         const token = userData.token;
         const user = userData.user;
 
-        // Lưu token và thông tin user
+        // Lưu token và thông tin user - CHỈ DÙNG userId (chuẩn hóa)
         localStorage.setItem('auth_token', token);
         localStorage.setItem('session_user', JSON.stringify({
-          name: user.username || user.fullName || userInput,
-          role: user.role,
-          userId: user.id,
+          userId: user.userId,  // CHỈ dùng userId duy nhất
+          username: user.username,
+          fullName: user.fullName,
           email: user.email,
+          role: user.role,
           loginAt: Date.now()
         }));
+        
+        console.log('✅ User logged in:', user.userId, user.role);
 
         // Chuyển trang theo vai trò
         document.body.classList.remove('fade-enter');

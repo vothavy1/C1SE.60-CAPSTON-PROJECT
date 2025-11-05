@@ -47,6 +47,11 @@ const questionController = {
             attributes: ['category_id', 'category_name']
           },
           {
+            model: QuestionOption,
+            as: 'QuestionOptions',
+            attributes: ['option_id', 'option_text', 'is_correct']
+          },
+          {
             model: User,
             as: 'Creator',
             attributes: ['user_id', 'username', 'full_name']
@@ -130,6 +135,7 @@ const questionController = {
     
     try {
       const {
+        question_title,
         question_text,
         question_type,
         difficulty_level,
@@ -137,9 +143,9 @@ const questionController = {
         options,
         coding_template
       } = req.body;
-      
       // Create question
       const newQuestion = await Question.create({
+        question_title,
         question_text,
         question_type,
         difficulty_level,
@@ -151,14 +157,20 @@ const questionController = {
       }, { transaction });
       
       // Add options if applicable
-      if (['MULTIPLE_CHOICE', 'SINGLE_CHOICE'].includes(question_type) && options && options.length > 0) {
-        await Promise.all(options.map(option => {
-          return QuestionOption.create({
-            question_id: newQuestion.question_id,
-            option_text: option.option_text,
-            is_correct: option.is_correct || false
-          }, { transaction });
-        }));
+      if (['MULTIPLE_CHOICE', 'SINGLE_CHOICE'].includes(question_type)) {
+        logger.info('Options received:', options);
+        if (options && options.length > 0) {
+          for (const option of options) {
+            logger.info(`Saving option: ${JSON.stringify(option)}`);
+            await QuestionOption.create({
+              question_id: newQuestion.question_id,
+              option_text: option.option_text,
+              is_correct: option.is_correct || false
+            }, { transaction });
+          }
+        } else {
+          logger.warn('No options provided for question_type:', question_type);
+        }
       }
       
       // Add coding template if applicable
@@ -175,22 +187,23 @@ const questionController = {
       await transaction.commit();
       
       // Get the created question with all details
-      const createdQuestion = await Question.findByPk(newQuestion.question_id, {
-        include: [
-          {
-            model: QuestionCategory,
-            attributes: ['category_id', 'category_name']
-          },
-          {
-            model: QuestionOption,
-            attributes: ['option_id', 'option_text', 'is_correct']
-          },
-          {
-            model: CodingQuestionTemplate,
-            attributes: ['template_id', 'programming_language', 'code_template', 'test_cases']
-          }
-        ]
-      });
+        const createdQuestion = await Question.findByPk(newQuestion.question_id, {
+          include: [
+            {
+              model: QuestionCategory,
+              attributes: ['category_id', 'category_name']
+            },
+            {
+              model: QuestionOption,
+              as: 'QuestionOptions',
+              attributes: ['option_id', 'option_text', 'is_correct']
+            },
+            {
+              model: CodingQuestionTemplate,
+              attributes: ['template_id', 'programming_language', 'code_template', 'test_cases']
+            }
+          ]
+        });
       
       return res.status(201).json({
         success: true,
@@ -199,11 +212,12 @@ const questionController = {
       });
       
     } catch (error) {
-      // Rollback transaction in case of error
-      await transaction.rollback();
-      
-      logger.error(`Create question error: ${error.message}`);
-      return res.status(500).json({ success: false, message: 'Đã xảy ra lỗi khi tạo câu hỏi mới' });
+      // Rollback transaction in case of error, only if not finished
+      if (transaction.finished !== 'commit' && transaction.finished !== 'rollback') {
+        await transaction.rollback();
+      }
+      logger.error(`Create question error: ${error.message} | Payload: ${JSON.stringify(req.body)} | Stack: ${error.stack}`);
+      return res.status(500).json({ success: false, message: 'Đã xảy ra lỗi khi tạo câu hỏi mới', error: error.message });
     }
   },
   
@@ -216,6 +230,7 @@ const questionController = {
     try {
       const questionId = req.params.id;
       const {
+        question_title,
         question_text,
         question_type,
         difficulty_level,
@@ -235,6 +250,7 @@ const questionController = {
       
       // Update question
       await question.update({
+        question_title: question_title || question.question_title,
         question_text: question_text || question.question_text,
         question_type: question_type || question.question_type,
         difficulty_level: difficulty_level || question.difficulty_level,
@@ -316,9 +332,10 @@ const questionController = {
       });
       
     } catch (error) {
-      // Rollback transaction in case of error
-      await transaction.rollback();
-      
+      // Rollback transaction in case of error, only if not finished
+      if (transaction.finished !== 'commit' && transaction.finished !== 'rollback') {
+        await transaction.rollback();
+      }
       logger.error(`Update question error: ${error.message}`);
       return res.status(500).json({ success: false, message: 'Đã xảy ra lỗi khi cập nhật câu hỏi' });
     }

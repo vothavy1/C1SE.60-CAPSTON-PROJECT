@@ -8,72 +8,50 @@ function getAuthHeaders() {
     };
 }
 
-document.addEventListener('DOMContentLoaded', loadTestData);
-document.getElementById('editTestForm').addEventListener('submit', handleEditSubmit);
-
-function getTestIdFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('id');
-}
-
-async function loadTestData() {
-    const testId = getTestIdFromUrl();
-    if (!testId) {
-        alert('Không tìm thấy ID đề thi!');
-        window.location.href = 'test-list.html';
-        return;
-    }
-    document.getElementById('testId').value = testId;
+// Load test info
+async function loadTest() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const testId = urlParams.get('id');
+    if (!testId) return;
     try {
-        const response = await fetch(`${API_BASE_URL}/tests/${testId}`, {
+        const res = await fetch(`${API_BASE_URL}/tests/${testId}`, {
             headers: getAuthHeaders()
         });
-        if (!response.ok) throw new Error('Không lấy được dữ liệu đề thi!');
-        const test = await response.json();
-        document.getElementById('testName').value = test.name || '';
+        if (!res.ok) throw new Error('Không tải được thông tin đề thi');
+        const data = await res.json();
+        const test = data.data || data;
+        document.getElementById('testId').value = test.test_id;
+        document.getElementById('testName').value = test.test_name || '';
         document.getElementById('testDescription').value = test.description || '';
         document.getElementById('testType').value = test.type || '';
-    } catch (error) {
-        alert(error.message);
-        window.location.href = 'test-list.html';
+    } catch (err) {
+        alert(err.message);
     }
 }
 
-async function handleEditSubmit(e) {
+document.addEventListener('DOMContentLoaded', loadTest);
+
+document.getElementById('editTestForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const testId = document.getElementById('testId').value;
-    const testName = document.getElementById('testName').value.trim();
-    const testDescription = document.getElementById('testDescription').value.trim();
-    const testType = document.getElementById('testType').value;
-
-    if (!testName) {
-        alert('Tên đề thi không được để trống!');
-        return;
-    }
-    if (!testType) {
-        alert('Vui lòng chọn loại đề!');
-        return;
-    }
-
-    const testData = {
-        name: testName,
-        description: testDescription,
-        type: testType
+    const payload = {
+        test_name: document.getElementById('testName').value.trim(),
+        description: document.getElementById('testDescription').value.trim(),
+        type: document.getElementById('testType').value
     };
-
     try {
-        const response = await fetch(`${API_BASE_URL}/tests/${testId}`, {
+        const res = await fetch(`${API_BASE_URL}/tests/${testId}`, {
             method: 'PUT',
             headers: getAuthHeaders(),
-            body: JSON.stringify(testData)
+            body: JSON.stringify(payload)
         });
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Cập nhật đề thi thất bại!');
+        if (res.ok) {
+            alert('Cập nhật thành công!');
+            window.location.href = 'test-list.html';
+        } else {
+            alert('Cập nhật thất bại!');
         }
-        alert('Cập nhật đề thi thành công!');
-        window.location.href = 'test-list.html';
-    } catch (error) {
-        alert(error.message || 'Có lỗi xảy ra khi cập nhật đề thi!');
+    } catch (err) {
+        alert('Có lỗi xảy ra!');
     }
-}
+});

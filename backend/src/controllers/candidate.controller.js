@@ -12,6 +12,7 @@ exports.createCandidate = async (req, res) => {
   
   try {
     const { 
+      user_id,
       first_name, 
       last_name, 
       email, 
@@ -21,50 +22,126 @@ exports.createCandidate = async (req, res) => {
       education,
       skills,
       source,
-      notes
+      notes,
+      status
     } = req.body;
 
-    // Check if candidate with the same email already exists
-    const existingCandidate = await Candidate.findOne({ 
-      where: { email },
-      transaction: t
-    });
-
-    if (existingCandidate) {
+    // Validate required fields
+    if (!first_name || !last_name || !email || !source) {
       await t.rollback();
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Candidate with this email already exists' 
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: first_name, last_name, email, source'
       });
     }
 
-    // Create candidate
+    // Check if user_id is provided and already has a candidate profile
+    if (user_id) {
+      const existingByUser = await Candidate.findOne({ 
+        where: { user_id },
+        transaction: t
+      });
+
+      if (existingByUser) {
+        await t.rollback();
+        return res.status(400).json({ 
+          success: false, 
+          message: 'User already has a candidate profile',
+          data: existingByUser
+        });
+      }
+    }
+
+    // Check if candidate with the same email already exists
+    if (email) {
+      const existingCandidate = await Candidate.findOne({ 
+        where: { email },
+        transaction: t
+      });
+
+      if (existingCandidate) {
+        await t.rollback();
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Candidate with this email already exists' 
+        });
+      }
+    }
+
+    // Create candidate - Always set status to NEW for new candidates
     const candidate = await Candidate.create({
+      user_id: user_id || null,
       first_name,
       last_name,
       email,
       phone,
       current_position,
-      years_of_experience,
+      years_of_experience: years_of_experience ? parseInt(years_of_experience) : null,
       education,
       skills,
       source,
       notes,
-      status: 'NEW'
+      status: 'NEW' // Always NEW for new candidates from recruiter
     }, { transaction: t });
+
+    // Handle resume upload if file is present
+    let resumeData = null;
+    if (req.file) {
+      try {
+        // Save resume file info to database
+        const resumeFileName = req.file.filename;
+        const resumeFilePath = `/uploads/cv/${resumeFileName}`;
+        
+        resumeData = await CandidateResume.create({
+          candidate_id: candidate.candidate_id,
+          file_name: req.file.originalname,
+          file_path: resumeFilePath,
+          file_size: req.file.size,
+          file_type: req.file.mimetype,
+          is_primary: true
+        }, { transaction: t });
+
+        logger.info(`✅ Resume uploaded for candidate ${candidate.candidate_id}: ${resumeFileName}`);
+      } catch (resumeError) {
+        logger.error(`Error saving resume: ${resumeError.message}`);
+        // Continue even if resume save fails
+      }
+    }
 
     await t.commit();
     
-    logger.info(`New candidate created: ${candidate.first_name} ${candidate.last_name}`);
+    // Logging chi tiết
+    if (user_id) {
+      logger.info(`✅ Created candidate profile for user_id: ${user_id}, candidate_id: ${candidate.candidate_id}`);
+    } else {
+      logger.info(`✅ New candidate created: ${candidate.first_name} ${candidate.last_name} (ID: ${candidate.candidate_id})`);
+    }
     
     return res.status(201).json({
       success: true,
       message: 'Candidate created successfully',
-      data: candidate
+      data: {
+        ...candidate.toJSON(),
+        resume: resumeData ? {
+          file_name: resumeData.file_name,
+          file_path: resumeData.file_path
+        } : null
+      }
     });
     
   } catch (error) {
     await t.rollback();
+    
+    // Clean up uploaded file if exists
+    if (req.file && req.file.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+        logger.info(`Cleaned up uploaded file: ${req.file.filename}`);
+      } catch (cleanupError) {
+        logger.error(`Failed to cleanup file: ${cleanupError.message}`);
+      }
+    }
+    
     logger.error(`Error creating candidate: ${error.message}`);
     return res.status(500).json({
       success: false,
@@ -124,14 +201,12 @@ exports.getAllCandidates = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Candidates retrieved successfully',
-      data: {
-        candidates,
-        pagination: {
-          total: count,
-          page: parseInt(page),
-          limit: parseInt(limit),
-          totalPages: Math.ceil(count / limit)
-        }
+      data: candidates,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(count / limit)
       }
     });
     
@@ -187,6 +262,44 @@ exports.getCandidateById = async (req, res) => {
     
   } catch (error) {
     logger.error(`Error retrieving candidate: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve candidate',
+      error: error.message
+    });
+  }
+};
+
+// Get candidate by user_id
+exports.getCandidateByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const candidate = await Candidate.findOne({
+      where: { user_id: userId },
+      include: [
+        {
+          model: User,
+          attributes: ['user_id', 'username', 'email', 'full_name']
+        }
+      ]
+    });
+    
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: 'Candidate profile not found for this user'
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Candidate retrieved successfully',
+      data: candidate
+    });
+    
+  } catch (error) {
+    logger.error(`Error retrieving candidate by user ID: ${error.message}`);
     return res.status(500).json({
       success: false,
       message: 'Failed to retrieve candidate',

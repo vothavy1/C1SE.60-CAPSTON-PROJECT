@@ -13,6 +13,13 @@ router.post(
   candidateTestController.assignTest
 );
 
+// Route for candidates to self-assign (start a test)
+router.post(
+  '/self-assign',
+  authMiddleware.verifyToken,
+  candidateTestController.selfAssignTest
+);
+
 router.get(
   '/admin',
   authMiddleware.verifyToken,
@@ -43,18 +50,19 @@ router.get(
 
 router.post(
   '/:id/start',
-  validationMiddleware.validateStartTest,
+  authMiddleware.verifyToken,
   candidateTestController.startTest
 );
 
 router.post(
-  '/:id/answer',
-  validationMiddleware.validateSubmitAnswer,
+  '/:id/answers',
+  authMiddleware.verifyToken,
   candidateTestController.submitAnswer
 );
 
 router.post(
   '/:id/complete',
+  authMiddleware.verifyToken,
   candidateTestController.completeTest
 );
 
@@ -62,6 +70,26 @@ router.post(
   '/:id/fraud',
   validationMiddleware.validateFraudEvent,
   candidateTestController.logFraudEvent
+);
+
+// Routes for authenticated candidates to view their tests
+router.get(
+  '/my-tests',
+  authMiddleware.verifyToken,
+  candidateTestController.getMyCandidateTests
+);
+
+// Route to get candidate test by ID (for completion page) - MUST be after specific routes
+router.get(
+  '/:id/details',
+  authMiddleware.verifyToken,
+  candidateTestController.getCandidateTestDetails
+);
+
+router.get(
+  '/:id',
+  authMiddleware.verifyToken,
+  candidateTestController.getCandidateTestById
 );
 
 module.exports = router;
