@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Ứng Viên - CS60</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="config.js"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-6 shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold">Quản Lý Ứng Viên</h1>
+                    <p class="text-sm opacity-90 mt-1">Xem và cập nhật trạng thái ứng viên</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="recruiter.html" class="px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition">
+                        ← Quay lại
+                    </a>
+                    <button onclick="logout()" class="px-4 py-2 bg-red-500 rounded-lg hover:bg-red-600 transition">
+                        Đăng xuất
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-600 text-sm font-medium">Tổng ứng viên</h3>
+                <p id="totalCount" class="text-3xl font-bold text-purple-600 mt-2">0</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-600 text-sm font-medium">Chờ xét duyệt</h3>
+                <p id="newCount" class="text-3xl font-bold text-blue-600 mt-2">0</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-600 text-sm font-medium">Đã Pass</h3>
+                <p id="hiredCount" class="text-3xl font-bold text-green-600 mt-2">0</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-600 text-sm font-medium">Đã Fail</h3>
+                <p id="rejectedCount" class="text-3xl font-bold text-red-600 mt-2">0</p>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="bg-white rounded-lg shadow p-4 mb-6 flex gap-4 items-center">
+            <div class="flex-1">
+                <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên, email, số điện thoại..."
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+            </div>
+            <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                <option value="">Tất cả trạng thái</option>
+                <option value="NEW">Mới</option>
+                <option value="SCREENING">Sàng lọc</option>
+                <option value="TESTING">Đang test</option>
+                <option value="INTERVIEWING">Phỏng vấn</option>
+                <option value="OFFERED">Đã offer</option>
+                <option value="HIRED">Đã tuyển</option>
+                <option value="REJECTED">Từ chối</option>
+            </select>
+            <button onclick="loadCandidates()" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                🔄 Làm mới
+            </button>
+        </div>
+
+        <!-- Candidates Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Họ và Tên</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Điện thoại</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Công ty</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày nộp</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="candidatesTable" class="bg-white divide-y divide-gray-200">
+                    <!-- Data will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="hidden text-center py-12">
+            <svg class="animate-spin h-12 w-12 mx-auto text-purple-600" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-gray-600 mt-4">Đang tải dữ liệu...</p>
+        </div>
+    </div>
+
+    <script>
+        let allCandidates = [];
+
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                alert('Vui lòng đăng nhập!');
+                window.location.href = 'index.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_info');
+            window.location.href = 'index.html';
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN');
+        }
+
+        // Get status badge HTML
+        function getStatusBadge(status) {
+            const badges = {
+                'NEW': '<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Mới</span>',
+                'SCREENING': '<span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Sàng lọc</span>',
+                'TESTING': '<span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">Đang test</span>',
+                'INTERVIEWING': '<span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs">Phỏng vấn</span>',
+                'OFFERED': '<span class="px-2 py-1 bg-cyan-100 text-cyan-800 rounded-full text-xs">Đã offer</span>',
+                'HIRED': '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Đã tuyển</span>',
+                'REJECTED': '<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Từ chối</span>'
+            };
+            return badges[status] || status;
+        }
+
+        // Load candidates
+        async function loadCandidates() {
+            if (!checkAuth()) return;
+
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('candidatesTable');
+
+            loading.classList.remove('hidden');
+
+            try {
+                const token = localStorage.getItem('auth_token');
+                const search = document.getElementById('searchInput').value;
+                const status = document.getElementById('statusFilter').value;
+
+                let url = `${API_CONFIG.BASE_URL}/candidates?`;
+                if (search) url += `search=${encodeURIComponent(search)}&`;
+                if (status) url += `status=${status}&`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Không thể tải danh sách ứng viên');
+                }
+
+                const data = await response.json();
+                allCandidates = data.data || [];
+
+                // Update statistics
+                updateStatistics();
+
+                // Render table
+                renderTable();
+
+            } catch (error) {
+                console.error('Load candidates error:', error);
+                alert('Lỗi: ' + error.message);
+                table.innerHTML = `<tr><td colspan="8" class="px-6 py-4 text-center text-red-600">${error.message}</td></tr>`;
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            document.getElementById('totalCount').textContent = allCandidates.length;
+            document.getElementById('newCount').textContent = allCandidates.filter(c => c.status === 'NEW').length;
+            document.getElementById('hiredCount').textContent = allCandidates.filter(c => c.status === 'HIRED').length;
+            document.getElementById('rejectedCount').textContent = allCandidates.filter(c => c.status === 'REJECTED').length;
+        }
+
+        // Render table
+        function renderTable() {
+            const table = document.getElementById('candidatesTable');
+
+            if (allCandidates.length === 0) {
+                table.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-gray-500">Không có ứng viên nào</td></tr>';
+                return;
+            }
+
+            table.innerHTML = allCandidates.map(candidate => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm">${candidate.candidate_id}</td>
+                    <td class="px-6 py-4 font-medium">${candidate.first_name} ${candidate.last_name}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${candidate.email}</td>
+                    <td class="px-6 py-4 text-sm">${candidate.phone || '-'}</td>
+                    <td class="px-6 py-4 text-sm">${candidate.company_name || '-'}</td>
+                    <td class="px-6 py-4">${getStatusBadge(candidate.status)}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${formatDate(candidate.created_at)}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex justify-center gap-2">
+                            <button onclick="viewCV(${candidate.candidate_id})" 
+                                class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                                title="Xem CV">
+                                📄 CV
+                            </button>
+                            <button onclick="updateStatus(${candidate.candidate_id}, 'HIRED')" 
+                                class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                                title="Pass">
+                                ✓ Pass
+                            </button>
+                            <button onclick="updateStatus(${candidate.candidate_id}, 'REJECTED')" 
+                                class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                                title="Fail">
+                                ✗ Fail
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // View CV
+        async function viewCV(candidateId) {
+            const token = localStorage.getItem('auth_token');
+            
+            try {
+                // Open CV in new window
+                const url = `${API_CONFIG.BASE_URL}/candidates/${candidateId}/cv`;
+                window.open(url + `?token=${token}`, '_blank');
+            } catch (error) {
+                console.error('View CV error:', error);
+                alert('Không thể xem CV: ' + error.message);
+            }
+        }
+
+        // Update candidate status
+        async function updateStatus(candidateId, newStatus) {
+            const statusNames = {
+                'HIRED': 'PASS (Đã tuyển)',
+                'REJECTED': 'FAIL (Từ chối)'
+            };
+
+            if (!confirm(`Xác nhận cập nhật trạng thái thành "${statusNames[newStatus]}"?`)) {
+                return;
+            }
+
+            const token = localStorage.getItem('auth_token');
+
+            try {
+                const response = await fetch(`${API_CONFIG.BASE_URL}/candidates/${candidateId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    alert('Cập nhật trạng thái thành công!');
+                    loadCandidates(); // Reload list
+                } else {
+                    throw new Error(data.message || 'Không thể cập nhật trạng thái');
+                }
+
+            } catch (error) {
+                console.error('Update status error:', error);
+                alert('Lỗi: ' + error.message);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', loadCandidates);
+        document.getElementById('statusFilter').addEventListener('change', loadCandidates);
+
+        // Initialize
+        if (checkAuth()) {
+            loadCandidates();
+        }
+    </script>
+</body>
+</html>

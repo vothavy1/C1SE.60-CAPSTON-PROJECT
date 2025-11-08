@@ -27,10 +27,28 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         
         if (response.ok) {
             const data = await response.json();
+            console.log('Login response:', data); // Debug log
+            
             // Lưu token vào localStorage
             const token = data.token || data.data?.token;
+            const user = data.user || data.data?.user;
+            
             if (token) {
                 localStorage.setItem('token', token);
+                
+                // Lưu session_user để candidate-list.html có thể kiểm tra
+                if (user) {
+                    const sessionUser = {
+                        user_id: user.userId || user.user_id, // Handle both camelCase and snake_case
+                        username: user.username,
+                        email: user.email,
+                        fullName: user.fullName || user.full_name || `${user.first_name || ''} ${user.last_name || ''}`.trim(),
+                        role: user.role
+                    };
+                    localStorage.setItem('session_user', JSON.stringify(sessionUser));
+                    console.log('Session saved:', sessionUser); // Debug log
+                }
+                
                 // Chuyển sang recruiter.html
                 window.location.href = 'recruiter.html';
             } else {

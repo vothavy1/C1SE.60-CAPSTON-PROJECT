@@ -41,8 +41,20 @@ const Candidate = sequelize.define('Candidate', {
     type: DataTypes.STRING(100),
     allowNull: true
   },
+  position: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  company_name: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
   years_of_experience: {
     type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  experience_years: {
+    type: DataTypes.STRING(50),
     allowNull: true
   },
   education: {

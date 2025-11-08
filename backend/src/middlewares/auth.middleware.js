@@ -5,13 +5,24 @@ const logger = require('../utils/logger');
 // Middleware to authenticate user with JWT
 const authenticate = async (req, res, next) => {
   try {
-    // Get token from header
+    // Get token from header or query parameter (for file downloads)
+    let token = null;
+    
+    // Try to get from Authorization header first
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+    
+    // If not in header, try query parameter (for CV downloads)
+    if (!token && req.query.token) {
+      token = req.query.token;
+    }
+    
+    // If still no token, return error
+    if (!token) {
       return res.status(401).json({ success: false, message: 'Không có token xác thực' });
     }
-
-    const token = authHeader.split(' ')[1];
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -53,21 +64,43 @@ const authenticate = async (req, res, next) => {
 };
 
 // Middleware to check for required permissions and allowed roles
-const authorize = (requiredPermissions = [], options = {}) => {
+// Can accept either roles (e.g., ['ADMIN', 'RECRUITER']) or permissions
+const authorize = (rolesOrPermissions = [], options = {}) => {
   return async (req, res, next) => {
     try {
       if (!req.user) {
         return res.status(401).json({ success: false, message: 'Chưa xác thực' });
       }
 
-      // For admin role, bypass permission check
+      // For admin role, bypass all checks
       if (req.user.Role && req.user.Role.role_name === 'ADMIN') {
         return next();
       }
 
-      // Check allowed roles if provided
+      const userRole = req.user.Role?.role_name?.toUpperCase();
+      
+      // If rolesOrPermissions array contains role names (ADMIN, RECRUITER, CANDIDATE, etc.)
+      // treat it as roles check
+      const commonRoles = ['ADMIN', 'RECRUITER', 'CANDIDATE'];
+      const isRoleCheck = rolesOrPermissions.some(item => 
+        commonRoles.includes(item.toUpperCase())
+      );
+
+      if (isRoleCheck) {
+        // Check if user's role is in the allowed roles list
+        const allowedRoles = rolesOrPermissions.map(r => r.toUpperCase());
+        if (!allowedRoles.includes(userRole)) {
+          return res.status(403).json({ 
+            success: false, 
+            message: 'Không có quyền truy cập chức năng này' 
+          });
+        }
+        return next();
+      }
+
+      // Otherwise, treat as permissions check
+      // Check allowed roles from options (legacy support)
       if (options.allowedRoles && Array.isArray(options.allowedRoles)) {
-        const userRole = req.user.Role.role_name?.toUpperCase();
         const allowedRoles = options.allowedRoles.map(r => r.toUpperCase());
         if (!allowedRoles.includes(userRole)) {
           return res.status(403).json({ success: false, message: 'Không có quyền truy cập chức năng này' });
@@ -75,12 +108,12 @@ const authorize = (requiredPermissions = [], options = {}) => {
       }
 
       // Get user permissions from loaded relationship
-      const userPermissions = req.user.Role.Permissions.map(p => p.permission_name);
+      const userPermissions = req.user.Role?.Permissions?.map(p => p.permission_name) || [];
       // Check if user has any of the required permissions
-      const hasPermission = requiredPermissions.some(permission => 
+      const hasPermission = rolesOrPermissions.some(permission => 
         userPermissions.includes(permission)
       );
-      if (!hasPermission && requiredPermissions.length > 0) {
+      if (!hasPermission && rolesOrPermissions.length > 0) {
         return res.status(403).json({ 
           success: false, 
           message: 'Không có quyền truy cập chức năng này' 
