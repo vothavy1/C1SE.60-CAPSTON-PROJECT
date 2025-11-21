@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Danh Sách Ứng Viên - Recruiter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .status-badge {
+      @apply px-3 py-1 rounded-full text-xs font-semibold inline-block;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-800 via-indigo-900 to-slate-900 min-h-screen text-white">
+  
+  <!-- Header -->
+  <header class="bg-white/10 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-indigo-400/30">
+    <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
+      <div class="flex items-center gap-4">
+        <a href="recruiter.html" class="text-2xl hover:text-indigo-300 transition">←</a>
+        <h1 class="text-2xl md:text-3xl font-bold">📋 Quản Lý Ứng Viên</h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <span id="userName" class="text-indigo-200">Xin chào!</span>
+        <button onclick="logout()" class="bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-2 rounded-lg hover:opacity-90 transition">
+          Đăng xuất
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto mt-6 p-6">
+    
+    <!-- Actions Bar -->
+    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-center justify-between border border-white/20">
+      <div class="flex gap-3 flex-wrap">
+        <button onclick="showAddModal()" class="bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-2 rounded-lg hover:opacity-90 transition">
+          ➕ Thêm ứng viên
+        </button>
+        <button onclick="refreshList()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg transition">
+          Làm mới
+        </button>
+      </div>
+      
+      <!-- Search & Filter -->
+      <div class="flex gap-3 flex-wrap flex-1 max-w-4xl">
+        <input 
+          id="searchInput" 
+          type="text" 
+          placeholder="Tìm theo tên, email, vị trí..." 
+          class="flex-1 px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          onkeyup="searchCandidates()"
+        />
+        <div class="flex gap-2 items-center">
+          <label class="text-sm whitespace-nowrap">Từ ngày:</label>
+          <input 
+            id="fromDate" 
+            type="date" 
+            onchange="filterByDate()" 
+            class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+          />
+        </div>
+        <div class="flex gap-2 items-center">
+          <label class="text-sm whitespace-nowrap">Đến ngày:</label>
+          <input 
+            id="toDate" 
+            type="date" 
+            onchange="filterByDate()" 
+            class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Candidates Table -->
+    <div class="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/20">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-white/10">
+            <tr>
+              <th class="px-6 py-4 text-left font-semibold">ID</th>
+              <th class="px-6 py-4 text-left font-semibold">Họ tên</th>
+              <th class="px-6 py-4 text-left font-semibold">Email</th>
+              <th class="px-6 py-4 text-left font-semibold">Số điện thoại</th>
+              <th class="px-6 py-4 text-left font-semibold">Vị trí</th>
+              <th class="px-6 py-4 text-left font-semibold">Công ty</th>
+              <th class="px-6 py-4 text-left font-semibold">Kinh nghiệm</th>
+              <th class="px-6 py-4 text-left font-semibold">Trạng thái</th>
+              <th class="px-6 py-4 text-left font-semibold">Ngày tạo</th>
+              <th class="px-6 py-4 text-center font-semibold">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="candidatesTableBody" class="divide-y divide-white/10">
+            <tr>
+              <td colspan="10" class="px-6 py-8 text-center text-gray-400">
+                Đang tải dữ liệu...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div id="paginationContainer" class="bg-white/5 px-6 py-4 flex justify-between items-center border-t border-white/10">
+        <div class="text-sm text-gray-300">
+          Hiển thị <span id="showingFrom">0</span> - <span id="showingTo">0</span> của <span id="totalRecords">0</span> bản ghi
+        </div>
+        <div id="paginationButtons" class="flex gap-2">
+          <!-- Pagination buttons will be inserted here -->
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Add/Edit Candidate Modal -->
+  <div id="candidateModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-indigo-400/30 shadow-2xl">
+      <div class="sticky top-0 bg-slate-800 border-b border-white/10 px-6 py-4 flex justify-between items-center">
+        <h2 id="modalTitle" class="text-2xl font-bold">Thêm Ứng Viên Mới</h2>
+        <button onclick="closeModal()" class="text-3xl hover:text-red-400 transition">&times;</button>
+      </div>
+      
+      <form id="candidateForm" class="p-6 space-y-4">
+        <input type="hidden" id="candidateId" />
+        
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Họ *</label>
+            <input type="text" id="firstName" required 
+              class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Tên *</label>
+            <input type="text" id="lastName" required 
+              class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Email *</label>
+          <input type="email" id="email" required 
+            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Số điện thoại *</label>
+          <input type="tel" id="phone" required
+            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Vị trí hiện tại</label>
+          <input type="text" id="currentPosition"
+            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Số năm kinh nghiệm</label>
+          <input type="number" id="yearsOfExperience" min="0"
+            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Học vấn</label>
+          <input type="text" id="education"
+            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" 
+            placeholder="Ví dụ: Đại học Công nghệ Thông tin" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Kỹ năng</label>
+          <textarea id="skills" rows="2"
+            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            placeholder="JavaScript, React, Node.js, ..."></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Nguồn ứng tuyển *</label>
+          <select id="source" required
+            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <option value="">-- Chọn nguồn --</option>
+            <option value="WEBSITE">Website</option>
+            <option value="LINKEDIN">LinkedIn</option>
+            <option value="REFERRAL">Giới thiệu</option>
+            <option value="JOB_BOARD">Trang tuyển dụng</option>
+            <option value="OTHER">Khác</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Ghi chú</label>
+          <textarea id="notes" rows="3"
+            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            placeholder="Ghi chú về ứng viên..."></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Trạng thái</label>
+          <select id="status" 
+            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <option value="NEW">Mới</option>
+            <option value="SCREENING">Sàng lọc</option>
+            <option value="TESTING">Đang test</option>
+            <option value="INTERVIEWING">Phỏng vấn</option>
+            <option value="OFFERED">Đã offer</option>
+            <option value="HIRED">Đã tuyển</option>
+            <option value="REJECTED">Từ chối</option>
+          </select>
+        </div>
+
+        <div class="flex gap-3 pt-4">
+          <button type="submit" class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 px-6 py-3 rounded-lg font-semibold transition">
+            💾 Lưu
+          </button>
+          <button type="button" onclick="closeModal()" class="flex-1 bg-gray-600 hover:bg-gray-500 px-6 py-3 rounded-lg font-semibold transition">
+            Hủy
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:5000/api';
+    let allCandidates = [];
+    let filteredCandidates = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
+
+    // Get auth headers
+    function getAuthHeaders() {
+      const token = localStorage.getItem('token');
+      console.log('📤 Getting auth headers, token exists:', !!token);
+      
+      if (!token) {
+        console.error('❌ No token for auth headers');
+        alert('Vui lòng đăng nhập lại');
+        window.location.href = 'login.html';
+        return null;
+      }
+      
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+      
+      console.log('✅ Auth headers prepared:', { 
+        hasContentType: !!headers['Content-Type'],
+        hasAuthorization: !!headers['Authorization'],
+        authPrefix: headers['Authorization'].substring(0, 20) + '...'
+      });
+      
+      return headers;
+    }
+
+    // Check authentication
+    function checkAuth() {
+      const token = localStorage.getItem('token');
+      
+      console.log('🔐 Auth Check:', {
+        hasToken: !!token,
+        tokenLength: token ? token.length : 0,
+        hasSession: !!localStorage.getItem('session_user')
+      });
+      
+      if (!token) {
+        console.error('❌ No token found in localStorage');
+        alert('Vui lòng đăng nhập lại');
+        window.location.href = 'login.html';
+        return false;
+      }
+
+      const session = JSON.parse(localStorage.getItem('session_user') || 'null');
+      
+      // If we have a token but no session, allow access (session might not be set in older logins)
+      if (session) {
+        const role = String(session.role || '').toUpperCase();
+        if (role !== 'RECRUITER' && role !== 'ADMIN') {
+          alert('Bạn không có quyền truy cập trang này');
+          window.location.href = 'exam.html';
+          return false;
+        }
+        // Display user name
+        document.getElementById('userName').textContent = `Xin chào, ${session.fullName || session.username}!`;
+      } else {
+        // No session data, but we have token - show generic greeting
+        document.getElementById('userName').textContent = `Xin chào!`;
+      }
+      
+      return true;
+    }
+
+    // Logout
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('session_user');
+      window.location.href = 'index.html';
+    }
+
+    // Get status text only (no colored badges)
+    function getStatusText(status) {
+      const statusText = {
+        'NEW': 'Mới',
+        'SCREENING': 'Sàng lọc',
+        'TESTING': 'Đang test',
+        'INTERVIEWING': 'Phỏng vấn',
+        'OFFERED': 'Đã offer',
+        'HIRED': 'Đã tuyển',
+        'REJECTED': 'Từ chối'
+      };
+      
+      return statusText[status] || status;
+    }
+
+    // Format date
+    function formatDate(dateString) {
+      if (!dateString) return '-';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('vi-VN', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit' 
+      });
+    }
+
+    // Load all candidates
+    async function loadCandidates() {
+      try {
+        const headers = getAuthHeaders();
+        if (!headers) return; // Already redirected to login
+        
+        const response = await fetch(`${API_BASE_URL}/candidates`, {
+          headers: headers
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Failed to load candidates');
+        }
+
+        const data = await response.json();
+        
+        // Ensure we always get an array
+        if (Array.isArray(data.data)) {
+          allCandidates = data.data;
+        } else if (Array.isArray(data)) {
+          allCandidates = data;
+        } else {
+          console.warn('⚠️ Unexpected response format:', data);
+          allCandidates = [];
+        }
+        
+        filteredCandidates = [...allCandidates];
+        
+        renderTable();
+        console.log('✅ Loaded candidates:', allCandidates.length);
+      } catch (error) {
+        console.error('❌ Error loading candidates:', error);
+        allCandidates = [];
+        filteredCandidates = [];
+        document.getElementById('candidatesTableBody').innerHTML = `
+          <tr>
+            <td colspan="10" class="px-6 py-8 text-center text-red-400">
+              Lỗi khi tải dữ liệu: ${error.message}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Update statistics - removed (no longer needed)
+
+    // Render table
+    function renderTable() {
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const pageData = filteredCandidates.slice(start, end);
+
+      if (pageData.length === 0) {
+        document.getElementById('candidatesTableBody').innerHTML = `
+          <tr>
+            <td colspan="10" class="px-6 py-8 text-center text-gray-400">
+              Không có ứng viên nào
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const html = pageData.map(candidate => `
+        <tr class="hover:bg-white/5 transition">
+          <td class="px-6 py-4">${candidate.candidate_id}</td>
+          <td class="px-6 py-4 font-semibold">${candidate.first_name} ${candidate.last_name}</td>
+          <td class="px-6 py-4 text-indigo-300">${candidate.email}</td>
+          <td class="px-6 py-4">${candidate.phone || '-'}</td>
+          <td class="px-6 py-4">${candidate.position || candidate.current_position || '-'}</td>
+          <td class="px-6 py-4">${candidate.company_name || '-'}</td>
+          <td class="px-6 py-4">${candidate.experience_years || candidate.years_of_experience || 0} năm</td>
+          <td class="px-6 py-4">${getStatusText(candidate.status)}</td>
+          <td class="px-6 py-4 text-sm text-gray-300">${formatDate(candidate.created_at)}</td>
+          <td class="px-6 py-4">
+            <div class="flex justify-center gap-2 flex-wrap">
+              <button onclick="viewCV(${candidate.candidate_id})" 
+                class="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded transition text-sm" title="Xem CV trong tab mới">
+                Xem
+              </button>
+              <button onclick="downloadCV(${candidate.candidate_id})" 
+                class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded transition text-sm" title="Tải CV về máy">
+                Tải
+              </button>
+              <button onclick="updateStatusPass(${candidate.candidate_id})" 
+                class="px-3 py-1 bg-green-600 hover:bg-green-500 rounded transition text-sm" title="Pass">
+                Pass
+              </button>
+              <button onclick="updateStatusFail(${candidate.candidate_id})" 
+                class="px-3 py-1 bg-red-600 hover:bg-red-500 rounded transition text-sm" title="Fail">
+                Fail
+              </button>
+              <button onclick="editCandidate(${candidate.candidate_id})" 
+                class="px-3 py-1 bg-yellow-600 hover:bg-yellow-500 rounded transition text-sm" title="Sửa">
+                Sửa
+              </button>
+              <button onclick="deleteCandidate(${candidate.candidate_id})" 
+                class="px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded transition text-sm" title="Xóa">
+                Xóa
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      document.getElementById('candidatesTableBody').innerHTML = html;
+      updatePagination();
+    }
+
+    // Update pagination
+    function updatePagination() {
+      const totalPages = Math.ceil(filteredCandidates.length / itemsPerPage);
+      const start = (currentPage - 1) * itemsPerPage + 1;
+      const end = Math.min(start + itemsPerPage - 1, filteredCandidates.length);
+
+      document.getElementById('showingFrom').textContent = filteredCandidates.length > 0 ? start : 0;
+      document.getElementById('showingTo').textContent = end;
+      document.getElementById('totalRecords').textContent = filteredCandidates.length;
+
+      let buttonsHTML = '';
+      
+      if (currentPage > 1) {
+        buttonsHTML += `<button onclick="goToPage(${currentPage - 1})" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded transition">← Trước</button>`;
+      }
+
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === currentPage) {
+          buttonsHTML += `<button class="px-3 py-1 bg-indigo-600 rounded font-semibold">${i}</button>`;
+        } else if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+          buttonsHTML += `<button onclick="goToPage(${i})" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded transition">${i}</button>`;
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+          buttonsHTML += `<span class="px-2">...</span>`;
+        }
+      }
+
+      if (currentPage < totalPages) {
+        buttonsHTML += `<button onclick="goToPage(${currentPage + 1})" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded transition">Sau →</button>`;
+      }
+
+      document.getElementById('paginationButtons').innerHTML = buttonsHTML;
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      renderTable();
+    }
+
+    // Search candidates
+    function searchCandidates() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+
+      filteredCandidates = allCandidates.filter(candidate => {
+        const matchesSearch = 
+          candidate.first_name.toLowerCase().includes(searchTerm) ||
+          candidate.last_name.toLowerCase().includes(searchTerm) ||
+          candidate.email.toLowerCase().includes(searchTerm) ||
+          (candidate.current_position && candidate.current_position.toLowerCase().includes(searchTerm)) ||
+          (candidate.skills && candidate.skills.toLowerCase().includes(searchTerm));
+        
+        // Date filtering
+        let matchesDate = true;
+        if (fromDate || toDate) {
+          const candidateDate = candidate.created_at ? new Date(candidate.created_at) : null;
+          if (candidateDate) {
+            if (fromDate) {
+              const from = new Date(fromDate);
+              from.setHours(0, 0, 0, 0);
+              matchesDate = matchesDate && candidateDate >= from;
+            }
+            if (toDate) {
+              const to = new Date(toDate);
+              to.setHours(23, 59, 59, 999);
+              matchesDate = matchesDate && candidateDate <= to;
+            }
+          } else {
+            matchesDate = false;
+          }
+        }
+
+        return matchesSearch && matchesDate;
+      });
+
+      currentPage = 1;
+      renderTable();
+    }
+
+    // Filter by date
+    function filterByDate() {
+      searchCandidates();
+    }
+
+    // Refresh list
+    function refreshList() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('fromDate').value = '';
+      document.getElementById('toDate').value = '';
+      loadCandidates();
+    }
+
+    // Show add modal
+    function showAddModal() {
+      document.getElementById('modalTitle').textContent = 'Thêm Ứng Viên Mới';
+      document.getElementById('candidateId').value = '';
+      document.getElementById('firstName').value = '';
+      document.getElementById('lastName').value = '';
+      document.getElementById('email').value = '';
+      document.getElementById('phone').value = '';
+      document.getElementById('currentPosition').value = '';
+      document.getElementById('yearsOfExperience').value = '';
+      document.getElementById('education').value = '';
+      document.getElementById('skills').value = '';
+      document.getElementById('source').value = '';
+      document.getElementById('notes').value = '';
+      document.getElementById('status').value = 'NEW';
+
+      document.getElementById('candidateModal').classList.remove('hidden');
+      document.getElementById('candidateModal').classList.add('flex');
+    }
+
+    // Close modal
+    function closeModal() {
+      document.getElementById('candidateModal').classList.add('hidden');
+      document.getElementById('candidateModal').classList.remove('flex');
+    }
+
+    // View CV in new tab (inline display)
+    function viewCV(id) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Vui lòng đăng nhập lại');
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      // Open in new tab with token in Authorization header via fetch and blob
+      const url = `${API_BASE_URL}/candidates/${id}/cv`;
+      
+      fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Không thể tải CV');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        // Create a blob URL and open in new tab
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+        
+        // Clean up the blob URL after some time
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      })
+      .catch(error => {
+        console.error('Error viewing CV:', error);
+        alert('Lỗi khi xem CV: ' + error.message);
+      });
+    }
+
+    // Download CV to computer
+    function downloadCV(id) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Vui lòng đăng nhập lại');
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      const url = `${API_BASE_URL}/candidates/${id}/cv/download`;
+      
+      fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Không thể tải CV');
+        }
+        
+        // Get filename from Content-Disposition header
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `CV_Candidate_${id}.pdf`;
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+          if (filenameMatch && filenameMatch[1]) {
+            filename = filenameMatch[1];
+          }
+        }
+        
+        return response.blob().then(blob => ({ blob, filename }));
+      })
+      .then(({ blob, filename }) => {
+        // Create download link
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // Clean up
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        
+        console.log('✅ CV downloaded successfully');
+      })
+      .catch(error => {
+        console.error('Error downloading CV:', error);
+        alert('Lỗi khi tải CV: ' + error.message);
+      });
+    }
+
+    // Update status to Pass (HIRED)
+    async function updateStatusPass(id) {
+      if (!confirm('Xác nhận PASS ứng viên này? Hệ thống sẽ tự động tạo tài khoản và gửi email thông báo.')) return;
+
+      try {
+        const headers = getAuthHeaders();
+        if (!headers) return; // Already redirected to login
+        
+        const response = await fetch(`${API_BASE_URL}/candidates/${id}/status`, {
+          method: 'PUT',
+          headers: headers,
+          body: JSON.stringify({ 
+            status: 'HIRED',
+            notes: 'PASS - Đã duyệt CV và tạo tài khoản'
+          })
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to update status');
+        }
+
+        const data = await response.json();
+        console.log('✅ Response:', data);
+        
+        let message = data.message || 'Cập nhật thành công!';
+        if (data.data && data.data.email_sent) {
+          message += '\n✅ Email đã được gửi đến: ' + data.data.email;
+        }
+        if (data.data && data.data.account_created && data.data.username) {
+          message += '\n✅ Tài khoản đã tạo: ' + data.data.username;
+        }
+        
+        alert(message);
+        loadCandidates(); // Reload list
+      } catch (error) {
+        console.error('❌ Error updating status:', error);
+        alert('Lỗi khi cập nhật trạng thái: ' + error.message);
+      }
+    }
+
+    // Update status to Fail (REJECTED)
+    async function updateStatusFail(id) {
+      if (!confirm('Xác nhận FAIL ứng viên này? Hệ thống sẽ gửi email thông báo từ chối.')) return;
+
+      try {
+        const headers = getAuthHeaders();
+        if (!headers) return; // Already redirected to login
+        
+        const response = await fetch(`${API_BASE_URL}/candidates/${id}/status`, {
+          method: 'PUT',
+          headers: headers,
+          body: JSON.stringify({ 
+            status: 'REJECTED',
+            notes: 'FAIL - Không đạt yêu cầu'
+          })
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to update status');
+        }
+
+        const data = await response.json();
+        console.log('✅ Response:', data);
+        
+        let message = data.message || 'Cập nhật thành công!';
+        if (data.data && data.data.email_sent) {
+          message += '\n✅ Email từ chối đã được gửi đến: ' + data.data.email;
+        }
+        
+        alert(message);
+        loadCandidates(); // Reload list
+      } catch (error) {
+        console.error('❌ Error updating status:', error);
+        alert('Lỗi khi cập nhật trạng thái: ' + error.message);
+      }
+    }
+
+    // View candidate
+    function viewCandidate(id) {
+      alert('Chi tiết ứng viên ID: ' + id + '\n(Chức năng đang phát triển)');
+    }
+
+    // Edit candidate
+    async function editCandidate(id) {
+      try {
+        const headers = getAuthHeaders();
+        if (!headers) return; // Already redirected to login
+        
+        const response = await fetch(`${API_BASE_URL}/candidates/${id}`, {
+          headers: headers
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        if (!response.ok) throw new Error('Failed to load candidate');
+
+        const data = await response.json();
+        const candidate = data.data;
+
+        console.log('📝 Loading candidate for edit:', candidate);
+
+        document.getElementById('modalTitle').textContent = 'Sửa Thông Tin Ứng Viên';
+        document.getElementById('candidateId').value = candidate.candidate_id;
+        document.getElementById('firstName').value = candidate.first_name || '';
+        document.getElementById('lastName').value = candidate.last_name || '';
+        document.getElementById('email').value = candidate.email || '';
+        document.getElementById('phone').value = candidate.phone || '';
+        document.getElementById('currentPosition').value = candidate.current_position || '';
+        document.getElementById('yearsOfExperience').value = candidate.years_of_experience || '';
+        document.getElementById('education').value = candidate.education || '';
+        document.getElementById('skills').value = candidate.skills || '';
+        document.getElementById('source').value = candidate.source || '';
+        document.getElementById('notes').value = candidate.notes || '';
+        document.getElementById('status').value = candidate.status || 'NEW';
+
+        document.getElementById('candidateModal').classList.remove('hidden');
+        document.getElementById('candidateModal').classList.add('flex');
+      } catch (error) {
+        console.error('❌ Error loading candidate:', error);
+        alert('Lỗi khi tải thông tin ứng viên: ' + error.message);
+      }
+    }
+
+    // Delete candidate
+    async function deleteCandidate(id) {
+      if (!confirm('Bạn có chắc chắn muốn xóa ứng viên này?')) return;
+
+      try {
+        const headers = getAuthHeaders();
+        if (!headers) return; // Already redirected to login
+        
+        const response = await fetch(`${API_BASE_URL}/candidates/${id}`, {
+          method: 'DELETE',
+          headers: headers
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        if (!response.ok) throw new Error('Failed to delete candidate');
+
+        alert('✅ Đã xóa ứng viên thành công!');
+        loadCandidates();
+      } catch (error) {
+        console.error('Error deleting candidate:', error);
+        alert('❌ Lỗi khi xóa ứng viên: ' + error.message);
+      }
+    }
+
+    // Handle form submit
+    document.getElementById('candidateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const candidateId = document.getElementById('candidateId').value;
+      
+      const candidateData = {
+        first_name: document.getElementById('firstName').value,
+        last_name: document.getElementById('lastName').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        current_position: document.getElementById('currentPosition').value,
+        years_of_experience: document.getElementById('yearsOfExperience').value,
+        education: document.getElementById('education').value,
+        skills: document.getElementById('skills').value,
+        source: document.getElementById('source').value,
+        notes: document.getElementById('notes').value,
+        status: document.getElementById('status').value
+      };
+
+      try {
+        const headers = getAuthHeaders();
+        if (!headers) return; // Already redirected to login
+        
+        let response;
+        if (candidateId) {
+          // Update existing candidate
+          response = await fetch(`${API_BASE_URL}/candidates/${candidateId}`, {
+            method: 'PUT',
+            headers: headers,
+            body: JSON.stringify(candidateData)
+          });
+        } else {
+          // Create new candidate
+          response = await fetch(`${API_BASE_URL}/candidates`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(candidateData)
+          });
+        }
+
+        if (response.status === 401 || response.status === 403) {
+          alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to save candidate');
+        }
+
+        const result = await response.json();
+        alert(candidateId ? '✅ Đã cập nhật thông tin ứng viên thành công!' : '✅ Đã thêm ứng viên mới thành công!');
+        closeModal();
+        loadCandidates();
+      } catch (error) {
+        console.error('Error saving candidate:', error);
+        alert('❌ Lỗi: ' + error.message);
+      }
+    });
+
+    // Initialize
+    if (checkAuth()) {
+      loadCandidates();
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "cs60-frontend",
+  "version": "1.0.0",
+  "description": "Frontend HTML/CSS/JS for CS60 Recruitment System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["frontend", "recruitment", "exam"],
+  "author": "",
+  "license": "ISC"
+}

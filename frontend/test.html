@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bài Thi - ExamPro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body, main, header, footer, section, aside {
+      transition: opacity 0.3s ease;
+    }
+
+    .alert-box, .cheat-alert {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -60%);
+      background: linear-gradient(135deg, #2b2bff, #a16eff);
+      color: #fff;
+      padding: 20px 35px;
+      border-radius: 16px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.3);
+      font-size: 18px;
+      font-weight: 500;
+      text-align: center;
+      z-index: 9999;
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .alert-box.show, .cheat-alert.show {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
+
+    .cheat-alert a {
+      display: inline-block;
+      margin-top: 10px;
+      background-color: #f87171;
+      padding: 6px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: white;
+      font-weight: 500;
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-800 min-h-screen text-white font-sans">
+
+  <!-- Thông báo bật camera -->
+  <div id="cameraAlert" class="alert-box hidden">
+    ⚠️ Vui lòng bật camera để xác thực trước khi tiếp tục!
+  </div>
+
+  <!-- Thông báo gian lận -->
+  <div id="cheatAlert" class="cheat-alert hidden">
+    ⚠️ Bạn có hành vi gian lận!<br>
+    <a href="exam.html">Quay lại trang chủ</a>
+  </div>
+
+  <header id="header" class="bg-white/10 backdrop-blur-md shadow-lg sticky top-0 z-10 border-b border-purple-400/30 relative">
+    <div class="max-w-6xl mx-auto flex justify-between items-center py-4 px-6">
+      <h1 class="text-2xl font-bold text-white tracking-wide">Bài Thi Toán - ExamPro</h1>
+      <div class="flex items-center gap-4">
+        <div id="timer" class="text-yellow-300 font-semibold text-xl">45:00</div>
+
+        <!-- Violation Counter -->
+        <button id="violationBtn" class="relative bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-2 rounded-lg text-sm hover:opacity-90 transition flex items-center gap-2">
+          <span>⚠️</span>
+          <span id="violationCounter">0/2</span>
+        </button>
+
+        <div class="relative w-32 h-24 border-2 border-purple-300 rounded-lg overflow-hidden bg-purple-900/30 shadow-inner">
+          <video id="examCam" autoplay playsinline muted style="width:100%;height:100%;display:none;"></video>
+          <div id="camPlaceholder" class="absolute inset-0 flex items-center justify-center text-purple-300 text-sm">📷 Tắt</div>
+        </div>
+
+        <button id="toggleCamBtn" class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-3 py-2 rounded-lg text-sm hover:opacity-90 transition">
+          Bật camera
+        </button>
+
+        <a href="exam.html" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm transition">
+          Quay lại
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Violation Modal -->
+  <div id="violationModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-2xl p-8 max-w-2xl w-full mx-4 border-2 border-purple-400/30 shadow-2xl">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-white">⚠️ Danh Sách Vi Phạm</h2>
+        <button id="closeModalBtn" class="text-white hover:text-red-400 text-3xl leading-none">&times;</button>
+      </div>
+      
+      <div id="violationList" class="space-y-3 max-h-96 overflow-y-auto">
+        <!-- Violations will be loaded here -->
+        <div class="text-center text-purple-300 py-8">
+          <p>Chưa có vi phạm nào được ghi nhận</p>
+        </div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-purple-400/30">
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-purple-300">Tổng số vi phạm:</span>
+          <span id="totalViolations" class="text-yellow-300 font-bold text-lg">0</span>
+        </div>
+        <div class="flex justify-between items-center text-sm mt-2">
+          <span class="text-purple-300">Giới hạn cho phép:</span>
+          <span class="text-red-300 font-bold text-lg">2</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main id="main" class="max-w-6xl mx-auto mt-10 grid grid-cols-12 gap-6 p-4">
+    <aside class="col-span-3 bg-white/10 rounded-2xl p-5 border border-purple-400/30 backdrop-blur-md shadow-lg">
+      <h3 class="text-lg font-semibold mb-4 text-purple-200">Danh sách câu hỏi</h3>
+      <div id="questionNav" class="grid grid-cols-5 gap-3"></div>
+    </aside>
+
+    <section class="col-span-9 bg-white/10 rounded-2xl p-8 border border-purple-400/30 backdrop-blur-md shadow-lg relative">
+      <div id="questionArea" class="pointer-events-none opacity-50"></div>
+    </section>
+  </main>
+
+  <footer id="footer" class="text-center py-6 text-purple-200 mt-8 border-t border-purple-500/30">
+    © 2025 by C1SE.60
+  </footer>
+
+  <script>
+    // API Configuration
+    const API_BASE_URL = 'http://localhost:5000/api';
+    
+    // Get auth headers with JWT token
+    function getAuthHeaders() {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+      return {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      };
+    }
+
+    // Get test ID from URL parameters
+    function getTestIdFromUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('testId');
+    }
+
+    // Global variables
+    let testData = null;
+    let questions = [];
+    let testDuration = 45; // Default 45 minutes
+    let passingScore = 60; // Default passing score
+
+    let currentQuestion = 0;
+    const questionArea = document.getElementById("questionArea");
+    const questionNav = document.getElementById("questionNav");
+    const timerEl = document.getElementById("timer");
+    const alertBox = document.getElementById("cameraAlert");
+    const cheatAlert = document.getElementById("cheatAlert");
+    const cam = document.getElementById("examCam");
+    const camPlaceholder = document.getElementById("camPlaceholder");
+    const btn = document.getElementById("toggleCamBtn");
+
+    let cameraEnabled = false;
+    let selectedAnswers = {};
+    let stream = null;
+    let examDisabled = false;
+    
+    // Violation tracking
+    let violationCount = 0;
+    const MAX_VIOLATIONS = 2;
+    let isTabActive = true;
+    let cameraLost = false;
+    
+    // Interval IDs for cleanup
+    let countdownInterval = null;
+    let cameraCheckInterval = null;
+    let statusCheckInterval = null;
+
+    // Load test data from API
+    async function loadTestData() {
+      const testId = getTestIdFromUrl();
+      const candidateTestId = getCandidateTestIdFromUrl();
+      
+      if (!testId) {
+        alert('Lỗi: Không tìm thấy ID đề thi. Vui lòng quay lại danh sách đề thi.');
+        window.location.href = 'exam.html';
+        return;
+      }
+
+      try {
+        // Show loading
+        questionArea.innerHTML = `
+          <div class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            <p class="text-white mt-2">Đang tải đề thi...</p>
+          </div>
+        `;
+
+        // ===== CRITICAL: Check test status before allowing access =====
+        if (candidateTestId) {
+          console.log('🔍 Checking existing test status:', candidateTestId);
+          
+          try {
+            const statusResponse = await fetch(`${API_BASE_URL}/candidate-tests/${candidateTestId}`, {
+              headers: getAuthHeaders()
+            });
+
+            if (statusResponse.ok) {
+              const statusResult = await statusResponse.json();
+              const testStatus = statusResult.data.status;
+              
+              console.log('📊 Test status:', testStatus);
+              
+              if (testStatus === 'COMPLETED') {
+                // Test already completed - REDIRECT immediately using multiple methods
+                console.log('✅ Test already COMPLETED, redirecting to completion page...');
+                console.log('🔀 Redirect URL:', `test-complete.html?candidateTestId=${candidateTestId}`);
+                
+                // Show message
+                alert('Bài thi này đã được hoàn thành. Bạn sẽ được chuyển đến trang kết quả.');
+                
+                // Try multiple redirect methods
+                try {
+                  window.location.replace(`test-complete.html?candidateTestId=${candidateTestId}`);
+                } catch (e) {
+                  window.location.href = `test-complete.html?candidateTestId=${candidateTestId}`;
+                }
+                
+                // Prevent further execution
+                throw new Error('Test already completed - redirecting');
+              } else if (testStatus === 'IN_PROGRESS') {
+                console.log('⏳ Test is IN_PROGRESS, allowing continuation...');
+                // Continue with the test - user can resume
+              } else if (testStatus === 'ASSIGNED') {
+                console.log('📝 Test is ASSIGNED, ready to start...');
+                // Test is assigned but not started yet - allow to start
+              } else {
+                console.warn('⚠️ Unexpected test status:', testStatus);
+              }
+            } else {
+              console.error('❌ Failed to fetch test status:', statusResponse.status);
+            }
+          } catch (error) {
+            console.error('❌ Error checking test status:', error);
+          }
+        }
+
+        // Fetch test details
+        const testResponse = await fetch(`${API_BASE_URL}/tests/${testId}`, {
+          headers: getAuthHeaders()
+        });
+
+        if (!testResponse.ok) {
+          throw new Error(`Lỗi tải đề thi: ${testResponse.status}`);
+        }
+
+        testData = await testResponse.json();
+        console.log('Test data loaded:', testData);
+
+        // Extract test info
+        const test = testData.data || testData;
+        testDuration = test.duration_minutes || test.duration || 45;
+        passingScore = test.passing_score || 60;
+
+        // Fetch questions for this test
+        const questionsResponse = await fetch(`${API_BASE_URL}/tests/${testId}/questions`, {
+          headers: getAuthHeaders()
+        });
+
+        if (!questionsResponse.ok) {
+          throw new Error(`Lỗi tải câu hỏi: ${questionsResponse.status}`);
+        }
+
+        const questionsData = await questionsResponse.json();
+        console.log('Questions data loaded:', questionsData);
+
+        // Process questions data
+        questions = processQuestionsData(questionsData);
+
+        if (questions.length === 0) {
+          questionArea.innerHTML = `
+            <div class="text-center py-8">
+              <div class="bg-yellow-500/20 border border-yellow-400 rounded-lg p-6">
+                <h4 class="text-yellow-200 text-lg font-semibold mb-2">⚠️ Đề thi chưa có câu hỏi</h4>
+                <p class="text-yellow-300">Đề thi này chưa được thêm câu hỏi. Vui lòng liên hệ người quản lý để thêm câu hỏi vào đề thi.</p>
+                <a href="exam.html" class="mt-4 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition inline-block">
+                  Quay lại danh sách đề thi
+                </a>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        // Initialize the exam
+        initializeExam();
+
+      } catch (error) {
+        console.error('Error loading test:', error);
+        questionArea.innerHTML = `
+          <div class="text-center py-8">
+            <div class="bg-red-500/20 border border-red-400 rounded-lg p-6">
+              <h4 class="text-red-200 text-lg font-semibold mb-2">Lỗi tải đề thi</h4>
+              <p class="text-red-300">${error.message}</p>
+              <button onclick="loadTestData()" class="mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">
+                Thử lại
+              </button>
+              <a href="exam.html" class="mt-4 ml-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition inline-block">
+                Quay lại
+              </a>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Process questions data from API response
+    function processQuestionsData(data) {
+      let questionsArray = [];
+      
+      // Handle different response structures
+      if (data.success && data.data) {
+        if (data.data.questions) {
+          questionsArray = data.data.questions;
+        } else if (Array.isArray(data.data)) {
+          questionsArray = data.data;
+        }
+      } else if (data.questions) {
+        questionsArray = data.questions;
+      } else if (Array.isArray(data)) {
+        questionsArray = data;
+      }
+
+      console.log('Processing questions:', questionsArray);
+
+      return questionsArray.map((q, index) => {
+        // Get options from QuestionOptions array
+        let options = [];
+        if (q.QuestionOptions && Array.isArray(q.QuestionOptions)) {
+          options = q.QuestionOptions.map(opt => ({
+            id: opt.option_id,
+            text: opt.option_text,
+            isCorrect: opt.is_correct
+          }));
+        } else if (q.options && Array.isArray(q.options)) {
+          options = q.options.map((opt, idx) => ({
+            id: opt.option_id || idx,
+            text: opt.option_text || opt.text || opt,
+            isCorrect: opt.is_correct || false
+          }));
+        }
+
+        return {
+          id: q.question_id || q.id || (index + 1),
+          text: q.question_text || q.text || q.question || 'Câu hỏi không có nội dung',
+          options: options,
+          type: q.question_type || q.type || 'MULTIPLE_CHOICE',
+          order: q.question_order || (index + 1)
+        };
+      });
+    }
+
+    // Initialize exam interface
+    async function initializeExam() {
+      // Update timer with actual test duration
+      totalSeconds = testDuration * 60;
+      
+      // Render questions navigation
+      renderQuestionNavigation();
+      
+      // Enable camera area (still requires user to click)
+      questionArea.classList.remove("pointer-events-none", "opacity-50");
+      questionArea.classList.add("opacity-30");
+      
+      // Show instruction message
+      questionArea.innerHTML = `
+        <div class="text-center py-8">
+          <div class="bg-yellow-500/20 border border-yellow-400 rounded-lg p-6">
+            <h4 class="text-yellow-200 text-lg font-semibold mb-2">🚀 Đã sẵn sàng làm bài thi</h4>
+            <p class="text-yellow-300">Vui lòng bật camera để bắt đầu làm bài.</p>
+            <p class="text-yellow-300 text-sm mt-2">Thời gian: ${testDuration} phút | Số câu hỏi: ${questions.length}</p>
+          </div>
+        </div>
+      `;
+
+      // Start the candidate test in background
+      const candidateTestId = getCandidateTestIdFromUrl();
+      if (candidateTestId) {
+        try {
+          console.log('Starting candidate test:', candidateTestId);
+          const startResponse = await fetch(`${API_BASE_URL}/candidate-tests/${candidateTestId}/start`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+          });
+          
+          if (startResponse.ok) {
+            const startResult = await startResponse.json();
+            console.log('Test started successfully:', startResult);
+          } else {
+            console.warn('Failed to start test on server, continuing locally');
+          }
+        } catch (error) {
+          console.error('Error starting test:', error);
+        }
+      }
+    }
+
+    // Render question navigation
+    function renderQuestionNavigation() {
+      questionNav.innerHTML = '';
+      questions.forEach((q, i) => {
+        const b = document.createElement("button");
+        b.textContent = i + 1;
+        b.className = "bg-purple-800/60 text-white py-2 rounded-lg hover:bg-purple-600 transition font-semibold";
+        b.addEventListener("click", () => {
+          if (examDisabled) return;
+          if(cameraEnabled) showQuestion(i);
+        });
+        questionNav.appendChild(b);
+      });
+    }
+
+    // This function is now called by renderQuestionNavigation() after loading data
+
+    function showQuestion(i){
+      currentQuestion = i;
+      const q = questions[i];
+      
+      // Build options HTML
+      let optionsHtml = '';
+      if (q.options && q.options.length > 0) {
+        // Determine input type based on question type
+        const inputType = (q.type === 'SINGLE_CHOICE') ? 'radio' : 'checkbox';
+        const isMultipleChoice = (q.type === 'MULTIPLE_CHOICE');
+        
+        optionsHtml = q.options.map((opt, idx) => {
+          let isChecked = false;
+          if (isMultipleChoice) {
+            // For multiple choice, selectedAnswers[q.id] is an array
+            isChecked = Array.isArray(selectedAnswers[q.id]) && selectedAnswers[q.id].includes(opt.id);
+          } else {
+            // For single choice, use string comparison (input values are strings)
+            isChecked = String(selectedAnswers[q.id]) === String(opt.id);
+          }
+          
+          return `
+            <label class="flex items-center gap-3 bg-white/10 p-3 rounded-lg cursor-pointer hover:bg-purple-700/40 transition">
+              <input type="${inputType}" name="q${q.id}" value="${opt.id}" ${isChecked ? "checked" : ""} class="accent-purple-400">
+              <span><strong>${String.fromCharCode(65 + idx)}.</strong> ${opt.text}</span>
+            </label>
+          `;
+        }).join("");
+      } else if (q.type === 'TEXT' || q.type === 'ESSAY') {
+        optionsHtml = `
+          <textarea name="q${q.id}_text" class="w-full bg-white/10 text-white p-3 rounded-lg border border-purple-400/30 focus:border-purple-400 focus:outline-none" rows="5" placeholder="Nhập câu trả lời của bạn...">${selectedAnswers[q.id] || ''}</textarea>
+        `;
+      }
+
+      questionArea.innerHTML = `
+        <div class="mb-4 text-purple-200">
+          <span class="text-sm">Câu hỏi ${i + 1} / ${questions.length}</span>
+        </div>
+        <h2 class="text-2xl font-semibold mb-6 text-white">${q.text}</h2>
+        <div class="space-y-3">
+          ${optionsHtml}
+        </div>
+        <div class="flex justify-between mt-8">
+          <button class="bg-indigo-500 px-5 py-2 rounded-lg hover:bg-indigo-600 transition ${i===0?"opacity-50 cursor-not-allowed":""}" ${i===0?"disabled":""} onclick="showQuestion(${i-1})">⬅ Trước</button>
+          ${i === questions.length - 1 ? 
+            '<button class="bg-green-500 px-5 py-2 rounded-lg hover:bg-green-600 transition" onclick="submitTest()">✅ Nộp bài</button>' :
+            `<button class="bg-indigo-500 px-5 py-2 rounded-lg hover:bg-indigo-600 transition" onclick="showQuestion(${i+1})">Tiếp ➡</button>`
+          }
+        </div>
+      `;
+      
+      // Add event listeners for answer selection
+      if (q.type === 'TEXT' || q.type === 'ESSAY') {
+        const textarea = document.querySelector(`textarea[name='q${q.id}_text']`);
+        if (textarea) {
+          textarea.addEventListener("input", e => {
+            selectedAnswers[q.id] = e.target.value;
+          });
+        }
+      } else if (q.type === 'MULTIPLE_CHOICE') {
+        // For multiple choice, handle checkboxes
+        document.querySelectorAll(`input[name='q${q.id}']`).forEach(inp => {
+          inp.addEventListener("change", e => {
+            if (!Array.isArray(selectedAnswers[q.id])) {
+              selectedAnswers[q.id] = [];
+            }
+            
+            if (e.target.checked) {
+              // Add to array if checked
+              if (!selectedAnswers[q.id].includes(e.target.value)) {
+                selectedAnswers[q.id].push(e.target.value);
+              }
+            } else {
+              // Remove from array if unchecked
+              selectedAnswers[q.id] = selectedAnswers[q.id].filter(id => id !== e.target.value);
+            }
+            
+            // Update navigation to show answered question
+            updateQuestionNav();
+          });
+        });
+      } else {
+        // For single choice (radio buttons)
+        document.querySelectorAll(`input[name='q${q.id}']`).forEach(inp => {
+          inp.addEventListener("change", e => {
+            // Store as number if it's numeric, otherwise as string
+            const value = e.target.value;
+            selectedAnswers[q.id] = isNaN(value) ? value : parseInt(value);
+            console.log(`Selected answer for question ${q.id}:`, selectedAnswers[q.id]);
+            // Update navigation to show answered question
+            updateQuestionNav();
+          });
+        });
+      }
+    }
+
+    // Update question navigation to show answered questions
+    function updateQuestionNav() {
+      const buttons = questionNav.querySelectorAll('button');
+      buttons.forEach((btn, idx) => {
+        const questionId = questions[idx].id;
+        if (selectedAnswers[questionId]) {
+          btn.classList.remove('bg-purple-800/60');
+          btn.classList.add('bg-green-600');
+        } else {
+          btn.classList.remove('bg-green-600');
+          btn.classList.add('bg-purple-800/60');
+        }
+      });
+    }
+
+    // Submit test function
+    async function submitTest() {
+      const candidateTestId = getCandidateTestIdFromUrl();
+      
+      if (!candidateTestId) {
+        alert('Lỗi: Không tìm thấy ID bài thi. Vui lòng thử lại.');
+        window.location.href = 'exam.html';
+        return;
+      }
+
+      // ===== CRITICAL: Check if test is already completed before submitting =====
+      try {
+        console.log('🔍 Checking test status before submission...');
+        const statusCheckResponse = await fetch(`${API_BASE_URL}/candidate-tests/${candidateTestId}`, {
+          headers: getAuthHeaders()
+        });
+
+        if (statusCheckResponse.ok) {
+          const statusData = await statusCheckResponse.json();
+          const currentStatus = statusData.data.status;
+          
+          console.log('📊 Current test status:', currentStatus);
+          
+          if (currentStatus === 'COMPLETED') {
+            console.log('⚠️ Test already completed, redirecting...');
+            alert('Bài thi này đã được nộp rồi. Bạn sẽ được chuyển đến trang kết quả.');
+            window.location.href = `test-complete.html?candidateTestId=${candidateTestId}`;
+            return; // Stop execution
+          }
+        }
+      } catch (error) {
+        console.error('Error checking status:', error);
+      }
+
+      // Confirm submission
+      if (!confirm('Bạn có chắc chắn muốn nộp bài? Sau khi nộp, bạn không thể thay đổi câu trả lời.')) {
+        return;
+      }
+
+      // Disable submit button and show loading
+      questionArea.innerHTML = `
+        <div class="text-center py-8">
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+          <h3 class="text-2xl font-bold text-white mb-2">Đang nộp bài...</h3>
+          <p class="text-purple-200">Vui lòng chờ trong giây lát</p>
+        </div>
+      `;
+      
+      // Disable exam controls
+      examDisabled = true;
+
+      try {
+        console.log('=== SUBMIT TEST START ===');
+        console.log('Candidate Test ID:', candidateTestId);
+
+        // Step 1: Submit all answers to backend
+        console.log('Submitting answers for candidate_test_id:', candidateTestId);
+        
+        for (const question of questions) {
+          let selectedOption = selectedAnswers[question.id];
+          
+          // Handle different question types
+          let answer;
+          if (question.type === 'TEXT' || question.type === 'ESSAY') {
+            answer = {
+              question_id: question.id,
+              selected_option_id: null,
+              text_answer: selectedOption || ''
+            };
+          } else if (question.type === 'MULTIPLE_CHOICE') {
+            // For multiple choice, send array as comma-separated string
+            const selectedIds = Array.isArray(selectedOption) ? selectedOption.join(',') : (selectedOption || '');
+            answer = {
+              question_id: question.id,
+              selected_option_id: selectedIds,
+              text_answer: null
+            };
+          } else {
+            // Single choice
+            answer = {
+              question_id: question.id,
+              selected_option_id: selectedOption || null,
+              text_answer: null
+            };
+          }
+
+          console.log('Submitting answer:', answer);
+
+          try {
+            const answerResponse = await fetch(`${API_BASE_URL}/candidate-tests/${candidateTestId}/answers`, {
+              method: 'POST',
+              headers: getAuthHeaders(),
+              body: JSON.stringify(answer)
+            });
+
+            if (!answerResponse.ok) {
+              console.error('Failed to submit answer for question', question.id);
+            } else {
+              console.log('✓ Answer submitted for question', question.id);
+            }
+          } catch (answerError) {
+            console.error('Error submitting answer for question', question.id, ':', answerError);
+            // Continue with other answers even if one fails
+          }
+        }
+        
+        console.log('All answers submitted, completing test...');
+
+        // Show submitting message
+        questionArea.innerHTML = `
+          <div class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+            <h3 class="text-2xl font-bold text-white mb-2">Đang nộp bài...</h3>
+            <p class="text-purple-200">Vui lòng chờ trong giây lát</p>
+          </div>
+        `;
+
+        // Step 2: Complete the test with 5 second timeout
+        console.log('🔄 Completing test...');
+        console.log('API URL:', `${API_BASE_URL}/candidate-tests/${candidateTestId}/complete`);
+        console.log('Timestamp:', new Date().toISOString());
+        
+        // Create fetch with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          console.error('⏰ Request timeout after 5 seconds');
+          controller.abort();
+        }, 5000);
+        
+        const completeResponse = await fetch(`${API_BASE_URL}/candidate-tests/${candidateTestId}/complete`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          signal: controller.signal
+        }).finally(() => clearTimeout(timeoutId));
+
+        console.log('📊 Complete response status:', completeResponse.status);
+        console.log('📊 Complete response headers:', [...completeResponse.headers.entries()]);
+        
+        if (!completeResponse.ok) {
+          const errorData = await completeResponse.json().catch(() => ({ message: 'Unknown error' }));
+          console.error('❌ Complete response error:', errorData);
+          
+          // If test already completed, redirect to completion page
+          if (completeResponse.status === 404 || completeResponse.status === 400 || completeResponse.status === 409) {
+            console.log('⚠️ Test already completed or invalid state, redirecting to completion page...');
+            alert('Bài thi đã được hoàn thành. Đang chuyển đến trang kết quả...');
+            window.location.href = `test-complete.html?candidateTestId=${candidateTestId}`;
+            return; // Exit function
+          }
+          
+          throw new Error(errorData.message || `Không thể hoàn thành bài thi: ${completeResponse.status}`);
+        }
+
+        const result = await completeResponse.json();
+        console.log('✅ Test completed successfully:', result);
+        console.log('📄 Response data:', JSON.stringify(result, null, 2));
+
+        // Check if submission was successful
+        if (!result.success) {
+          console.error('❌ Submission not successful:', result.message);
+          throw new Error(result.message || 'Lỗi không xác định');
+        }
+        
+        // SUCCESS! Clean up everything before redirect
+        console.log('🎉 Test completed successfully!');
+        console.log('📊 Result data:', result.data);
+        
+        // Clean up: stop all intervals and camera
+        cleanupBeforeRedirect();
+        
+        // Show success message briefly
+        questionArea.innerHTML = `
+          <div class="text-center py-8">
+            <div class="text-6xl mb-4">✅</div>
+            <h3 class="text-2xl font-bold text-green-300 mb-2">Nộp bài thành công!</h3>
+            <p class="text-purple-200">Đang chuyển đến trang kết quả...</p>
+          </div>
+        `;
+        
+        // Redirect after brief delay
+        console.log('🔀 Redirecting to:', `test-complete.html?candidateTestId=${candidateTestId}`);
+        setTimeout(() => {
+          window.location.replace(`test-complete.html?candidateTestId=${candidateTestId}`);
+        }, 1000);
+        
+        return;
+
+      } catch (error) {
+        console.error('=== ERROR SUBMITTING TEST ===');
+        console.error('Error:', error);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Stack:', error.stack);
+        console.error('Timestamp:', new Date().toISOString());
+        
+        // Re-enable UI
+        examDisabled = false;
+        
+        const errorMsg = error.message || '';
+        const isAbortError = error.name === 'AbortError';
+        
+        // Handle timeout
+        if (isAbortError) {
+          console.error('⏰ Request timed out after 5 seconds');
+          questionArea.innerHTML = `
+            <div class="text-center py-8">
+              <div class="bg-red-500/20 border-2 border-red-400 rounded-xl p-6 max-w-md mx-auto">
+                <h3 class="text-2xl font-bold text-red-300 mb-4">⏰ Timeout</h3>
+                <p class="text-white mb-4">Kết nối bị timeout sau 5 giây. Vui lòng kiểm tra kết nối mạng và thử lại.</p>
+                <button onclick="location.reload()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition">
+                  🔄 Thử lại
+                </button>
+              </div>
+            </div>
+          `;
+          alert('⏰ Kết nối bị timeout!\n\nVui lòng kiểm tra kết nối mạng và thử lại.');
+          return;
+        }
+        
+        // If error mentions "already completed" or "not in progress", redirect to completion page
+        if (errorMsg.includes('not in progress') || 
+            errorMsg.includes('not found') || 
+            errorMsg.includes('already completed') ||
+            errorMsg.includes('COMPLETED')) {
+          console.log('⚠️ Test already completed, redirecting to completion page...');
+          alert('Bài thi đã được hoàn thành. Đang chuyển đến trang kết quả...');
+          
+          cleanupBeforeRedirect();
+          
+          const candidateTestId = getCandidateTestIdFromUrl();
+          if (candidateTestId) {
+            setTimeout(() => {
+              window.location.replace(`test-complete.html?candidateTestId=${candidateTestId}`);
+            }, 500);
+          } else {
+            // Fallback to exam.html if no candidateTestId
+            window.location.href = 'exam.html';
+          }
+        } else {
+          // Show detailed error for network/server errors
+          console.error('❌ Network or server error:', error);
+          
+          // Show error message to user
+          questionArea.innerHTML = `
+            <div class="text-center py-8">
+              <div class="bg-red-500/20 border-2 border-red-400 rounded-xl p-6 max-w-md mx-auto">
+                <h3 class="text-2xl font-bold text-red-300 mb-4">❌ Lỗi nộp bài</h3>
+                <p class="text-white mb-4">${error.message || 'Không thể nộp bài. Vui lòng thử lại.'}</p>
+                <button onclick="location.reload()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition">
+                  🔄 Thử lại
+                </button>
+              </div>
+            </div>
+          `;
+          
+          // Also show alert
+          alert('❌ Nộp bài thất bại!\n\n' + (error.message || 'Lỗi không xác định') + '\n\nVui lòng thử lại.');
+        }
+      }
+    }
+
+    // Get candidate_test_id from URL
+    function getCandidateTestIdFromUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('candidateTestId') || urlParams.get('candidate_test_id');
+    }
+
+    // Cleanup function - stop all intervals and camera
+    function cleanupBeforeRedirect() {
+      console.log('🧹 Cleaning up before redirect...');
+      
+      // Stop all intervals
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        console.log('✓ Countdown timer stopped');
+      }
+      if (cameraCheckInterval) {
+        clearInterval(cameraCheckInterval);
+        console.log('✓ Camera check interval stopped');
+      }
+      if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+        console.log('✓ Status check interval stopped');
+      }
+      
+      // Stop camera stream
+      if (stream) {
+        stream.getTracks().forEach(track => {
+          track.stop();
+          console.log('✓ Camera track stopped');
+        });
+        stream = null;
+      }
+      
+      // Disable exam
+      examDisabled = true;
+      
+      console.log('✅ Cleanup completed');
+    }
+
+    // Log fraud event to backend
+    async function logFraudEvent(eventDescription) {
+      const candidateTestId = getCandidateTestIdFromUrl();
+      if (!candidateTestId) return;
+
+      try {
+        await fetch(`${API_BASE_URL}/candidate-tests/${candidateTestId}/fraud`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            event_type: 'VIOLATION',
+            event_description: eventDescription,
+            event_timestamp: new Date().toISOString()
+          })
+        });
+        console.log('Fraud event logged:', eventDescription);
+      } catch (error) {
+        console.error('Failed to log fraud event:', error);
+      }
+    }
+
+    // bộ đếm giờ (will be set by loadTestData)
+    let totalSeconds = 45*60;
+    countdownInterval = setInterval(()=>{
+      totalSeconds--;
+      const m = String(Math.floor(totalSeconds/60)).padStart(2,"0");
+      const s = String(totalSeconds%60).padStart(2,"0");
+      timerEl.textContent = `${m}:${s}`;
+    },1000);
+
+    function showAlert(){
+      alertBox.classList.remove("hidden");
+      alertBox.classList.add("show");
+      setTimeout(()=>alertBox.classList.remove("show"),2500);
+    }
+
+    // Toggle camera
+    btn.addEventListener("click", async ()=>{
+      if(cameraEnabled) return;
+      try{
+        stream = await navigator.mediaDevices.getUserMedia({video:true});
+        cam.srcObject = stream;
+        cam.style.display = "block";
+        cam.play();
+        camPlaceholder.style.display = "none";
+        btn.textContent = "Camera đang bật";
+        btn.disabled = true;
+        cameraEnabled = true;
+        questionArea.classList.remove("pointer-events-none","opacity-50","opacity-30");
+        
+        // Start the exam - show first question
+        if (questions.length > 0) {
+          showQuestion(0);
+        }
+      }catch(err){
+        alert("Không thể bật camera: "+err.message);
+      }
+    });
+
+    document.addEventListener("click", e=>{
+      if(!cameraEnabled && !btn.contains(e.target)) showAlert();
+    });
+
+    // ===== STRICT MONITORING SYSTEM =====
+    
+    // Track tab switching and window focus
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleWindowBlur);
+    window.addEventListener("focus", handleWindowFocus);
+
+    function handleVisibilityChange() {
+      if (document.hidden && !examDisabled && cameraEnabled) {
+        isTabActive = false;
+        handleViolation('Chuyển tab hoặc mở cửa sổ khác');
+      } else if (!document.hidden) {
+        isTabActive = true;
+        // When user returns to tab, check if test was completed elsewhere
+        checkTestStatusOnReturn();
+      }
+    }
+
+    function handleWindowBlur() {
+      if (!examDisabled && cameraEnabled) {
+        handleViolation('Mất focus khỏi cửa sổ thi');
+      }
+    }
+
+    function handleWindowFocus() {
+      // Tab is back in focus - check status
+      checkTestStatusOnReturn();
+    }
+
+    // Check test status when user returns to the page
+    async function checkTestStatusOnReturn() {
+      const candidateTestId = getCandidateTestIdFromUrl();
+      if (!candidateTestId || examDisabled) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/candidate-tests/${candidateTestId}`, {
+          headers: getAuthHeaders()
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const status = data.data.status;
+          
+          if (status === 'COMPLETED') {
+            console.log('⚠️ Test was completed, redirecting...');
+            examDisabled = true;
+            alert('Bài thi đã được hoàn thành.');
+            window.location.href = `test-complete.html?candidateTestId=${candidateTestId}`;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking status on return:', error);
+      }
+    }
+
+    function handleViolation(reason) {
+      violationCount++;
+      console.warn(`⚠️ Violation ${violationCount}/${MAX_VIOLATIONS}: ${reason}`);
+      
+      // Log violation to backend
+      logFraudEvent(reason);
+      
+      if (violationCount >= MAX_VIOLATIONS) {
+        // Auto-submit test after max violations
+        autoSubmitDueToViolation(reason);
+      } else {
+        // Show warning
+        showViolationWarning(violationCount, reason);
+      }
+    }
+
+    function showViolationWarning(count, reason) {
+      const remaining = MAX_VIOLATIONS - count;
+      cheatAlert.innerHTML = `
+        ⚠️ CẢNH BÁO VI PHẠM (${count}/${MAX_VIOLATIONS})<br>
+        <span style="font-size: 14px;">${reason}</span><br>
+        <span style="font-size: 12px; color: #fef3c7;">
+          Còn ${remaining} lần nữa sẽ tự động nộp bài!
+        </span>
+      `;
+      cheatAlert.classList.remove("hidden");
+      cheatAlert.classList.add("show");
+      
+      setTimeout(() => {
+        cheatAlert.classList.remove("show");
+        setTimeout(() => cheatAlert.classList.add("hidden"), 300);
+      }, 3000);
+    }
+
+    async function autoSubmitDueToViolation(reason) {
+      examDisabled = true;
+      cheatAlert.innerHTML = `
+        ⚠️ BÀI THI ĐÃ BỊ KẾT THÚC<br>
+        <span style="font-size: 14px;">Lý do: ${reason}</span><br>
+        <span style="font-size: 12px;">Đang tự động nộp bài...</span>
+      `;
+      cheatAlert.classList.remove("hidden");
+      cheatAlert.classList.add("show");
+
+      // Disable all interactions
+      questionArea.classList.add("pointer-events-none");
+      document.getElementById("header").style.opacity = 0.5;
+      document.getElementById("main").style.opacity = 0.5;
+      
+      // Log final violation
+      await logFraudEvent(`Auto-submit due to ${violationCount} violations: ${reason}`);
+      
+      // Submit test automatically
+      setTimeout(() => {
+        submitTest();
+      }, 2000);
+    }
+
+    // Monitor camera status
+    function monitorCameraStatus() {
+      if (stream && cameraEnabled) {
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack && !videoTrack.enabled) {
+          handleCameraOff();
+        }
+      }
+    }
+
+    function handleCameraOff() {
+      if (!cameraLost && !examDisabled) {
+        cameraLost = true;
+        alert('⚠️ Camera đã tắt! Vui lòng bật lại camera để tiếp tục làm bài.');
+        questionArea.classList.add("pointer-events-none", "opacity-50");
+        logFraudEvent('Camera turned off during exam');
+      }
+    }
+
+    // Check camera every 2 seconds
+    cameraCheckInterval = setInterval(monitorCameraStatus, 2000);
+
+    // Check test status periodically (every 10 seconds)
+    statusCheckInterval = setInterval(() => {
+      const candidateTestId = getCandidateTestIdFromUrl();
+      if (candidateTestId && !examDisabled) {
+        checkTestStatusOnReturn();
+      }
+    }, 10000);
+
+    // ========== VIOLATION TRACKING & MODAL ==========
+    const violationBtn = document.getElementById('violationBtn');
+    const violationModal = document.getElementById('violationModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const violationCounter = document.getElementById('violationCounter');
+    const violationList = document.getElementById('violationList');
+    const totalViolations = document.getElementById('totalViolations');
+    
+    // Track violations locally
+    const violations = [];
+
+    // Update violation counter in header
+    function updateViolationCounter() {
+      violationCounter.textContent = `${violationCount}/${MAX_VIOLATIONS}`;
+      totalViolations.textContent = violationCount;
+      
+      // Change button color based on violation count
+      if (violationCount >= MAX_VIOLATIONS) {
+        violationBtn.className = 'relative bg-gradient-to-r from-red-700 to-red-900 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2 animate-pulse';
+      } else if (violationCount > 0) {
+        violationBtn.className = 'relative bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-2 rounded-lg text-sm hover:opacity-90 transition flex items-center gap-2';
+      }
+    }
+
+    // Report violation to backend
+    async function reportViolationToBackend(violationType, description) {
+      try {
+        const token = localStorage.getItem('token');
+        const candidateTestId = getCandidateTestIdFromUrl();
+        
+        if (!candidateTestId) {
+          console.error('Cannot report violation: No candidate test ID');
+          return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/reports/violation`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            candidateTestId: parseInt(candidateTestId),
+            violationType: violationType,
+            description: description
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to report violation');
+        }
+
+        const result = await response.json();
+        console.log('✅ Violation reported:', result);
+        
+        // Add to local violations array
+        violations.push({
+          type: violationType,
+          description: description,
+          timestamp: new Date().toISOString()
+        });
+        
+      } catch (error) {
+        console.error('Error reporting violation:', error);
+      }
+    }
+
+    // Log activity to backend
+    async function logActivityToBackend(activityType, description, metadata = {}) {
+      try {
+        const token = localStorage.getItem('token');
+        const candidateTestId = getCandidateTestIdFromUrl();
+        
+        if (!candidateTestId) {
+          return;
+        }
+
+        await fetch(`${API_BASE_URL}/reports/activity`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            candidateTestId: parseInt(candidateTestId),
+            activityType: activityType,
+            description: description,
+            metadata: metadata
+          })
+        });
+        
+      } catch (error) {
+        console.error('Error logging activity:', error);
+      }
+    }
+
+    // Load violations from backend
+    async function loadViolations() {
+      try {
+        const token = localStorage.getItem('token');
+        const candidateTestId = getCandidateTestIdFromUrl();
+        
+        if (!candidateTestId) {
+          return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/reports/violations?candidateTestId=${candidateTestId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load violations');
+        }
+
+        const result = await response.json();
+        const backendViolations = result.data || [];
+        
+        // Display violations in modal
+        if (backendViolations.length === 0 && violations.length === 0) {
+          violationList.innerHTML = `
+            <div class="text-center text-purple-300 py-8">
+              <p>Chưa có vi phạm nào được ghi nhận</p>
+            </div>
+          `;
+        } else {
+          // Combine backend and local violations
+          const allViolations = [...backendViolations, ...violations];
+          
+          violationList.innerHTML = allViolations.map((v, index) => {
+            const timestamp = new Date(v.timestamp).toLocaleString('vi-VN');
+            return `
+              <div class="bg-white/10 backdrop-blur-sm p-4 rounded-lg border border-purple-400/20">
+                <div class="flex justify-between items-start mb-2">
+                  <span class="text-red-300 font-semibold">Vi phạm #${index + 1}</span>
+                  <span class="text-purple-300 text-sm">${timestamp}</span>
+                </div>
+                <div class="text-sm">
+                  <div class="text-orange-300 font-medium mb-1">Loại: ${v.violationType || v.type}</div>
+                  <div class="text-white">${v.description}</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+        
+      } catch (error) {
+        console.error('Error loading violations:', error);
+        violationList.innerHTML = `
+          <div class="text-center text-red-300 py-8">
+            <p>⚠️ Không thể tải danh sách vi phạm</p>
+          </div>
+        `;
+      }
+    }
+
+    // Open modal
+    violationBtn.addEventListener('click', () => {
+      violationModal.classList.remove('hidden');
+      loadViolations();
+    });
+
+    // Close modal
+    closeModalBtn.addEventListener('click', () => {
+      violationModal.classList.add('hidden');
+    });
+
+    // Close modal when clicking outside
+    violationModal.addEventListener('click', (e) => {
+      if (e.target === violationModal) {
+        violationModal.classList.add('hidden');
+      }
+    });
+
+    // Override handleViolation to also report to backend
+    const originalHandleViolation = handleViolation;
+    handleViolation = function(reason) {
+      // Call original function
+      originalHandleViolation(reason);
+      
+      // Update counter
+      updateViolationCounter();
+      
+      // Report to backend
+      const violationType = reason.includes('tab') || reason.includes('cửa sổ') ? 'tab_switch' : 
+                           reason.includes('camera') ? 'camera_off' : 
+                           reason.includes('focus') ? 'lost_focus' : 'other';
+      
+      reportViolationToBackend(violationType, reason);
+    };
+
+    // Log test start activity
+    logActivityToBackend('test_start', 'Candidate started the test');
+
+    // Load test data when page loads
+    document.addEventListener('DOMContentLoaded', loadTestData);
+  </script>
+</body>
+</html>

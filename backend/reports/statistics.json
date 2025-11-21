@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "testId": 26,
+    "candidateId": 1,
+    "candidateName": "Test Candidate",
+    "score": 85,
+    "percentage": "85.00",
+    "status": "pass",
+    "completedAt": "2025-11-03T22:30:00.000Z"
+  },
+  {
+    "id": 3,
+    "testId": 26,
+    "candidateId": 1,
+    "candidateName": "Test Candidate",
+    "score": 40,
+    "percentage": "40.00",
+    "status": "fail",
+    "completedAt": "2025-11-03T22:45:00.000Z"
+  },
+  {
+    "id": 4,
+    "testId": 26,
+    "candidateId": 1,
+    "candidateName": "Test Candidate",
+    "score": 75,
+    "percentage": "75.00",
+    "status": "pass",
+    "completedAt": "2025-11-03T23:00:00.000Z"
+  },
+  {
+    "id": "22",
+    "testId": 26,
+    "candidateId": 1,
+    "candidateName": "User -",
+    "score": 0,
+    "percentage": "0.00",
+    "status": "fail",
+    "completedAt": "2025-11-03T16:14:33.978Z"
+  },
+  {
+    "id": "23",
+    "testId": 26,
+    "candidateId": 1,
+    "candidateName": "User -",
+    "score": 0,
+    "percentage": "0.00",
+    "status": "fail",
+    "completedAt": "2025-11-03T16:58:40.838Z"
+  }
+]

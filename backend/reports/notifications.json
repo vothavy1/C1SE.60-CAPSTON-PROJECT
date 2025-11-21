@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1762186474067,
+    "candidate_test_id": "22",
+    "candidate_name": "User -",
+    "candidate_email": "havy@test.com",
+    "test_name": "FPT Shop",
+    "score": 0,
+    "passed": false,
+    "message": "Rất tiếc, bạn chưa đạt yêu cầu ở bài thi \"FPT Shop\", điểm của bạn là 0.",
+    "sent_at": "2025-11-03T16:14:34.067Z",
+    "status": "sent"
+  },
+  {
+    "id": 1762189120946,
+    "candidate_test_id": "23",
+    "candidate_name": "User -",
+    "candidate_email": "havy@test.com",
+    "test_name": "FPT Shop",
+    "score": 0,
+    "passed": false,
+    "message": "Rất tiếc, bạn chưa đạt yêu cầu ở bài thi \"FPT Shop\", điểm của bạn là 0.",
+    "sent_at": "2025-11-03T16:58:40.946Z",
+    "status": "sent"
+  }
+]

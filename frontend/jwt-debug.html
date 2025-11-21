@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JWT Token Debug</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>🔐 JWT Token Debug Tool</h2>
+    
+    <button onclick="analyzeToken()">Analyze Token</button>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testAPIWithToken()">Test API with Token</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        
+        function showResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'warning';
+            resultsDiv.innerHTML += `<div class="result ${className}">${message}</div>`;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        function analyzeToken() {
+            clearResults();
+            showResult('<strong>🔍 Analyzing JWT Token...</strong>');
+            
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            
+            if (!token) {
+                showResult('❌ No token found in localStorage', 'error');
+                return;
+            }
+
+            showResult(`✅ Token exists: ${token.length} characters`, 'success');
+            showResult(`📝 Token preview: ${token.substring(0, 50)}...`);
+
+            // Try to decode JWT payload (without verification)
+            try {
+                const parts = token.split('.');
+                if (parts.length !== 3) {
+                    showResult('❌ Invalid JWT format (should have 3 parts)', 'error');
+                    return;
+                }
+
+                const payload = JSON.parse(atob(parts[1]));
+                showResult('✅ JWT Payload decoded successfully:', 'success');
+                showResult(`<pre>${JSON.stringify(payload, null, 2)}</pre>`);
+                
+                // Check expiration
+                if (payload.exp) {
+                    const now = Math.floor(Date.now() / 1000);
+                    const expiry = payload.exp;
+                    if (expiry < now) {
+                        showResult('⚠️ Token is EXPIRED!', 'error');
+                    } else {
+                        const timeLeft = expiry - now;
+                        showResult(`✅ Token valid for ${Math.floor(timeLeft / 3600)} hours`, 'success');
+                    }
+                }
+                
+            } catch (error) {
+                showResult(`❌ Error decoding JWT: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            clearResults();
+            showResult('<strong>🔐 Testing Login...</strong>');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'havy@test.com',
+                        password: '123456'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showResult('✅ Login successful!', 'success');
+                    showResult(`📝 Response: <pre>${JSON.stringify(result, null, 2)}</pre>`);
+                    
+                    if (result.data && result.data.token) {
+                        localStorage.setItem('auth_token', result.data.token);
+                        localStorage.setItem('session_user', JSON.stringify(result.data.user));
+                        showResult('✅ Token saved to localStorage', 'success');
+                    }
+                } else {
+                    showResult(`❌ Login failed: ${result.message || 'Unknown error'}`, 'error');
+                    showResult(`📝 Response: <pre>${JSON.stringify(result, null, 2)}</pre>`);
+                }
+            } catch (error) {
+                showResult(`❌ Login request failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAPIWithToken() {
+            clearResults();
+            showResult('<strong>🔗 Testing API with Token...</strong>');
+            
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            
+            if (!token) {
+                showResult('❌ No token available. Please login first.', 'error');
+                return;
+            }
+
+            try {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                };
+                
+                showResult(`📤 Request headers: <pre>${JSON.stringify(headers, null, 2)}</pre>`);
+                
+                const response = await fetch(`${API_BASE_URL}/tests`, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                showResult(`📥 Response status: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showResult('✅ API call successful!', 'success');
+                    showResult(`📝 Response data: <pre>${JSON.stringify(result, null, 2)}</pre>`);
+                    
+                    // Check data structure
+                    let tests = [];
+                    if (result.success && result.data && result.data.tests) {
+                        tests = result.data.tests;
+                    } else if (Array.isArray(result.data)) {
+                        tests = result.data;
+                    } else if (Array.isArray(result)) {
+                        tests = result;
+                    }
+                    
+                    showResult(`📊 Found ${tests.length} tests in response`, tests.length > 0 ? 'success' : 'warning');
+                    
+                } else {
+                    const errorText = await response.text();
+                    showResult(`❌ API call failed: ${response.status} ${response.statusText}`, 'error');
+                    showResult(`📝 Error response: ${errorText}`);
+                }
+                
+            } catch (error) {
+                showResult(`❌ API request failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-analyze token on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(analyzeToken, 500);
+        });
+    </script>
+</body>
+</html>

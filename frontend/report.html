@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Báo Cáo & Thống Kê - ExamPro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .stat-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    .tab-button {
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .tab-button.active {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+    }
+    .tab-button.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #fbbf24;
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-800 min-h-screen text-white font-sans">
+
+  <!-- Navigation Header -->
+  <header class="bg-white/10 backdrop-blur-md shadow-lg border-b border-purple-400/30">
+    <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
+      <h1 class="text-2xl font-bold text-white tracking-wide">📊 Báo Cáo & Thống Kê</h1>
+      <div class="flex items-center gap-4">
+        <button id="refreshBtn" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+          🔄 Làm Mới
+        </button>
+        <a href="recruiter.html" class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+          ← Quay Lại
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto p-6">
+
+    <!-- Statistics Overview Cards -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="stat-card bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex justify-between items-start mb-4">
+          <h3 class="text-white/80 text-sm font-medium">Tổng Số Bài Thi</h3>
+          <span class="text-3xl">📝</span>
+        </div>
+        <p id="totalTests" class="text-4xl font-bold text-white">0</p>
+        <p class="text-blue-200 text-sm mt-2">Tất cả các bài thi</p>
+      </div>
+
+      <div class="stat-card bg-gradient-to-br from-green-500 to-emerald-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex justify-between items-start mb-4">
+          <h3 class="text-white/80 text-sm font-medium">Hoàn Thành</h3>
+          <span class="text-3xl">✅</span>
+        </div>
+        <p id="completedTests" class="text-4xl font-bold text-white">0</p>
+        <p class="text-green-200 text-sm mt-2">Đã nộp bài</p>
+      </div>
+
+      <div class="stat-card bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-6 shadow-xl">
+        <div class="flex justify-between items-start mb-4">
+          <h3 class="text-white/80 text-sm font-medium">Vi Phạm</h3>
+          <span class="text-3xl">⚠️</span>
+        </div>
+        <p id="totalViolations" class="text-4xl font-bold text-white">0</p>
+        <p class="text-orange-200 text-sm mt-2">Tổng số vi phạm</p>
+      </div>
+
+      <div class="stat-card bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 shadow-xl">
+        <div class="flex justify-between items-start mb-4">
+          <h3 class="text-white/80 text-sm font-medium">Điểm Trung Bình</h3>
+          <span class="text-3xl">📈</span>
+        </div>
+        <p id="avgScore" class="text-4xl font-bold text-white">0.0</p>
+        <p class="text-purple-200 text-sm mt-2">Trên tổng số 100</p>
+      </div>
+    </section>
+
+
+
+    <!-- Violations Section -->
+    <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-400/30 min-h-[500px]">
+      
+      <!-- Violations Tab - Enhanced Table -->
+      <div id="violationsTab" class="tab-content">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-white flex items-center gap-2">
+            <span class="text-2xl">⚠️</span>
+            Báo Cáo Vi Phạm
+          </h3>
+          <div class="flex gap-2">
+            <select id="violationTypeFilter" class="bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30 hover:border-orange-400/50 transition cursor-pointer">
+              <option value="">Tất cả loại vi phạm</option>
+              <option value="TAB_SWITCH">Chuyển tab</option>
+              <option value="COPY_PASTE">Sao chép dán</option>
+              <option value="SCREENSHOT">Chụp màn hình</option>
+              <option value="CAMERA_OFF">Tắt camera</option>
+              <option value="LOST_FOCUS">Mất focus</option>
+              <option value="MULTIPLE_FACES">Nhiều khuôn mặt</option>
+              <option value="NO_FACE">Không phát hiện khuôn mặt</option>
+              <option value="NONE">Không vi phạm</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Violations Table -->
+        <div class="overflow-x-auto rounded-lg border border-orange-400/20">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-gradient-to-r from-orange-500/30 to-red-500/30 text-orange-100">
+              <tr>
+                <th class="px-4 py-3 font-semibold">ID</th>
+                <th class="px-4 py-3 font-semibold">Tên Ứng Viên</th>
+                <th class="px-4 py-3 font-semibold">Bài Thi</th>
+                <th class="px-4 py-3 font-semibold">Ngày Giờ</th>
+                <th class="px-4 py-3 font-semibold">Loại Vi Phạm</th>
+                <th class="px-4 py-3 font-semibold">Điểm Số</th>
+                <th class="px-4 py-3 font-semibold">Kết Quả</th>
+              </tr>
+            </thead>
+            <tbody id="violationsList" class="text-white bg-purple-900/20">
+              <tr>
+                <td colspan="7" class="text-center text-purple-300 py-8">
+                  <div class="flex flex-col items-center gap-2">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400"></div>
+                    <span>Đang tải dữ liệu vi phạm...</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    // API Configuration
+    const API_BASE_URL = 'http://localhost:5000/api';
+    
+    // Get token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Vui lòng đăng nhập để xem báo cáo');
+      window.location.href = 'login.html';
+    }
+    
+    // Get user info to check role
+    const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+    if (userInfo.role === 'CANDIDATE') {
+      alert('❌ Chỉ có Nhà tuyển dụng (RECRUITER) và Quản trị viên (ADMIN) mới được xem báo cáo.\n\nỨng viên không có quyền truy cập trang này.');
+      window.location.href = 'index.html';
+    }
+
+
+
+
+
+    // ========== LOAD STATISTICS ==========
+    async function loadStatistics() {
+      try {
+        console.log('📊 Loading statistics from API...');
+        const response = await fetch(`${API_BASE_URL}/reports/statistics`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        console.log('📊 Statistics API Response Status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Statistics API Error:', errorText);
+          throw new Error('Failed to load statistics');
+        }
+
+        const result = await response.json();
+        console.log('📊 Statistics Data:', result);
+        
+        const stats = result.data;
+
+        if (!stats) {
+          console.warn('⚠️ No statistics data returned');
+          return;
+        }
+
+        console.log('📊 Processing statistics:', {
+          totalTests: stats.totalTests,
+          completedTests: stats.completedTests,
+          totalViolations: stats.totalViolations,
+          avgScore: stats.averageScore
+        });
+
+        // Update stat cards
+        document.getElementById('totalTests').textContent = stats.totalTests || 0;
+        document.getElementById('completedTests').textContent = stats.completedTests || 0;
+        document.getElementById('totalViolations').textContent = stats.totalViolations || 0;
+        document.getElementById('avgScore').textContent = (stats.averageScore || 0).toFixed(1);
+
+        console.log('✅ Statistics loaded successfully');
+
+      } catch (error) {
+        console.error('❌ Error loading statistics:', error);
+        console.error('Error details:', error.message, error.stack);
+        
+        // Show default values instead of error message
+        document.getElementById('totalTests').textContent = '0';
+        document.getElementById('completedTests').textContent = '0';
+        document.getElementById('totalViolations').textContent = '0';
+        document.getElementById('avgScore').textContent = '0.0';
+      }
+    }
+
+
+
+    // ========== LOAD VIOLATIONS ==========
+    async function loadViolations() {
+      try {
+        console.log('⚠️ Loading violations from API...');
+        const filter = document.getElementById('violationTypeFilter').value;
+        let url = `${API_BASE_URL}/reports/violations`;
+        if (filter) url += `?violationType=${filter}`;
+
+        console.log('⚠️ Fetching from:', url);
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        console.log('⚠️ Violations API Response Status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Violations API Error:', errorText);
+          throw new Error('Failed to load violations');
+        }
+
+        const result = await response.json();
+        console.log('⚠️ Violations Data:', result);
+        
+        const violations = result.data || [];
+        console.log(`⚠️ Found ${violations.length} violations`);
+
+        const violationsList = document.getElementById('violationsList');
+        
+        if (violations.length === 0) {
+          console.log('ℹ️ No violations found, showing empty message');
+          violationsList.innerHTML = `
+            <tr>
+              <td colspan="7" class="text-center text-purple-300 py-12">
+                <div class="flex flex-col items-center gap-3">
+                  <span class="text-5xl">✅</span>
+                  <span class="text-lg font-semibold">Không có vi phạm nào được ghi nhận</span>
+                  <span class="text-sm text-purple-400">Tất cả ứng viên đang tuân thủ quy định</span>
+                </div>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        violationsList.innerHTML = violations.map(v => {
+          const timestamp = new Date(v.reported_at || v.timestamp).toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          
+          // Determine result badge based on score or status
+          let resultBadge = '';
+          const score = parseInt(v.score) || 0;
+          if (v.result === 'passed' || v.passed || score >= 50) {
+            resultBadge = '<span class="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-xs font-semibold">✅ Đạt</span>';
+          } else if (v.result === 'failed' || v.passed === false || score < 50) {
+            resultBadge = '<span class="px-3 py-1 bg-red-500/20 text-red-300 rounded-full text-xs font-semibold">❌ Không đạt</span>';
+          } else {
+            resultBadge = '<span class="px-3 py-1 bg-gray-500/20 text-gray-300 rounded-full text-xs font-semibold">⏳ Đang làm</span>';
+          }
+
+          // Format violation type display with color coding
+          const typeDisplay = {
+            'tab_switch': '<span class="px-2 py-1 bg-orange-500/20 text-orange-300 rounded text-xs">🔄 Chuyển tab</span>',
+            'camera_off': '<span class="px-2 py-1 bg-red-500/20 text-red-300 rounded text-xs">📷 Tắt camera</span>',
+            'lost_focus': '<span class="px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded text-xs">👁️ Mất focus</span>',
+            'other': '<span class="px-2 py-1 bg-gray-500/20 text-gray-300 rounded text-xs">⚠️ Khác</span>'
+          }[v.violation_type] || `<span class="px-2 py-1 bg-gray-500/20 text-gray-300 rounded text-xs">${v.violation_type || 'N/A'}</span>`;
+          
+          return `
+            <tr class="border-b border-orange-400/10 hover:bg-orange-500/10 transition-colors">
+              <td class="px-4 py-3 font-mono text-sm text-purple-300">#${v.candidateId || v.candidate_id || 'N/A'}</td>
+              <td class="px-4 py-3 font-medium">${v.candidate_name || 'Unknown'}</td>
+              <td class="px-4 py-3 text-sm text-purple-300 max-w-xs truncate" title="${v.test_name || 'N/A'}">${v.test_name || 'N/A'}</td>
+              <td class="px-4 py-3 text-xs text-purple-300">${timestamp}</td>
+              <td class="px-4 py-3">${typeDisplay}</td>
+              <td class="px-4 py-3 font-bold text-center ${score >= 50 ? 'text-green-300' : 'text-red-300'}">${score}</td>
+              <td class="px-4 py-3 text-center">${resultBadge}</td>
+            </tr>
+          `;
+        }).join('');
+
+        console.log('✅ Violations loaded and displayed in table');
+
+      } catch (error) {
+        console.error('❌ Error loading violations:', error);
+        console.error('Error details:', error.message, error.stack);
+        document.getElementById('violationsList').innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center text-red-300 py-12">
+              <div class="flex flex-col items-center gap-3">
+                <span class="text-5xl">⚠️</span>
+                <span class="text-lg font-semibold">Không thể tải danh sách vi phạm</span>
+                <span class="text-sm text-red-400">${error.message}</span>
+                <button onclick="loadViolations()" class="mt-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition">
+                  🔄 Thử lại
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // ========== EVENT LISTENERS ==========
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      loadStatistics();
+      loadViolations();
+    });
+
+    document.getElementById('violationTypeFilter').addEventListener('change', loadViolations);
+
+    // ========== INITIAL LOAD ==========
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStatistics();
+      loadViolations();
+    });
+  </script>
+
+</body>
+</html>

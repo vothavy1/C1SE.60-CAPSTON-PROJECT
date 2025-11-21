@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .error { color: red; background: #ffe6e6; padding: 10px; border-radius: 5px; }
+        .success { color: green; background: #e6ffe6; padding: 10px; border-radius: 5px; }
+        .info { color: blue; background: #e6f3ff; padding: 10px; border-radius: 5px; }
+        pre { background: #f0f0f0; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+    </style>
+</head>
+<body>
+    <h2>🔧 Quick Debug - API Connection</h2>
+    
+    <div id="authInfo" class="info"></div>
+    
+    <button class="btn-primary" onclick="testAPI()">Test API Call</button>
+    <button class="btn-success" onclick="testBackend()">Test Backend Health</button>
+    
+    <div id="result" style="margin-top: 20px;"></div>
+    
+    <h3>Console Output:</h3>
+    <pre id="console" style="height: 300px; overflow-y: auto;"></pre>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        let consoleEl = document.getElementById('console');
+
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            consoleEl.textContent += '[LOG] ' + args.join(' ') + '\n';
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            consoleEl.textContent += '[ERROR] ' + args.join(' ') + '\n';
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        };
+
+        // Show auth info on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            const user = localStorage.getItem('session_user');
+            
+            const authDiv = document.getElementById('authInfo');
+            authDiv.innerHTML = `
+                <strong>Auth Status:</strong><br>
+                Token: ${token ? 'EXISTS (' + token.substring(0, 30) + '...)' : 'MISSING'}<br>
+                User: ${user ? 'EXISTS' : 'MISSING'}<br>
+                API Base: ${API_BASE_URL}
+            `;
+            
+            console.log('Page loaded');
+            console.log('Token exists:', !!token);
+            console.log('User exists:', !!user);
+        });
+
+        function getAuthHeaders() {
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            return {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+            };
+        }
+
+        async function testBackend() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '🔄 Testing backend health...';
+            
+            try {
+                console.log('Testing backend root endpoint...');
+                const response = await fetch('http://localhost:5000/', {
+                    method: 'GET'
+                });
+                
+                console.log('Backend health response status:', response.status);
+                
+                if (response.ok) {
+                    const text = await response.text();
+                    console.log('Backend health response:', text);
+                    resultDiv.innerHTML = `<div class="success">✅ Backend is healthy! Status: ${response.status}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">⚠️ Backend responded with status: ${response.status}</div>`;
+                }
+            } catch (error) {
+                console.error('Backend health check failed:', error);
+                resultDiv.innerHTML = `<div class="error">❌ Backend health check failed: ${error.message}</div>`;
+            }
+        }
+
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '🔄 Testing API call...';
+            
+            try {
+                console.log('=== API TEST START ===');
+                
+                const headers = getAuthHeaders();
+                console.log('Request headers:', JSON.stringify(headers, null, 2));
+                
+                const url = `${API_BASE_URL}/tests`;
+                console.log('Request URL:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: headers
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Response error text:', errorText);
+                    
+                    let errorMsg = `HTTP ${response.status}`;
+                    if (response.status === 401) {
+                        errorMsg += ' - Unauthorized (Invalid or expired token)';
+                    } else if (response.status === 403) {
+                        errorMsg += ' - Forbidden (Insufficient permissions)';
+                    } else if (response.status === 404) {
+                        errorMsg += ' - Not Found (Endpoint does not exist)';
+                    } else if (response.status === 500) {
+                        errorMsg += ' - Internal Server Error';
+                    }
+                    
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            ❌ API Error: ${errorMsg}<br>
+                            <strong>Details:</strong> ${errorText}
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const result = await response.json();
+                console.log('API response data:', JSON.stringify(result, null, 2));
+                
+                // Parse data
+                let tests = [];
+                if (result.success && result.data && result.data.tests) {
+                    tests = result.data.tests;
+                } else if (Array.isArray(result.data)) {
+                    tests = result.data;
+                } else if (Array.isArray(result)) {
+                    tests = result;
+                }
+                
+                console.log('Parsed tests array:', tests);
+                console.log('Number of tests:', tests.length);
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        ✅ API Success!<br>
+                        <strong>Found:</strong> ${tests.length} tests<br>
+                        <strong>Response structure:</strong> ${Object.keys(result).join(', ')}<br>
+                        ${tests.length > 0 ? `<strong>Sample test:</strong> ${JSON.stringify(tests[0], null, 2)}` : ''}
+                    </div>
+                `;
+                
+                console.log('=== API TEST END ===');
+                
+            } catch (error) {
+                console.error('API test failed:', error);
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ❌ API Test Failed<br>
+                        <strong>Error:</strong> ${error.message}<br>
+                        <strong>Error type:</strong> ${error.name}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

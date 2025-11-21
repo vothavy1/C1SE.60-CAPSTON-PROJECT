@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phòng Thi Trực Tuyến</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-800 min-h-screen text-white font-sans">
+  <script>
+    // Guard: yêu cầu đăng nhập và phải là CANDIDATE; nếu là RECRUITER chuyển qua trang recruiter
+    (function guardRole() {
+      try {
+        const session = JSON.parse(localStorage.getItem('session_user') || 'null');
+        if (!session) {
+          location.replace('index.html');
+          return;
+        }
+        const role = String(session.role || '').toUpperCase();
+        if (role === 'RECRUITER') {
+          location.replace('recruiter.html');
+          return;
+        }
+        // Set header name if present
+        const nameEl = document.getElementById('userName');
+        if (nameEl && session.name) nameEl.textContent = `Xin chào, ${session.name}!`;
+      } catch (_) {
+        location.replace('index.html');
+      }
+    })();
+  </script>
+
+  <!-- Header -->
+  <header class="bg-white/10 backdrop-blur-md shadow-lg sticky top-0 z-10 border-b border-purple-400/30">
+  <div class="max-w-6xl mx-auto flex justify-between items-center py-4 px-6">
+    <!-- Logo / Tên App -->
+    <h1 class="text-3xl font-bold text-white tracking-wide">Tuyển dụng</h1>
+
+    <!-- Thông tin người dùng và đăng xuất -->
+    <div class="flex items-center gap-4">
+      <span id="userName" class="font-medium text-purple-200">Xin chào, học viên!</span>
+      
+      <button id="logoutBtn" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+        Đăng xuất
+      </button>
+    </div>
+  </div>
+</header>
+
+<script>
+  // Đăng xuất: xoá token + session, quay về trang đăng nhập
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    try {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('session_user');
+    } catch(_) {}
+    window.location.href = "index.html";
+  });
+</script>
+
+
+  <!-- Hero -->
+  <section class="text-center py-12 bg-gradient-to-r from-indigo-600 to-purple-700 shadow-lg">
+    <h2 class="text-4xl font-semibold mb-3">Hệ thống thi trực tuyến thông minh</h2>
+    <p class="text-purple-100 mb-6 text-lg">Thực hiện bài thi có giám sát khuôn mặt bằng AI – an toàn, tiện lợi và chuyên nghiệp</p>
+
+    <button
+      id="startExamBtn"
+      class="bg-gradient-to-r from-yellow-400 to-amber-300 text-indigo-900 px-8 py-3 rounded-lg font-bold hover:scale-105 hover:shadow-lg transition"
+      onclick="scrollToExamList()"
+    >
+      🚀 Xem danh sách đề thi
+    </button>
+  </section>
+
+  <!-- Main content -->
+  <main class="max-w-5xl mx-auto mt-10 p-8 bg-white/10 rounded-2xl shadow-xl border border-purple-300/30 backdrop-blur-md">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-2xl font-semibold flex items-center gap-2 text-white">
+        📝 Danh sách bài test tuyển dụng
+      </h3>
+      <div class="flex items-center gap-4">
+        
+      </div>
+    </div>
+
+
+
+    <!-- Danh sách bài thi -->
+    <div id="examList" class="grid md:grid-cols-2 gap-6">
+      <!-- Render JS -->
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-center py-6 text-purple-200 mt-12 border-t border-purple-500/30">
+    © 2025 <span class="text-white font-semibold">ExamPro</span>. All rights reserved.
+  </footer>
+
+  <!-- JS -->
+  <script>
+    // API Configuration
+    const API_BASE_URL = 'http://localhost:5000/api';
+
+    // Get auth headers with JWT token
+    function getAuthHeaders() {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+      return {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      };
+    }
+
+    // Show loading spinner
+    function showLoading() {
+      console.log('showLoading called');
+      const list = document.getElementById("examList");
+      list.innerHTML = `
+        <div class="col-span-full text-center py-8">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          <p class="text-white mt-2">Đang tải danh sách đề thi...</p>
+        </div>
+      `;
+    }
+
+    // Show error message
+    function showError(message) {
+      const list = document.getElementById("examList");
+      list.innerHTML = `
+        <div class="col-span-full text-center py-8">
+          <div class="bg-red-500/20 border border-red-400 rounded-lg p-6">
+            <h4 class="text-red-200 text-lg font-semibold mb-2">Lỗi tải dữ liệu</h4>
+            <p class="text-red-300">${message}</p>
+            <button onclick="loadExams()" class="mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">
+              Thử lại
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Fetch exams from API
+    async function loadExams() {
+      console.log('loadExams function called');
+      showLoading();
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/tests`, {
+          headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            // Token expired or invalid, redirect to login
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('session_user');
+            window.location.href = 'index.html';
+            return;
+          }
+          throw new Error(`Lỗi ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('API Response:', result);
+        console.log('Response keys:', Object.keys(result));
+        
+        // Handle different response structures
+        let tests = [];
+        if (result.success && result.data && result.data.tests) {
+          tests = result.data.tests;
+          console.log('Using result.data.tests path');
+        } else if (Array.isArray(result.data)) {
+          tests = result.data;
+          console.log('Using result.data path');
+        } else if (Array.isArray(result)) {
+          tests = result;
+          console.log('Using result path');
+        } else {
+          console.log('Unknown response structure:', result);
+        }
+
+        console.log('Total tests from database:', tests.length);
+        console.log('All tests details:', tests.map(t => `ID:${t.test_id} "${t.test_name}" Status:${t.status}`));
+        
+        // Show all tests for students (both ACTIVE and DRAFT)
+        // Students can see all available tests
+        const activeTests = tests.filter(test => test.status === 'ACTIVE');
+        console.log('ACTIVE tests for students:', activeTests.length);
+        console.log('ACTIVE tests:', activeTests.map(t => `ID:${t.test_id} "${t.test_name}"`));
+        
+        if (tests.length > 0) {
+          console.log('Sample test from database:', tests[0]);
+        }
+
+        renderExams(tests);
+
+      } catch (error) {
+        console.error('Error loading exams:', error);
+        showError(error.message);
+      }
+    }
+
+    // Render exams list
+    function renderExams(tests) {
+      const list = document.getElementById("examList");
+      
+      if (!Array.isArray(tests) || tests.length === 0) {
+        list.innerHTML = `
+          <div class="col-span-full text-center py-8">
+            <div class="bg-yellow-500/20 border border-yellow-400 rounded-lg p-6">
+              <h4 class="text-yellow-200 text-lg font-semibold mb-2">Chưa có đề thi</h4>
+              <p class="text-yellow-300">Hiện tại chưa có đề thi nào khả dụng.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      console.log('Rendering tests. Total received:', tests.length);
+
+      // Clear loading and render tests
+      list.innerHTML = '';
+      
+      // Sort tests: ACTIVE first, then by created_at desc
+      const sortedTests = [...tests].sort((a, b) => {
+        // ACTIVE tests first
+        if (a.status === 'ACTIVE' && b.status !== 'ACTIVE') return -1;
+        if (a.status !== 'ACTIVE' && b.status === 'ACTIVE') return 1;
+        
+        // Then by creation date (newest first)
+        const dateA = new Date(a.created_at || 0);
+        const dateB = new Date(b.created_at || 0);
+        return dateB - dateA;
+      });
+      
+      console.log('Sorted tests:', sortedTests.map(t => `${t.test_name}(${t.status})`));
+      
+      sortedTests.forEach(test => {
+        const div = document.createElement("div");
+        div.className = "p-6 rounded-xl bg-gradient-to-br from-purple-800/40 to-indigo-800/40 border border-purple-400/30 hover:shadow-2xl hover:scale-[1.02] transition";
+        
+        // Format test data
+        const testName = test.test_name || test.name || 'Đề thi không có tên';
+        const testDesc = test.description || 'Không có mô tả';
+        const testId = test.test_id || test.id;
+        const duration = test.duration_minutes || test.duration || 60;
+        const difficulty = test.difficulty_level || test.difficulty || 'Không xác định';
+        
+        // Check both status and is_active fields
+        const status = test.status || (test.is_active ? 'ACTIVE' : 'INACTIVE');
+        const isActive = test.is_active !== false && (test.status === 'ACTIVE' || test.status === 'active' || !test.status);
+
+        console.log(`Test ${testName}: status="${test.status}", is_active=${test.is_active}, final_status="${status}", isActive=${isActive}`);
+
+        // Only show ACTIVE tests for students
+        if (!isActive) return;
+
+        div.innerHTML = `
+          <div class="mb-3">
+            <h4 class="text-lg font-semibold text-white mb-2">${testName}</h4>
+            <p class="text-purple-200 text-sm mb-2">${testDesc}</p>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <span class="bg-blue-500/30 text-blue-200 px-2 py-1 rounded">⏱️ ${duration} phút</span>
+              <span class="bg-purple-500/30 text-purple-200 px-2 py-1 rounded">📊 ${difficulty}</span>
+              <span class="bg-${status === 'ACTIVE' ? 'green' : 'orange'}-500/30 text-${status === 'ACTIVE' ? 'green' : 'orange'}-200 px-2 py-1 rounded">
+                📋 ${status} (ID: ${testId})
+              </span>
+            </div>
+          </div>
+          <button
+            class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition w-full"
+            onclick="startTest('${testId}', '${testName}')"
+          >
+            🚀 Làm bài thi
+          </button>
+        `;
+        
+        list.appendChild(div);
+      });
+    }
+
+    // Start test function
+    async function startTest(testId, testName) {
+      if (!testId) {
+        alert('Lỗi: Không tìm thấy ID đề thi');
+        return;
+      }
+      
+      // Confirm before starting test
+      if (!confirm(`Bạn có chắc muốn bắt đầu làm đề thi "${testName}"?\n\nLưu ý: Sau khi bắt đầu, bạn không thể thoát giữa chừng.`)) {
+        return;
+      }
+
+      try {
+        // Get current user info - CHỈ check userId (chuẩn hóa)
+        const session = JSON.parse(localStorage.getItem('session_user') || 'null');
+        const authToken = localStorage.getItem('auth_token');
+        
+        if (!session || !session.userId || !authToken) {
+          alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+          localStorage.clear(); // Clear all data
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        console.log('✅ Session valid:', session.userId, session.role);
+
+        // Check if user has a candidate profile - Dùng userId
+        let candidateId;
+        const candidateResponse = await fetch(`${API_BASE_URL}/candidates/by-user/${session.userId}`, {
+          headers: getAuthHeaders()
+        });
+
+        if (candidateResponse.ok) {
+          const candidateData = await candidateResponse.json();
+          candidateId = candidateData.data?.candidate_id;
+          console.log('✅ Found existing candidate:', candidateId);
+        } else if (candidateResponse.status === 404) {
+          // Candidate profile not found, create one automatically
+          console.log('📝 Creating candidate profile for user:', session.userId);
+          
+          const createCandidateResponse = await fetch(`${API_BASE_URL}/candidates/self-register`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              user_id: session.userId,
+              first_name: session.fullName || session.username || 'User',
+              last_name: '-',
+              email: session.email || '',
+              status: 'NEW'
+            })
+          });
+
+          if (createCandidateResponse.ok) {
+            const newCandidate = await createCandidateResponse.json();
+            candidateId = newCandidate.data?.candidate_id;
+            console.log('✅ Created candidate profile:', candidateId);
+          } else {
+            // Log chi tiết lỗi
+            const errorData = await createCandidateResponse.json().catch(() => ({}));
+            console.error('❌ Failed to create candidate:', createCandidateResponse.status, errorData);
+            
+            // Nếu lỗi là "already exists", thử lấy lại
+            if (errorData.message?.includes('already has a candidate profile')) {
+              console.log('🔄 Candidate exists, fetching again...');
+              const retryResponse = await fetch(`${API_BASE_URL}/candidates/by-user/${session.userId}`, {
+                headers: getAuthHeaders()
+              });
+              if (retryResponse.ok) {
+                const retryData = await retryResponse.json();
+                candidateId = retryData.data?.candidate_id;
+                console.log('✅ Got candidate on retry:', candidateId);
+              }
+            }
+          }
+        } else {
+          // Log lỗi API khác
+          console.error('❌ Error fetching candidate:', candidateResponse.status);
+        }
+
+        if (!candidateId) {
+          alert('Không thể khởi tạo hồ sơ ứng viên. Vui lòng đăng xuất và đăng nhập lại.');
+          btn.disabled = false;
+          btn.innerHTML = '🚀 Làm bài thi';
+          return;
+        }
+
+        // Create candidate_test entry using self-assign route
+        console.log('🎯 Self-assigning test:', testId, 'for candidate:', candidateId);
+        const assignResponse = await fetch(`${API_BASE_URL}/candidate-tests/self-assign`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            candidate_id: candidateId,
+            test_id: testId
+          })
+        });
+
+        if (!assignResponse.ok) {
+          const errorData = await assignResponse.json().catch(() => ({}));
+          console.error('❌ Failed to assign test:', assignResponse.status, errorData);
+          
+          // If test already assigned, the API returns 200 with existing test data
+          // So if we get here, it's a real error
+          throw new Error(errorData.message || 'Không thể khởi tạo bài thi');
+        }
+
+        const assignResult = await assignResponse.json();
+        const candidateTestId = assignResult.data?.candidate_test_id;
+
+        if (!candidateTestId) {
+          throw new Error('Không nhận được ID bài thi');
+        }
+
+        // Redirect to test page with both IDs
+        window.location.href = `test.html?testId=${testId}&candidateTestId=${candidateTestId}`;
+
+      } catch (error) {
+        console.error('Error starting test:', error);
+        alert('Có lỗi xảy ra: ' + error.message);
+        const btn = event.target;
+        btn.disabled = false;
+        btn.innerHTML = '🚀 Làm bài thi';
+      }
+    }
+
+    // Scroll to exam list
+    function scrollToExamList() {
+      document.getElementById('examList').scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }
+
+
+
+    // Load exams when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM loaded, calling loadExams...');
+      loadExams();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Database API</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a2e; color: white; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: #16213e; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .test-card { background: #0f3460; border: 1px solid #533483; border-radius: 8px; padding: 15px; margin: 10px 0; }
+        .status-active { border-left: 4px solid #4CAF50; }
+        .status-draft { border-left: 4px solid #FF9800; }
+        .test-id { background: #533483; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .test-status { padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .active { background: #4CAF50; color: white; }
+        .draft { background: #FF9800; color: white; }
+        button { background: #533483; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #6c4a8a; }
+        .loading { text-align: center; padding: 20px; }
+        .error { background: #f44336; color: white; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .success { background: #4CAF50; color: white; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .json-display { background: #2a2a3a; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; overflow-x: auto; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Verify Database API Connection</h1>
+            <p>Kiểm tra API có lấy đúng 6 tests từ database không (ID: 11, 12, 13, 16, 17, 18)</p>
+        </div>
+
+        <div id="authSection">
+            <button onclick="login()">🔐 Login (havy@test.com)</button>
+            <button onclick="testAPI()">📡 Test API /tests</button>
+            <button onclick="clearResults()">🧹 Clear Results</button>
+        </div>
+
+        <div id="results"></div>
+
+        <div id="testsDisplay"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        
+        function getAuthHeaders() {
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            return {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+            };
+        }
+
+        function showResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            resultsDiv.innerHTML += `<div class="${className}">${message}</div>`;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('testsDisplay').innerHTML = '';
+        }
+
+        async function login() {
+            showResult('🔐 Attempting login...');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'havy@test.com',
+                        password: '123456'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success && result.data.token) {
+                    localStorage.setItem('auth_token', result.data.token);
+                    localStorage.setItem('session_user', JSON.stringify(result.data.user));
+                    showResult('✅ Login successful! Token saved.', 'success');
+                } else {
+                    showResult(`❌ Login failed: ${result.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Login error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAPI() {
+            showResult('📡 Testing API /tests...');
+            
+            try {
+                const headers = getAuthHeaders();
+                const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+                
+                if (!token) {
+                    showResult('❌ No token found. Please login first.', 'error');
+                    return;
+                }
+
+                showResult(`📤 Using token: ${token.substring(0, 30)}...`);
+
+                const response = await fetch(`${API_BASE_URL}/tests`, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                showResult(`📥 Response status: ${response.status} ${response.statusText}`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    showResult(`❌ API Error: ${errorText}`, 'error');
+                    return;
+                }
+
+                const result = await response.json();
+                showResult('✅ API call successful!', 'success');
+                
+                // Show raw response
+                showResult(`<div class="json-display"><strong>Raw API Response:</strong><pre>${JSON.stringify(result, null, 2)}</pre></div>`);
+                
+                // Parse tests
+                let tests = [];
+                if (result.success && result.data && result.data.tests) {
+                    tests = result.data.tests;
+                } else if (Array.isArray(result.data)) {
+                    tests = result.data;
+                } else if (Array.isArray(result)) {
+                    tests = result;
+                }
+
+                showResult(`📊 Found ${tests.length} tests in response`, 'success');
+                
+                if (tests.length === 6) {
+                    showResult('✅ Correct! Expected 6 tests from database.', 'success');
+                } else {
+                    showResult(`⚠️ Expected 6 tests but got ${tests.length}. Check database connection.`, 'error');
+                }
+
+                displayTests(tests);
+
+            } catch (error) {
+                showResult(`❌ API test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function displayTests(tests) {
+            const displayDiv = document.getElementById('testsDisplay');
+            
+            if (tests.length === 0) {
+                displayDiv.innerHTML = '<div class="error">❌ No tests found in API response</div>';
+                return;
+            }
+
+            let html = '<h2>📋 Tests from Database:</h2>';
+            
+            tests.forEach(test => {
+                const statusClass = test.status === 'ACTIVE' ? 'status-active' : 'status-draft';
+                const statusBadge = test.status === 'ACTIVE' ? 'active' : 'draft';
+                
+                html += `
+                    <div class="test-card ${statusClass}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h3>${test.test_name || test.name || 'Unnamed Test'}</h3>
+                            <div>
+                                <span class="test-id">ID: ${test.test_id || test.id}</span>
+                                <span class="test-status ${statusBadge}">${test.status || 'UNKNOWN'}</span>
+                            </div>
+                        </div>
+                        <p><strong>Description:</strong> ${test.description || 'No description'}</p>
+                        <p><strong>Duration:</strong> ${test.duration_minutes || 0} minutes</p>
+                        <p><strong>Difficulty:</strong> ${test.difficulty_level || 'Unknown'}</p>
+                        <p><strong>is_active:</strong> ${test.is_active}</p>
+                        <p><strong>Created by:</strong> User ${test.created_by}</p>
+                        <p><strong>Created at:</strong> ${test.created_at}</p>
+                        
+                        <div class="json-display">
+                            <strong>Full test object:</strong>
+                            <pre>${JSON.stringify(test, null, 2)}</pre>
+                        </div>
+                    </div>
+                `;
+            });
+
+            displayDiv.innerHTML = html;
+
+            // Summary
+            const activeCount = tests.filter(t => t.status === 'ACTIVE').length;
+            const draftCount = tests.filter(t => t.status === 'DRAFT').length;
+            
+            displayDiv.innerHTML += `
+                <div class="success">
+                    <h3>📊 Summary:</h3>
+                    <p>• Total tests: ${tests.length}</p>
+                    <p>• ACTIVE tests: ${activeCount}</p>
+                    <p>• DRAFT tests: ${draftCount}</p>
+                    <p>• Expected from database: 6 tests (2 ACTIVE, 4 DRAFT)</p>
+                </div>
+            `;
+        }
+
+        // Auto-check token on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            if (token) {
+                showResult('✅ Token found in localStorage', 'success');
+                showResult('Ready to test API. Click "Test API /tests" button.', 'success');
+            } else {
+                showResult('⚠️ No token found. Please login first.');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo Đề thi mới</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-dark text-light">
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/recruiter.html">Recruiter Dashboard</a>
+            <div class="d-flex align-items-center ms-auto">
+                <span class="me-3">Xin chào, Recruiter!</span>
+                <a href="#" class="btn btn-pink">Đăng xuất</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card bg-secondary text-light mb-4">
+                    <div class="card-header">
+                        <h2 class="mb-0">Tạo Đề thi mới</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="createTestForm">
+                            <div class="mb-3">
+                                <label for="testName" class="form-label">Tên đề thi</label>
+                                <input type="text" class="form-control" id="testName" name="testName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="testDescription" class="form-label">Mô tả</label>
+                                <textarea class="form-control" id="testDescription" name="testDescription" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="testType" class="form-label">Loại đề</label>
+                                <select class="form-select" id="testType" name="testType" required>
+                                    <option value="">-- Chọn loại đề --</option>
+                                    <option value="Trắc nghiệm">Trắc nghiệm</option>
+                                    <option value="Tự luận">Tự luận</option>
+                                    <option value="Coding">Coding</option>
+                                </select>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <a href="test-list.html" class="btn btn-outline-light">Quay lại</a>
+                                <button type="submit" class="btn btn-success">Tạo Đề thi</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center mt-5 mb-3">
+        <small>&copy; 2025 CS60 Recruitment</small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="create-test.js"></script>
+</body>
+</html>

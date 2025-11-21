@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Đăng ký - Hệ thống thi</title>
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+</head>
+<body class="fade-enter">
+<main class="auth-page">
+<section class="auth-card">
+<div class="left">
+<h1>Đăng ký</h1>
+<p class="muted">Tạo tài khoản mới để sử dụng hệ thống</p>
+
+
+<input id="fullName" class="input" placeholder="Họ và tên" />
+<input id="email" class="input" placeholder="Email" />
+<input id="pwd" type="password" class="input" placeholder="Mật khẩu" />
+
+<!-- Chọn vai trò -->
+<div style="margin: 10px 0 4px; color: var(--muted); font-size: 14px;">Vai trò</div>
+<div style="display:flex; gap:16px; align-items:center; margin-bottom:8px;">
+  <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+    <input type="radio" name="role" id="roleCandidate" value="candidate" checked />
+    Ứng viên (Candidate)
+  </label>
+  <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+    <input type="radio" name="role" id="roleRecruiter" value="recruiter" />
+    Nhà tuyển dụng (Recruiter)
+  </label>
+  <span class="muted" style="font-size:12px;">(Recruiter có thể quản lý đề thi, ứng viên...)</span>
+</div>
+
+<!-- Chọn công ty (chỉ hiện khi chọn Recruiter) -->
+<div id="companySection" style="display:none; margin-bottom:12px;">
+  <div style="margin: 10px 0 4px; color: var(--muted); font-size: 14px;">Công ty <span style="color:red;">*</span></div>
+  <select id="companySelect" class="input" style="padding: 12px; color: #fff; background-color: rgba(255,255,255,0.1);">
+    <option value="" style="color: #333; background-color: #fff;">-- Chọn công ty --</option>
+  </select>
+</div>
+
+<div class="actions">
+<button id="registerSubmit" class="btn primary">Hoàn tất đăng ký</button>
+<p class="note">Đã có tài khoản? <a href="index.html">Đăng nhập</a></p>
+<p class="note" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+  Chỉ muốn ứng tuyển? <a href="apply.html" style="color: #10b981;">Nộp CV →</a>
+</p>
+</div>
+</div>
+
+
+<div class="right">
+<div class="panel">
+<h3>Thông tin đăng ký</h3>
+<p class="muted">Vui lòng điền đầy đủ thông tin. Nếu bạn là nhà tuyển dụng, hãy chọn công ty mà bạn làm việc.</p>
+</div>
+</div>
+</section>
+</main>
+
+
+<script>
+// Removed face recognition code
+
+// Load companies from API
+async function loadCompanies() {
+  try {
+    const response = await apiCall('/companies', {
+      method: 'GET'
+    });
+    
+    const companySelect = document.getElementById('companySelect');
+    companySelect.innerHTML = '<option value="">-- Chọn công ty --</option>';
+    
+    response.data.forEach(company => {
+      const option = document.createElement('option');
+      option.value = company.company_id;
+      option.textContent = company.companyName;
+      option.style.color = '#333';
+      option.style.backgroundColor = '#fff';
+      companySelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Error loading companies:', error);
+  }
+}
+
+// Show/hide company selection based on role
+document.querySelectorAll('input[name="role"]').forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    const companySection = document.getElementById('companySection');
+    if (e.target.value === 'recruiter') {
+      companySection.style.display = 'block';
+      loadCompanies();
+    } else {
+      companySection.style.display = 'none';
+    }
+  });
+});
+
+// Load companies on page load if recruiter is selected
+if (document.getElementById('roleRecruiter').checked) {
+  document.getElementById('companySection').style.display = 'block';
+  loadCompanies();
+}
+
+// Nút hoàn tất đăng ký - Kết nối backend API
+document.getElementById('registerSubmit').addEventListener('click', async () => {
+  const full_name = document.getElementById('fullName').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('pwd').value;
+
+  if (!full_name || !email || !password) {
+    alert('Vui lòng nhập đầy đủ thông tin!');
+    return;
+  }
+
+  // Tạo username từ email (phần trước @)
+  const username = email.split('@')[0];
+
+  try {
+    // Xác định role_id: recruiter=2, candidate=4
+    const selectedRole = document.getElementById('roleRecruiter').checked ? 'recruiter' : 'candidate';
+    const role_id = selectedRole === 'recruiter' ? 2 : 4;
+    
+    // Check company selection for recruiters
+    let company_id = null;
+    if (role_id === 2) {
+      company_id = document.getElementById('companySelect').value;
+      if (!company_id) {
+        alert('Vui lòng chọn công ty!');
+        return;
+      }
+    }
+
+    // Gọi API register
+    const response = await apiCall('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        username,
+        email,
+        password,
+        full_name,
+        role_id,
+        company_id
+      })
+    });
+
+    alert('Đăng ký thành công! Về trang đăng nhập để tiếp tục.');
+    document.body.classList.remove('fade-enter');
+    document.body.classList.add('fade-exit');
+    setTimeout(() => location.href = 'index.html', 350);
+  } catch (error) {
+    alert('Đăng ký thất bại: ' + error.message);
+    console.error('Register error:', error);
+  }
+});
+</script>
+</body>
+</html>

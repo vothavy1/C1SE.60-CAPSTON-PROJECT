@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Debug Tool</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .box {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        h2 {
+            color: #4ec9b0;
+            margin-top: 0;
+        }
+        .key {
+            color: #9cdcfe;
+        }
+        .value {
+            color: #ce9178;
+        }
+        .null {
+            color: #569cd6;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1177bb;
+        }
+        .success {
+            color: #4ec9b0;
+        }
+        .error {
+            color: #f48771;
+        }
+        .warning {
+            color: #dcdcaa;
+        }
+        pre {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Token Debug Tool</h1>
+    
+    <div class="box">
+        <h2>Current Token Status</h2>
+        <div id="tokenStatus"></div>
+    </div>
+
+    <div class="box">
+        <h2>localStorage Contents</h2>
+        <pre id="localStorageContents"></pre>
+    </div>
+
+    <div class="box">
+        <h2>Actions</h2>
+        <button onclick="refreshStatus()">🔄 Refresh Status</button>
+        <button onclick="testAPI()">🧪 Test API Call</button>
+        <button onclick="clearTokens()">🗑️ Clear All Tokens</button>
+        <button onclick="goToLogin()">🔑 Go to Login</button>
+    </div>
+
+    <div class="box">
+        <h2>Test Results</h2>
+        <pre id="testResults"></pre>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+
+        function refreshStatus() {
+            const token = localStorage.getItem('token');
+            const authToken = localStorage.getItem('auth_token');
+            const session = localStorage.getItem('session_user');
+
+            let html = '';
+
+            // Check token
+            html += '<div><span class="key">token:</span> ';
+            if (token) {
+                html += '<span class="success">✅ EXISTS</span> ';
+                html += '<span class="value">(Length: ' + token.length + ')</span><br>';
+                html += '<span style="font-size: 10px; word-break: break-all;">' + token.substring(0, 50) + '...</span>';
+            } else {
+                html += '<span class="error">❌ NULL</span>';
+            }
+            html += '</div><br>';
+
+            // Check auth_token (legacy)
+            html += '<div><span class="key">auth_token (legacy):</span> ';
+            if (authToken) {
+                html += '<span class="warning">⚠️ EXISTS (should not be used)</span>';
+            } else {
+                html += '<span class="null">null</span>';
+            }
+            html += '</div><br>';
+
+            // Check session
+            html += '<div><span class="key">session_user:</span> ';
+            if (session) {
+                html += '<span class="success">✅ EXISTS</span>';
+                try {
+                    const sessionData = JSON.parse(session);
+                    html += '<br><pre>' + JSON.stringify(sessionData, null, 2) + '</pre>';
+                } catch (e) {
+                    html += '<span class="error"> (Invalid JSON)</span>';
+                }
+            } else {
+                html += '<span class="error">❌ NULL</span>';
+            }
+            html += '</div>';
+
+            document.getElementById('tokenStatus').innerHTML = html;
+
+            // Show all localStorage
+            let storageHTML = '{\n';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                storageHTML += '  "' + key + '": ';
+                if (value && value.length > 100) {
+                    storageHTML += '"' + value.substring(0, 100) + '..."\n';
+                } else {
+                    storageHTML += '"' + value + '"\n';
+                }
+            }
+            storageHTML += '}';
+            document.getElementById('localStorageContents').textContent = storageHTML;
+        }
+
+        async function testAPI() {
+            const token = localStorage.getItem('token');
+            const results = document.getElementById('testResults');
+            
+            results.innerHTML = 'Testing API with token...\n\n';
+
+            if (!token) {
+                results.innerHTML += '❌ ERROR: No token found in localStorage!\n';
+                results.innerHTML += 'Please login first.\n';
+                return;
+            }
+
+            try {
+                results.innerHTML += '📡 GET /api/candidates\n';
+                results.innerHTML += 'Authorization: Bearer ' + token.substring(0, 30) + '...\n\n';
+
+                const response = await fetch(`${API_BASE_URL}/candidates`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                results.innerHTML += 'Response Status: ' + response.status + ' ' + response.statusText + '\n';
+
+                if (response.status === 200) {
+                    const data = await response.json();
+                    results.innerHTML += '\n✅ SUCCESS!\n';
+                    results.innerHTML += 'Candidates found: ' + (data.data ? data.data.length : 0) + '\n';
+                    results.innerHTML += '\nResponse:\n' + JSON.stringify(data, null, 2).substring(0, 500) + '...\n';
+                } else if (response.status === 401) {
+                    results.innerHTML += '\n❌ UNAUTHORIZED: Token is invalid or expired\n';
+                } else if (response.status === 403) {
+                    results.innerHTML += '\n❌ FORBIDDEN: No permission to access this resource\n';
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    results.innerHTML += '\n❌ ERROR:\n' + JSON.stringify(errorData, null, 2) + '\n';
+                }
+            } catch (error) {
+                results.innerHTML += '\n❌ NETWORK ERROR:\n' + error.message + '\n';
+                results.innerHTML += '\nMake sure backend is running on http://localhost:5000\n';
+            }
+        }
+
+        function clearTokens() {
+            if (confirm('Clear all tokens and session data?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('session_user');
+                refreshStatus();
+                document.getElementById('testResults').textContent = '✅ All tokens cleared!';
+            }
+        }
+
+        function goToLogin() {
+            window.location.href = 'login.html';
+        }
+
+        // Auto-refresh on load
+        refreshStatus();
+    </script>
+</body>
+</html>

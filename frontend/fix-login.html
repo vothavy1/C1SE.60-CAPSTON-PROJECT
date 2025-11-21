@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix LocalStorage - Clear & Login</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .status.error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            color: #c62828;
+        }
+        .status.success {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            color: #2e7d32;
+        }
+        .status.warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            color: #e65100;
+        }
+        .status.info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            color: #1565c0;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button.danger {
+            background: #f44336;
+        }
+        button.danger:hover {
+            background: #d32f2f;
+        }
+        button.success {
+            background: #4caf50;
+        }
+        button.success:hover {
+            background: #388e3c;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+        }
+        .step {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .step strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+        #countdown {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🔧 Fix Lỗi Đăng Nhập - Quản Lý Ứng Viên</h1>
+            
+            <div class="status warning" id="problem">
+                <strong>⚠️ VẤN ĐỀ HIỆN TẠI:</strong><br>
+                Không thể vào trang Quản Lý Ứng Viên vì localStorage thiếu dữ liệu session_user
+            </div>
+
+            <div class="status info">
+                <strong>💡 GIẢI PHÁP:</strong><br>
+                Xóa toàn bộ localStorage cũ và đăng nhập lại để tạo dữ liệu mới đầy đủ
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📊 Trạng thái localStorage hiện tại</h2>
+            <div id="currentStatus"></div>
+        </div>
+
+        <div class="card">
+            <h2>🚀 Các bước thực hiện</h2>
+            
+            <div class="step">
+                <strong>Bước 1: Xóa localStorage cũ</strong>
+                <button class="danger" onclick="clearStorage()">❌ XÓA TOÀN BỘ LOCALSTORAGE</button>
+                <div id="clearResult"></div>
+            </div>
+
+            <div class="step">
+                <strong>Bước 2: Tự động chuyển đến trang đăng nhập</strong>
+                <div id="redirectInfo" style="display:none;">
+                    <p>✅ Đã xóa xong! Đang chuyển hướng trong <span id="countdown">3</span> giây...</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <strong>Bước 3: Đăng nhập với thông tin sau</strong>
+                <pre>Email: recruiter.vy@gmail.com
+Password: 123456</pre>
+            </div>
+
+            <div class="step">
+                <strong>Bước 4: Vào lại trang Quản Lý Ứng Viên</strong>
+                <p>Sau khi đăng nhập, nhấn vào "Quản Lý Ứng Viên" hoặc truy cập:</p>
+                <pre>http://localhost:3000/candidate-list.html</pre>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🔍 Debug Console</h2>
+            <button onclick="checkStatus()">🔄 Kiểm tra lại trạng thái</button>
+            <button class="success" onclick="testLogin()">🧪 Test API Login</button>
+            <pre id="debugConsole" style="min-height: 100px; max-height: 300px; overflow-y: auto;"></pre>
+        </div>
+    </div>
+
+    <script>
+        let debugLog = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = {
+                'info': 'ℹ️',
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️'
+            }[type] || 'ℹ️';
+            
+            const logMessage = `[${timestamp}] ${icon} ${message}`;
+            debugLog.push(logMessage);
+            updateDebugConsole();
+            console.log(logMessage);
+        }
+
+        function updateDebugConsole() {
+            document.getElementById('debugConsole').textContent = debugLog.join('\n');
+        }
+
+        function checkStatus() {
+            log('Checking localStorage status...', 'info');
+            
+            const token = localStorage.getItem('token');
+            const sessionUser = localStorage.getItem('session_user');
+            const authToken = localStorage.getItem('auth_token');
+            
+            let html = '<div style="margin-top: 10px;">';
+            
+            // Check token
+            if (token) {
+                html += '<div class="status success">✅ token: EXISTS (Length: ' + token.length + ')</div>';
+                log('Token exists: ' + token.substring(0, 30) + '...', 'success');
+            } else {
+                html += '<div class="status error">❌ token: NOT FOUND</div>';
+                log('Token NOT found', 'error');
+            }
+            
+            // Check session_user
+            if (sessionUser) {
+                html += '<div class="status success">✅ session_user: EXISTS</div>';
+                try {
+                    const parsed = JSON.parse(sessionUser);
+                    html += '<pre>' + JSON.stringify(parsed, null, 2) + '</pre>';
+                    log('session_user exists: ' + JSON.stringify(parsed), 'success');
+                } catch (e) {
+                    html += '<div class="status error">❌ session_user: INVALID JSON</div>';
+                    log('session_user invalid JSON', 'error');
+                }
+            } else {
+                html += '<div class="status error">❌ session_user: NOT FOUND (THIS IS THE PROBLEM!)</div>';
+                log('session_user NOT found - THIS IS WHY YOU CANNOT ACCESS THE PAGE', 'error');
+            }
+            
+            // Check auth_token (legacy)
+            if (authToken) {
+                html += '<div class="status warning">⚠️ auth_token (legacy): EXISTS (should be removed)</div>';
+            }
+            
+            // Show all localStorage keys
+            html += '<div class="status info"><strong>All localStorage keys:</strong><br>';
+            if (localStorage.length === 0) {
+                html += 'EMPTY (No keys found)';
+            } else {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    html += '- ' + key + '<br>';
+                }
+            }
+            html += '</div>';
+            
+            html += '</div>';
+            document.getElementById('currentStatus').innerHTML = html;
+        }
+
+        function clearStorage() {
+            log('Starting localStorage clear...', 'warning');
+            
+            const keysBeforeClear = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                keysBeforeClear.push(localStorage.key(i));
+            }
+            
+            log('Keys to remove: ' + keysBeforeClear.join(', '), 'info');
+            
+            // Clear all
+            localStorage.clear();
+            
+            log('localStorage cleared successfully!', 'success');
+            
+            document.getElementById('clearResult').innerHTML = 
+                '<div class="status success">✅ Đã xóa thành công tất cả dữ liệu cũ!</div>';
+            
+            // Show countdown
+            document.getElementById('redirectInfo').style.display = 'block';
+            
+            let count = 3;
+            const countdownEl = document.getElementById('countdown');
+            const interval = setInterval(() => {
+                count--;
+                countdownEl.textContent = count;
+                log('Redirecting in ' + count + '...', 'info');
+                
+                if (count <= 0) {
+                    clearInterval(interval);
+                    log('Redirecting to login.html...', 'success');
+                    window.location.href = 'login.html';
+                }
+            }, 1000);
+        }
+
+        async function testLogin() {
+            log('Testing login API...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'recruiter.vy@gmail.com',
+                        password: '123456'
+                    })
+                });
+                
+                log('Response status: ' + response.status, response.ok ? 'success' : 'error');
+                
+                const data = await response.json();
+                log('Response data: ' + JSON.stringify(data, null, 2), 'info');
+                
+                if (response.ok && data.success) {
+                    log('Login API works! Token received.', 'success');
+                    alert('✅ Login API hoạt động bình thường!\n\nBây giờ hãy:\n1. Nhấn nút "XÓA TOÀN BỘ LOCALSTORAGE"\n2. Đợi chuyển hướng đến login.html\n3. Đăng nhập lại');
+                } else {
+                    log('Login failed: ' + (data.message || 'Unknown error'), 'error');
+                    alert('❌ Login thất bại: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                log('Network error: ' + error.message, 'error');
+                alert('❌ Lỗi kết nối: ' + error.message + '\n\nĐảm bảo backend đang chạy trên port 5000');
+            }
+        }
+
+        // Auto-check on load
+        window.onload = function() {
+            log('Page loaded, checking status...', 'info');
+            checkStatus();
+            
+            // Check if we need to redirect
+            const token = localStorage.getItem('token');
+            const sessionUser = localStorage.getItem('session_user');
+            
+            if (!token || !sessionUser) {
+                log('Missing authentication data - user needs to clear and re-login', 'warning');
+            } else {
+                log('Authentication data present - user might be able to access the page', 'success');
+            }
+        };
+    </script>
+</body>
+</html>
