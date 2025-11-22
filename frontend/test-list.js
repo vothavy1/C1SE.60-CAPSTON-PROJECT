@@ -1,9 +1,34 @@
+// 🔥 FORCE CLEAR CACHE ON NEW LOGIN
+(function checkCacheBust() {
+    const lastPageLoad = sessionStorage.getItem('test_page_loaded');
+    const loginTime = localStorage.getItem('login_timestamp');
+    
+    if (loginTime && (!lastPageLoad || parseInt(lastPageLoad) < parseInt(loginTime))) {
+        console.log('🔄 New login detected, clearing test page cache...');
+        sessionStorage.setItem('test_page_loaded', Date.now().toString());
+        // Force reload without cache
+        if (!window.location.search.includes('nocache')) {
+            window.location.href = window.location.pathname + '?nocache=' + Date.now();
+            return;
+        }
+    }
+})();
+
 const API_BASE_URL = 'http://localhost:5000/api';
 
 function getAuthHeaders() {
-    const token = localStorage.getItem('authToken') || localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token') || localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+    
+    if (!token) {
+        console.warn('⚠️ No token found! Redirecting to login...');
+        setTimeout(() => window.location.href = 'login.html', 1000);
+    }
+    
     return {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
         ...(token && { 'Authorization': `Bearer ${token}` })
     };
 }
@@ -13,13 +38,34 @@ async function fetchTests() {
         const response = await fetch(`${API_BASE_URL}/tests`, {
             headers: getAuthHeaders()
         });
-        if (!response.ok) throw new Error('Lỗi khi lấy danh sách đề thi');
+        
+        if (response.status === 401) {
+            console.error('❌ 401 Unauthorized - Token không hợp lệ hoặc hết hạn');
+            alert('⚠️ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
+            localStorage.clear();
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        if (response.status === 403) {
+            console.error('❌ 403 Forbidden - Không có quyền truy cập');
+            alert('⚠️ Bạn không có quyền xem danh sách đề thi!');
+            return;
+        }
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Lỗi khi lấy danh sách đề thi');
+        }
+        
         const result = await response.json();
+        console.log('✅ Tests loaded:', result);
+        
         // Backend trả về { success: true, data: { tests: [...] } }
         const tests = result.data && result.data.tests ? result.data.tests : [];
         renderTests(tests);
     } catch (error) {
-        console.error(error);
+        console.error('❌ Error fetching tests:', error);
         document.querySelector('#testsTable tbody').innerHTML = `<tr><td colspan="6" class="text-danger text-center">${error.message}</td></tr>`;
     }
 }

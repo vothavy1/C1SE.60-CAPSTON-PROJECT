@@ -9,20 +9,34 @@
     .status-badge {
       @apply px-3 py-1 rounded-full text-xs font-semibold inline-block;
     }
+    
+    /* Professional Light Mode Theme */
+    body {
+      background-color: #f3f4f6;
+      color: #1f2937;
+    }
+    
+    .card-shadow {
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    
+    .card-shadow-lg {
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    }
   </style>
 </head>
-<body class="bg-gradient-to-br from-slate-800 via-indigo-900 to-slate-900 min-h-screen text-white">
+<body class="bg-gray-100 min-h-screen text-gray-900">
   
   <!-- Header -->
-  <header class="bg-white/10 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-indigo-400/30">
+  <header class="bg-white shadow-md sticky top-0 z-50 border-b border-gray-200">
     <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
       <div class="flex items-center gap-4">
-        <a href="recruiter.html" class="text-2xl hover:text-indigo-300 transition">←</a>
-        <h1 class="text-2xl md:text-3xl font-bold">📋 Quản Lý Ứng Viên</h1>
+        <a href="recruiter.html" class="text-2xl text-gray-700 hover:text-indigo-600 transition">←</a>
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900">📋 Quản Lý Ứng Viên</h1>
       </div>
       <div class="flex items-center gap-4">
-        <span id="userName" class="text-indigo-200">Xin chào!</span>
-        <button onclick="logout()" class="bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-2 rounded-lg hover:opacity-90 transition">
+        <span id="userName" class="text-gray-700 font-medium">Xin chào!</span>
+        <button onclick="logout()" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition shadow-md">
           Đăng xuất
         </button>
       </div>
@@ -33,12 +47,12 @@
   <main class="max-w-7xl mx-auto mt-6 p-6">
     
     <!-- Actions Bar -->
-    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-center justify-between border border-white/20">
+    <div class="bg-white rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-center justify-between border border-gray-200 card-shadow">
       <div class="flex gap-3 flex-wrap">
-        <button onclick="showAddModal()" class="bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-2 rounded-lg hover:opacity-90 transition">
+        <button onclick="showAddModal()" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition shadow-md">
           ➕ Thêm ứng viên
         </button>
-        <button onclick="refreshList()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg transition">
+        <button onclick="refreshList()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition shadow-md">
           Làm mới
         </button>
       </div>
@@ -49,51 +63,51 @@
           id="searchInput" 
           type="text" 
           placeholder="Tìm theo tên, email, vị trí..." 
-          class="flex-1 px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          class="flex-1 px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           onkeyup="searchCandidates()"
         />
         <div class="flex gap-2 items-center">
-          <label class="text-sm whitespace-nowrap">Từ ngày:</label>
+          <label class="text-sm whitespace-nowrap text-gray-700 font-medium">Từ ngày:</label>
           <input 
             id="fromDate" 
             type="date" 
             onchange="filterByDate()" 
-            class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+            class="px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
           />
         </div>
         <div class="flex gap-2 items-center">
-          <label class="text-sm whitespace-nowrap">Đến ngày:</label>
+          <label class="text-sm whitespace-nowrap text-gray-700 font-medium">Đến ngày:</label>
           <input 
             id="toDate" 
             type="date" 
             onchange="filterByDate()" 
-            class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+            class="px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
           />
         </div>
       </div>
     </div>
 
     <!-- Candidates Table -->
-    <div class="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/20">
+    <div class="bg-white rounded-xl overflow-hidden border border-gray-200 card-shadow">
       <div class="overflow-x-auto">
         <table class="w-full">
-          <thead class="bg-white/10">
+          <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th class="px-6 py-4 text-left font-semibold">ID</th>
-              <th class="px-6 py-4 text-left font-semibold">Họ tên</th>
-              <th class="px-6 py-4 text-left font-semibold">Email</th>
-              <th class="px-6 py-4 text-left font-semibold">Số điện thoại</th>
-              <th class="px-6 py-4 text-left font-semibold">Vị trí</th>
-              <th class="px-6 py-4 text-left font-semibold">Công ty</th>
-              <th class="px-6 py-4 text-left font-semibold">Kinh nghiệm</th>
-              <th class="px-6 py-4 text-left font-semibold">Trạng thái</th>
-              <th class="px-6 py-4 text-left font-semibold">Ngày tạo</th>
-              <th class="px-6 py-4 text-center font-semibold">Thao tác</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">ID</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Họ tên</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Email</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Số điện thoại</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Vị trí</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Công ty</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Kinh nghiệm</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Trạng thái</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Ngày tạo</th>
+              <th class="px-6 py-4 text-center font-semibold text-gray-700">Thao tác</th>
             </tr>
           </thead>
-          <tbody id="candidatesTableBody" class="divide-y divide-white/10">
+          <tbody id="candidatesTableBody" class="divide-y divide-gray-200">
             <tr>
-              <td colspan="10" class="px-6 py-8 text-center text-gray-400">
+              <td colspan="10" class="px-6 py-8 text-center text-gray-500">
                 Đang tải dữ liệu...
               </td>
             </tr>
@@ -102,8 +116,8 @@
       </div>
       
       <!-- Pagination -->
-      <div id="paginationContainer" class="bg-white/5 px-6 py-4 flex justify-between items-center border-t border-white/10">
-        <div class="text-sm text-gray-300">
+      <div id="paginationContainer" class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-200">
+        <div class="text-sm text-gray-600 font-medium">
           Hiển thị <span id="showingFrom">0</span> - <span id="showingTo">0</span> của <span id="totalRecords">0</span> bản ghi
         </div>
         <div id="paginationButtons" class="flex gap-2">
@@ -115,11 +129,11 @@
   </main>
 
   <!-- Add/Edit Candidate Modal -->
-  <div id="candidateModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-    <div class="bg-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-indigo-400/30 shadow-2xl">
-      <div class="sticky top-0 bg-slate-800 border-b border-white/10 px-6 py-4 flex justify-between items-center">
-        <h2 id="modalTitle" class="text-2xl font-bold">Thêm Ứng Viên Mới</h2>
-        <button onclick="closeModal()" class="text-3xl hover:text-red-400 transition">&times;</button>
+  <div id="candidateModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200 card-shadow-lg">
+      <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+        <h2 id="modalTitle" class="text-2xl font-bold text-gray-900">Thêm Ứng Viên Mới</h2>
+        <button onclick="closeModal()" class="text-3xl text-gray-500 hover:text-red-500 transition">&times;</button>
       </div>
       
       <form id="candidateForm" class="p-6 space-y-4">
@@ -127,59 +141,59 @@
         
         <div class="grid md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-semibold mb-2">Họ *</label>
+            <label class="block text-sm font-semibold mb-2 text-gray-700">Họ *</label>
             <input type="text" id="firstName" required 
-              class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+              class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
           </div>
           <div>
-            <label class="block text-sm font-semibold mb-2">Tên *</label>
+            <label class="block text-sm font-semibold mb-2 text-gray-700">Tên *</label>
             <input type="text" id="lastName" required 
-              class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+              class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
           </div>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2">Email *</label>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Email *</label>
           <input type="email" id="email" required 
-            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2">Số điện thoại *</label>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Số điện thoại *</label>
           <input type="tel" id="phone" required
-            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2">Vị trí hiện tại</label>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Vị trí hiện tại</label>
           <input type="text" id="currentPosition"
-            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2">Số năm kinh nghiệm</label>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Số năm kinh nghiệm</label>
           <input type="number" id="yearsOfExperience" min="0"
-            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2">Học vấn</label>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Học vấn</label>
           <input type="text" id="education"
-            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" 
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
             placeholder="Ví dụ: Đại học Công nghệ Thông tin" />
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2">Kỹ năng</label>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Kỹ năng</label>
           <textarea id="skills" rows="2"
-            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             placeholder="JavaScript, React, Node.js, ..."></textarea>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2">Nguồn ứng tuyển *</label>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Nguồn ứng tuyển *</label>
           <select id="source" required
-            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
             <option value="">-- Chọn nguồn --</option>
             <option value="WEBSITE">Website</option>
             <option value="LINKEDIN">LinkedIn</option>
@@ -190,16 +204,16 @@
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2">Ghi chú</label>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Ghi chú</label>
           <textarea id="notes" rows="3"
-            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             placeholder="Ghi chú về ứng viên..."></textarea>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2">Trạng thái</label>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Trạng thái</label>
           <select id="status" 
-            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
             <option value="NEW">Mới</option>
             <option value="SCREENING">Sàng lọc</option>
             <option value="TESTING">Đang test</option>
@@ -211,10 +225,10 @@
         </div>
 
         <div class="flex gap-3 pt-4">
-          <button type="submit" class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 px-6 py-3 rounded-lg font-semibold transition">
+          <button type="submit" class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-semibold transition shadow-md">
             💾 Lưu
           </button>
-          <button type="button" onclick="closeModal()" class="flex-1 bg-gray-600 hover:bg-gray-500 px-6 py-3 rounded-lg font-semibold transition">
+          <button type="button" onclick="closeModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition shadow-md">
             Hủy
           </button>
         </div>
@@ -223,6 +237,22 @@
   </div>
 
   <script>
+    // 🔥 FORCE CLEAR CACHE ON NEW LOGIN
+    (function checkCacheBust() {
+      const lastPageLoad = sessionStorage.getItem('candidate_page_loaded');
+      const loginTime = localStorage.getItem('login_timestamp');
+      
+      if (loginTime && (!lastPageLoad || parseInt(lastPageLoad) < parseInt(loginTime))) {
+        console.log('🔄 New login detected, clearing page cache...');
+        sessionStorage.setItem('candidate_page_loaded', Date.now().toString());
+        // Force reload without cache
+        if (!window.location.search.includes('nocache')) {
+          window.location.href = window.location.pathname + '?nocache=' + Date.now();
+          return;
+        }
+      }
+    })();
+
     const API_BASE_URL = 'http://localhost:5000/api';
     let allCandidates = [];
     let filteredCandidates = [];
@@ -230,6 +260,12 @@
     const itemsPerPage = 10;
 
     // Get auth headers
+    // Add timestamp to URL to prevent caching
+    function addCacheBuster(url) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}_t=${new Date().getTime()}`;
+    }
+
     function getAuthHeaders() {
       const token = localStorage.getItem('token');
       console.log('📤 Getting auth headers, token exists:', !!token);
@@ -243,12 +279,16 @@
       
       const headers = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       };
       
-      console.log('✅ Auth headers prepared:', { 
+      console.log('✅ Auth headers prepared with cache-busting:', { 
         hasContentType: !!headers['Content-Type'],
         hasAuthorization: !!headers['Authorization'],
+        hasCacheControl: !!headers['Cache-Control'],
         authPrefix: headers['Authorization'].substring(0, 20) + '...'
       });
       
@@ -297,15 +337,15 @@
           
           // Show warning banner
           const warningBanner = document.createElement('div');
-          warningBanner.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-4 rounded-lg shadow-2xl border-2 border-red-400';
+          warningBanner.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-4 rounded-lg shadow-2xl border-2 border-red-500';
           warningBanner.innerHTML = `
             <div class="flex items-center gap-4">
               <span class="text-3xl">⚠️</span>
               <div>
-                <p class="font-bold text-lg">CẢNH BÁO: Token cũ không có Company ID!</p>
-                <p class="text-sm mt-1">Bạn đang thấy dữ liệu của TẤT CẢ công ty. Vui lòng đăng xuất và đăng nhập lại!</p>
+                <p class="font-bold text-lg text-white">CẢNH BÁO: Token cũ không có Company ID!</p>
+                <p class="text-sm mt-1 text-white">Bạn đang thấy dữ liệu của TẤT CẢ công ty. Vui lòng đăng xuất và đăng nhập lại!</p>
               </div>
-              <button onclick="logout()" class="ml-4 bg-white text-red-600 px-4 py-2 rounded font-bold hover:bg-gray-100">
+              <button onclick="logout()" class="ml-4 bg-white text-red-600 px-4 py-2 rounded font-bold hover:bg-gray-100 shadow-md">
                 Đăng xuất ngay
               </button>
             </div>
@@ -381,8 +421,11 @@
         const headers = getAuthHeaders();
         if (!headers) return; // Already redirected to login
         
-        const response = await fetch(`${API_BASE_URL}/candidates`, {
-          headers: headers
+        // Add timestamp to prevent caching
+        const timestamp = new Date().getTime();
+        const response = await fetch(`${API_BASE_URL}/candidates?_t=${timestamp}`, {
+          headers: headers,
+          cache: 'no-store' // Force no caching
         });
 
         if (response.status === 401 || response.status === 403) {
@@ -424,7 +467,7 @@
         filteredCandidates = [];
         document.getElementById('candidatesTableBody').innerHTML = `
           <tr>
-            <td colspan="10" class="px-6 py-8 text-center text-red-400">
+            <td colspan="10" class="px-6 py-8 text-center text-red-600 font-medium">
               Lỗi khi tải dữ liệu: ${error.message}
             </td>
           </tr>
@@ -443,7 +486,7 @@
       if (pageData.length === 0) {
         document.getElementById('candidatesTableBody').innerHTML = `
           <tr>
-            <td colspan="10" class="px-6 py-8 text-center text-gray-400">
+            <td colspan="10" class="px-6 py-8 text-center text-gray-500">
               Không có ứng viên nào
             </td>
           </tr>
@@ -452,40 +495,40 @@
       }
 
       const html = pageData.map(candidate => `
-        <tr class="hover:bg-white/5 transition">
-          <td class="px-6 py-4">${candidate.candidate_id}</td>
-          <td class="px-6 py-4 font-semibold">${candidate.first_name} ${candidate.last_name}</td>
-          <td class="px-6 py-4 text-indigo-300">${candidate.email}</td>
-          <td class="px-6 py-4">${candidate.phone || '-'}</td>
-          <td class="px-6 py-4">${candidate.position || candidate.current_position || '-'}</td>
-          <td class="px-6 py-4">${candidate.company_name || '-'}</td>
-          <td class="px-6 py-4">${candidate.experience_years || candidate.years_of_experience || 0} năm</td>
-          <td class="px-6 py-4">${getStatusText(candidate.status)}</td>
-          <td class="px-6 py-4 text-sm text-gray-300">${formatDate(candidate.created_at)}</td>
+        <tr class="hover:bg-gray-50 transition">
+          <td class="px-6 py-4 text-gray-900">${candidate.candidate_id}</td>
+          <td class="px-6 py-4 font-semibold text-gray-900">${candidate.first_name} ${candidate.last_name}</td>
+          <td class="px-6 py-4 text-indigo-600">${candidate.email}</td>
+          <td class="px-6 py-4 text-gray-700">${candidate.phone || '-'}</td>
+          <td class="px-6 py-4 text-gray-700">${candidate.position || candidate.current_position || '-'}</td>
+          <td class="px-6 py-4 text-gray-700">${candidate.company_name || '-'}</td>
+          <td class="px-6 py-4 text-gray-700">${candidate.experience_years || candidate.years_of_experience || 0} năm</td>
+          <td class="px-6 py-4 text-gray-700">${getStatusText(candidate.status)}</td>
+          <td class="px-6 py-4 text-sm text-gray-600">${formatDate(candidate.created_at)}</td>
           <td class="px-6 py-4">
             <div class="flex justify-center gap-2 flex-wrap">
               <button onclick="viewCV(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded transition text-sm" title="Xem CV trong tab mới">
+                class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition text-sm shadow-sm" title="Xem CV trong tab mới">
                 Xem
               </button>
               <button onclick="downloadCV(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded transition text-sm" title="Tải CV về máy">
+                class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition text-sm shadow-sm" title="Tải CV về máy">
                 Tải
               </button>
               <button onclick="updateStatusPass(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-green-600 hover:bg-green-500 rounded transition text-sm" title="Pass">
+                class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition text-sm shadow-sm" title="Pass">
                 Pass
               </button>
               <button onclick="updateStatusFail(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-red-600 hover:bg-red-500 rounded transition text-sm" title="Fail">
+                class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded transition text-sm shadow-sm" title="Fail">
                 Fail
               </button>
               <button onclick="editCandidate(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-yellow-600 hover:bg-yellow-500 rounded transition text-sm" title="Sửa">
+                class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded transition text-sm shadow-sm" title="Sửa">
                 Sửa
               </button>
               <button onclick="deleteCandidate(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded transition text-sm" title="Xóa">
+                class="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded transition text-sm shadow-sm" title="Xóa">
                 Xóa
               </button>
             </div>
@@ -510,21 +553,21 @@
       let buttonsHTML = '';
       
       if (currentPage > 1) {
-        buttonsHTML += `<button onclick="goToPage(${currentPage - 1})" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded transition">← Trước</button>`;
+        buttonsHTML += `<button onclick="goToPage(${currentPage - 1})" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 rounded transition shadow-sm">← Trước</button>`;
       }
 
       for (let i = 1; i <= totalPages; i++) {
         if (i === currentPage) {
-          buttonsHTML += `<button class="px-3 py-1 bg-indigo-600 rounded font-semibold">${i}</button>`;
+          buttonsHTML += `<button class="px-3 py-1 bg-indigo-600 text-white rounded font-semibold shadow-sm">${i}</button>`;
         } else if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
-          buttonsHTML += `<button onclick="goToPage(${i})" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded transition">${i}</button>`;
+          buttonsHTML += `<button onclick="goToPage(${i})" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 rounded transition shadow-sm">${i}</button>`;
         } else if (i === currentPage - 2 || i === currentPage + 2) {
-          buttonsHTML += `<span class="px-2">...</span>`;
+          buttonsHTML += `<span class="px-2 text-gray-600">...</span>`;
         }
       }
 
       if (currentPage < totalPages) {
-        buttonsHTML += `<button onclick="goToPage(${currentPage + 1})" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded transition">Sau →</button>`;
+        buttonsHTML += `<button onclick="goToPage(${currentPage + 1})" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 rounded transition shadow-sm">Sau →</button>`;
       }
 
       document.getElementById('paginationButtons').innerHTML = buttonsHTML;
@@ -937,6 +980,32 @@
         alert('❌ Lỗi: ' + error.message);
       }
     });
+
+    // Clear any cached data on page load
+    window.addEventListener('pageshow', function(event) {
+      // If page is loaded from cache (back/forward button), force reload
+      if (event.persisted) {
+        console.log('🔄 Page loaded from cache, forcing reload...');
+        window.location.reload();
+      }
+    });
+
+    // Check if this is a fresh login (has timestamp in localStorage)
+    const loginTimestamp = localStorage.getItem('login_timestamp');
+    if (loginTimestamp) {
+      const timeSinceLogin = Date.now() - parseInt(loginTimestamp);
+      // If logged in less than 5 seconds ago, this is likely a fresh login
+      if (timeSinceLogin < 5000) {
+        console.log('🎯 Fresh login detected, ensuring no cache...');
+        // Force reload to ensure fresh data
+        if (!sessionStorage.getItem('reloaded_after_login')) {
+          sessionStorage.setItem('reloaded_after_login', 'true');
+          window.location.reload();
+        } else {
+          sessionStorage.removeItem('reloaded_after_login');
+        }
+      }
+    }
 
     // Initialize
     if (checkAuth()) {

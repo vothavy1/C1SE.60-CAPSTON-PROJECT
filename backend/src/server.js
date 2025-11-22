@@ -32,6 +32,7 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       users: '/api/users',
+      admin: '/api/admin',
       questions: '/api/questions',
       tests: '/api/tests',
       candidates: '/api/candidates',

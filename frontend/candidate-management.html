@@ -6,21 +6,35 @@
     <title>Quản Lý Ứng Viên - CS60</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="config.js"></script>
+    <style>
+        /* Professional Light Mode Theme */
+        body {
+            background-color: #f3f4f6;
+        }
+        
+        .card-shadow {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .card-shadow-lg {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-100">
     <!-- Header -->
-    <header class="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-6 shadow-lg">
-        <div class="container mx-auto px-4">
+    <header class="bg-white shadow-md sticky top-0 z-50 border-b border-gray-200">
+        <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-3xl font-bold">Quản Lý Ứng Viên</h1>
-                    <p class="text-sm opacity-90 mt-1">Xem và cập nhật trạng thái ứng viên</p>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900">📋 Quản Lý Ứng Viên</h1>
+                    <p class="text-sm text-gray-600 mt-1">Xem và cập nhật trạng thái ứng viên</p>
                 </div>
-                <div class="flex gap-3">
-                    <a href="recruiter.html" class="px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition">
+                <div class="flex gap-3 items-center">
+                    <a href="recruiter.html" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition border border-gray-300 shadow-sm">
                         ← Quay lại
                     </a>
-                    <button onclick="logout()" class="px-4 py-2 bg-red-500 rounded-lg hover:bg-red-600 transition">
+                    <button onclick="logout()" class="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg hover:opacity-90 transition shadow-md">
                         Đăng xuất
                     </button>
                 </div>
@@ -31,32 +45,32 @@
     <!-- Main Content -->
     <div class="container mx-auto px-4 py-8">
         <!-- Statistics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-gray-600 text-sm font-medium">Tổng ứng viên</h3>
-                <p id="totalCount" class="text-3xl font-bold text-purple-600 mt-2">0</p>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow hover:shadow-lg transition">
+                <h3 class="text-gray-600 text-sm font-semibold uppercase tracking-wide">Tổng ứng viên</h3>
+                <p id="totalCount" class="text-4xl font-bold text-purple-600 mt-3">0</p>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-gray-600 text-sm font-medium">Chờ xét duyệt</h3>
-                <p id="newCount" class="text-3xl font-bold text-blue-600 mt-2">0</p>
+            <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow hover:shadow-lg transition">
+                <h3 class="text-gray-600 text-sm font-semibold uppercase tracking-wide">Chờ xét duyệt</h3>
+                <p id="newCount" class="text-4xl font-bold text-blue-600 mt-3">0</p>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-gray-600 text-sm font-medium">Đã Pass</h3>
-                <p id="hiredCount" class="text-3xl font-bold text-green-600 mt-2">0</p>
+            <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow hover:shadow-lg transition">
+                <h3 class="text-gray-600 text-sm font-semibold uppercase tracking-wide">Đã Pass</h3>
+                <p id="hiredCount" class="text-4xl font-bold text-green-600 mt-3">0</p>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-gray-600 text-sm font-medium">Đã Fail</h3>
-                <p id="rejectedCount" class="text-3xl font-bold text-red-600 mt-2">0</p>
+            <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow hover:shadow-lg transition">
+                <h3 class="text-gray-600 text-sm font-semibold uppercase tracking-wide">Đã Fail</h3>
+                <p id="rejectedCount" class="text-4xl font-bold text-red-600 mt-3">0</p>
             </div>
         </div>
 
         <!-- Filter Bar -->
-        <div class="bg-white rounded-lg shadow p-4 mb-6 flex gap-4 items-center">
-            <div class="flex-1">
+        <div class="bg-white rounded-xl p-5 mb-6 flex flex-wrap gap-4 items-center border border-gray-200 card-shadow">
+            <div class="flex-1 min-w-[300px]">
                 <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên, email, số điện thoại..."
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
             </div>
-            <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+            <select id="statusFilter" class="px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                 <option value="">Tất cả trạng thái</option>
                 <option value="NEW">Mới</option>
                 <option value="SCREENING">Sàng lọc</option>
@@ -66,24 +80,24 @@
                 <option value="HIRED">Đã tuyển</option>
                 <option value="REJECTED">Từ chối</option>
             </select>
-            <button onclick="loadCandidates()" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+            <button onclick="loadCandidates()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition shadow-md font-medium">
                 🔄 Làm mới
             </button>
         </div>
 
         <!-- Candidates Table -->
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white rounded-xl overflow-hidden border border-gray-200 card-shadow">
             <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+                <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Họ và Tên</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Điện thoại</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Công ty</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày nộp</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Thao tác</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ID</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Họ và Tên</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Điện thoại</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Công ty</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Trạng thái</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Ngày nộp</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody id="candidatesTable" class="bg-white divide-y divide-gray-200">
@@ -94,11 +108,11 @@
 
         <!-- Loading Spinner -->
         <div id="loading" class="hidden text-center py-12">
-            <svg class="animate-spin h-12 w-12 mx-auto text-purple-600" fill="none" viewBox="0 0 24 24">
+            <svg class="animate-spin h-12 w-12 mx-auto text-indigo-600" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <p class="text-gray-600 mt-4">Đang tải dữ liệu...</p>
+            <p class="text-gray-600 mt-4 font-medium">Đang tải dữ liệu...</p>
         </div>
     </div>
 
@@ -193,7 +207,7 @@
             } catch (error) {
                 console.error('Load candidates error:', error);
                 alert('Lỗi: ' + error.message);
-                table.innerHTML = `<tr><td colspan="8" class="px-6 py-4 text-center text-red-600">${error.message}</td></tr>`;
+                table.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-red-600 font-medium">${error.message}</td></tr>`;
             } finally {
                 loading.classList.add('hidden');
             }
@@ -212,33 +226,33 @@
             const table = document.getElementById('candidatesTable');
 
             if (allCandidates.length === 0) {
-                table.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-gray-500">Không có ứng viên nào</td></tr>';
+                table.innerHTML = '<tr><td colspan="8" class="px-6 py-12 text-center text-gray-500 font-medium">Không có ứng viên nào</td></tr>';
                 return;
             }
 
             table.innerHTML = allCandidates.map(candidate => `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 text-sm">${candidate.candidate_id}</td>
-                    <td class="px-6 py-4 font-medium">${candidate.first_name} ${candidate.last_name}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">${candidate.email}</td>
-                    <td class="px-6 py-4 text-sm">${candidate.phone || '-'}</td>
-                    <td class="px-6 py-4 text-sm">${candidate.company_name || '-'}</td>
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4 text-sm text-gray-900 font-medium">${candidate.candidate_id}</td>
+                    <td class="px-6 py-4 font-semibold text-gray-900">${candidate.first_name} ${candidate.last_name}</td>
+                    <td class="px-6 py-4 text-sm text-indigo-600">${candidate.email}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${candidate.phone || '-'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${candidate.company_name || '-'}</td>
                     <td class="px-6 py-4">${getStatusBadge(candidate.status)}</td>
                     <td class="px-6 py-4 text-sm text-gray-600">${formatDate(candidate.created_at)}</td>
                     <td class="px-6 py-4">
                         <div class="flex justify-center gap-2">
                             <button onclick="viewCV(${candidate.candidate_id})" 
-                                class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                                class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm shadow-sm font-medium"
                                 title="Xem CV">
                                 📄 CV
                             </button>
                             <button onclick="updateStatus(${candidate.candidate_id}, 'HIRED')" 
-                                class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                                class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm shadow-sm font-medium"
                                 title="Pass">
                                 ✓ Pass
                             </button>
                             <button onclick="updateStatus(${candidate.candidate_id}, 'REJECTED')" 
-                                class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                                class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition text-sm shadow-sm font-medium"
                                 title="Fail">
                                 ✗ Fail
                             </button>

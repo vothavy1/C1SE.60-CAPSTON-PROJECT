@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - CS60</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Professional Light Mode Theme */
+        body {
+            background-color: #f3f4f6;
+        }
+        
+        .card-shadow {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .card-shadow-lg {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar {
+            background-color: #1e293b;
+        }
+
+        .sidebar-link {
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-link.active {
+            background-color: rgba(99, 102, 241, 0.2);
+            border-left: 4px solid #6366f1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Layout Container -->
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar w-64 flex-shrink-0 overflow-y-auto">
+            <div class="p-6">
+                <!-- Logo -->
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">CS</span>
+                    </div>
+                    <div>
+                        <h2 class="text-white font-bold text-lg">CS60 Admin</h2>
+                        <p class="text-gray-400 text-xs">Control Panel</p>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="space-y-2">
+                    <a href="#" onclick="showDashboard(event)" class="sidebar-link active flex items-center gap-3 px-4 py-3 text-white rounded-lg" id="navDashboard">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span class="font-medium">Dashboard</span>
+                    </a>
+
+                    <a href="#" onclick="showRecruiters(event)" class="sidebar-link flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white rounded-lg" id="navRecruiters">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="font-medium">Recruiters</span>
+                    </a>
+
+                    <a href="#" onclick="showCandidates(event)" class="sidebar-link flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white rounded-lg" id="navCandidates">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <span class="font-medium">Candidates</span>
+                    </a>
+
+                    <div class="border-t border-gray-700 my-4"></div>
+
+                    <button onclick="logout()" class="sidebar-link flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white rounded-lg w-full">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        <span class="font-medium">Logout</span>
+                    </button>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-10 card-shadow">
+                <div class="px-8 py-4 flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">📊 Tổng quan hệ thống</h1>
+                        <p class="text-sm text-gray-600 mt-1">Quản lý và giám sát toàn bộ hệ thống</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <!-- Notification Bell -->
+                        <div class="relative">
+                            <button onclick="toggleNotifications()" class="relative p-2 hover:bg-gray-100 rounded-lg transition" title="Thông báo">
+                                <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                </svg>
+                                <!-- Badge for unread count -->
+                                <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                            </button>
+                        </div>
+                        
+                        <div class="text-right">
+                            <p class="text-sm font-medium text-gray-900" id="adminName">Admin User</p>
+                            <p class="text-xs text-gray-500">Administrator</p>
+                        </div>
+                        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                            <span class="text-white font-bold text-sm" id="adminAvatar">A</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Notification Panel (Dropdown) -->
+            <div id="notificationPanel" class="hidden fixed top-20 right-8 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[600px] overflow-hidden">
+                <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-purple-50">
+                    <h3 class="text-lg font-bold text-gray-900">🔔 Thông báo</h3>
+                    <div class="flex gap-2">
+                        <button onclick="markAllNotificationsRead()" class="text-xs px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition" title="Đánh dấu tất cả đã đọc">
+                            Đọc tất cả
+                        </button>
+                        <button onclick="toggleNotifications()" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="notificationList" class="overflow-y-auto max-h-[500px] divide-y divide-gray-100">
+                    <!-- Notifications will be loaded here -->
+                    <div class="p-8 text-center text-gray-500">
+                        <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto mb-3" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p>Đang tải thông báo...</p>
+                    </div>
+                </div>
+                
+                <div class="p-3 border-t border-gray-200 bg-gray-50 flex justify-between text-xs">
+                    <button onclick="deleteReadNotifications()" class="text-red-600 hover:text-red-700 font-medium">
+                        Xóa đã đọc
+                    </button>
+                    <span class="text-gray-500">
+                        Tổng: <span id="totalNotificationsCount">0</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div id="dashboardContent" class="p-8 space-y-8">
+                
+                <!-- Statistics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    
+                    <!-- Total Companies Card -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow hover:shadow-lg transition">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Tổng số công ty</p>
+                                <p class="text-4xl font-bold text-blue-600 mt-3" id="companiesCount">0</p>
+                                <p class="text-xs text-gray-500 mt-2">Companies in system</p>
+                            </div>
+                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Candidates Card -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow hover:shadow-lg transition">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Tổng ứng viên</p>
+                                <p class="text-4xl font-bold text-green-600 mt-3" id="candidatesCount">0</p>
+                                <p class="text-xs text-gray-500 mt-2">Registered candidates</p>
+                            </div>
+                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Tests Card -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow hover:shadow-lg transition">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Tổng bài test</p>
+                                <p class="text-4xl font-bold text-purple-600 mt-3" id="testsCount">0</p>
+                                <p class="text-xs text-gray-500 mt-2">Available assessments</p>
+                            </div>
+                            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total CVs Card -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow hover:shadow-lg transition">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Tổng CV nộp</p>
+                                <p class="text-4xl font-bold text-orange-600 mt-3" id="cvsCount">0</p>
+                                <p class="text-xs text-gray-500 mt-2">Submitted CVs</p>
+                            </div>
+                            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Candidates Management Content -->
+            <div id="candidatesContent" class="p-8 space-y-8 hidden">
+                
+                <!-- Candidates Table Section -->
+                <div class="bg-white rounded-xl border border-gray-200 card-shadow">
+                    <!-- Table Header -->
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-900">Quản lý Candidates</h2>
+                                <p class="text-sm text-gray-600 mt-1">Danh sách tất cả ứng viên</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="refreshCandidates()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium text-sm">
+                                    Làm mới
+                                </button>
+                                <button onclick="openCreateCandidateModal()" class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg transition shadow-md font-medium text-sm">
+                                    Tạo Candidate
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Search -->
+                        <div class="flex gap-3">
+                            <div class="flex-1">
+                                <input type="text" id="searchCandidate" placeholder="Tìm kiếm theo tên, email..." 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                                    oninput="filterCandidates()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ID</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Username</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Company</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Created</th>
+                                    <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="candidatesTableBody" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="7" class="px-6 py-12 text-center text-gray-500 font-medium">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <svg class="animate-spin h-8 w-8 text-green-600 mb-3" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Đang tải dữ liệu...
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Table Footer -->
+                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                        <p class="text-sm text-gray-600">
+                            Tổng số: <span id="totalCandidates" class="font-semibold text-gray-900">0</span> candidates
+                        </p>
+                        <div class="text-xs text-gray-500">
+                            Cập nhật lần cuối: <span id="lastUpdateCandidates">--:--</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Recruiters Management Content -->
+            <div id="recruitersContent" class="p-8 space-y-8 hidden">
+                
+                <!-- Recruiters Table Section -->
+                <div class="bg-white rounded-xl border border-gray-200 card-shadow">
+                    <!-- Table Header -->
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-900">Quản lý Recruiters</h2>
+                                <p class="text-sm text-gray-600 mt-1">Danh sách tất cả nhà tuyển dụng</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="refreshRecruiters()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium text-sm">
+                                    Làm mới
+                                </button>
+                                <button onclick="openCreateRecruiterModal()" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition shadow-md font-medium text-sm">
+                                    Tạo Recruiter
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Search -->
+                        <div class="flex gap-3">
+                            <div class="flex-1">
+                                <input type="text" id="searchRecruiter" placeholder="Tìm kiếm theo tên, email..." 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    oninput="filterRecruiters()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ID</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Username</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Company</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Created</th>
+                                    <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recruitersTableBody" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="7" class="px-6 py-12 text-center text-gray-500 font-medium">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <svg class="animate-spin h-8 w-8 text-blue-600 mb-3" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Đang tải dữ liệu...
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Table Footer -->
+                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                        <p class="text-sm text-gray-600">
+                            Tổng số: <span id="totalRecruiters" class="font-semibold text-gray-900">0</span> recruiters
+                        </p>
+                        <div class="text-xs text-gray-500">
+                            Cập nhật lần cuối: <span id="lastUpdateRecruiters">--:--</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- Create/Edit Recruiter Modal -->
+    <div id="recruiterModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full m-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-gray-900" id="recruiterModalTitle">Tạo Recruiter mới</h3>
+                    <button onclick="closeRecruiterModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <form id="recruiterForm" onsubmit="submitRecruiter(event)" class="p-6 space-y-4">
+                <input type="hidden" id="recruiterId">
+                <input type="hidden" id="recruiterAction" value="create">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Username *</label>
+                    <input type="text" id="recruiterUsername" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
+                    <input type="email" id="recruiterEmail" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div id="passwordField">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Password *</label>
+                    <input type="password" id="recruiterPassword" minlength="6" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Tối thiểu 6 ký tự</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Company</label>
+                    <select id="recruiterCompany" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">Chọn công ty...</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Status *</label>
+                    <select id="recruiterStatus" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </div>
+                
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeRecruiterModal()" 
+                        class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium">
+                        Hủy
+                    </button>
+                    <button type="submit" 
+                        class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-medium shadow-md">
+                        <span id="recruiterSubmitText">Tạo</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Recruiter Modal -->
+    <div id="viewRecruiterModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full m-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-gray-900">Chi tiết Recruiter</h3>
+                    <button onclick="closeViewRecruiterModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">User ID</label>
+                        <p id="viewRecruiterId" class="text-gray-900 font-medium mt-1">-</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">Username</label>
+                        <p id="viewRecruiterUsername" class="text-gray-900 font-medium mt-1">-</p>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-600">Email</label>
+                    <p id="viewRecruiterEmail" class="text-blue-600 font-medium mt-1">-</p>
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-600">Company</label>
+                    <p id="viewRecruiterCompany" class="text-gray-900 font-medium mt-1">-</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">Status</label>
+                        <div id="viewRecruiterStatus" class="mt-2">-</div>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">Role</label>
+                        <div class="mt-2">
+                            <span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">RECRUITER</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">Created</label>
+                        <p id="viewRecruiterCreated" class="text-gray-700 text-sm mt-1">-</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">Updated</label>
+                        <p id="viewRecruiterUpdated" class="text-gray-700 text-sm mt-1">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Candidate Modal -->
+    <div id="candidateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full m-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-gray-900" id="candidateModalTitle">Tạo Candidate mới</h3>
+                    <button onclick="closeCandidateModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <form id="candidateForm" onsubmit="submitCandidate(event)" class="p-6 space-y-4">
+                <input type="hidden" id="candidateId">
+                <input type="hidden" id="candidateAction" value="create">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Username *</label>
+                    <input type="text" id="candidateUsername" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
+                    <input type="email" id="candidateEmail" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+                
+                <div id="candidatePasswordField">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Password *</label>
+                    <input type="password" id="candidatePassword" minlength="6" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    <p class="text-xs text-gray-500 mt-1">Tối thiểu 6 ký tự</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Company</label>
+                    <select id="candidateCompany" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <option value="">Chọn công ty...</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Status *</label>
+                    <select id="candidateStatus" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </div>
+                
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeCandidateModal()" 
+                        class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium">
+                        Hủy
+                    </button>
+                    <button type="submit" 
+                        class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg font-medium shadow-md">
+                        <span id="candidateSubmitText">Tạo</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Candidate Modal -->
+    <div id="viewCandidateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full m-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-gray-900">Chi tiết Candidate</h3>
+                    <button onclick="closeViewCandidateModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">User ID</label>
+                        <p id="viewCandidateId" class="text-gray-900 font-medium mt-1">-</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">Username</label>
+                        <p id="viewCandidateUsername" class="text-gray-900 font-medium mt-1">-</p>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-600">Email</label>
+                    <p id="viewCandidateEmail" class="text-blue-600 font-medium mt-1">-</p>
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-600">Company</label>
+                    <p id="viewCandidateCompany" class="text-gray-900 font-medium mt-1">-</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">Status</label>
+                        <div id="viewCandidateStatus" class="mt-2">-</div>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">Role</label>
+                        <div class="mt-2">
+                            <span class="px-2.5 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">CANDIDATE</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">Created</label>
+                        <p id="viewCandidateCreated" class="text-gray-700 text-sm mt-1">-</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">Updated</label>
+                        <p id="viewCandidateUpdated" class="text-gray-700 text-sm mt-1">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            
+            console.log('🔐 Auth Check:', {
+                hasToken: !!token,
+                tokenLength: token ? token.length : 0
+            });
+            
+            if (!token) {
+                console.error('❌ No token found');
+                alert('Vui lòng đăng nhập với tài khoản ADMIN để truy cập trang này');
+                window.location.href = 'admin-login.html';
+                return false;
+            }
+
+            // Parse token to check role
+            try {
+                const tokenPayload = parseJwt(token);
+                console.log('🔍 Token Payload:', tokenPayload);
+                
+                if (!tokenPayload) {
+                    console.error('❌ Cannot parse token');
+                    alert('Token không hợp lệ. Vui lòng đăng nhập lại với tài khoản ADMIN.');
+                    localStorage.clear();
+                    window.location.href = 'admin-login.html';
+                    return false;
+                }
+
+                if (!tokenPayload.role) {
+                    console.error('❌ Token missing role');
+                    alert('Token không chứa thông tin quyền. Vui lòng đăng nhập lại với tài khoản ADMIN.');
+                    localStorage.clear();
+                    window.location.href = 'admin-login.html';
+                    return false;
+                }
+                
+                if (tokenPayload.role.toUpperCase() !== 'ADMIN') {
+                    console.error('❌ TRUY CẬP BỊ TỪ CHỐI - Chỉ ADMIN mới được phép');
+                    console.error('Role hiện tại:', tokenPayload.role);
+                    const roleUpper = tokenPayload.role.toUpperCase();
+                    if (roleUpper === 'RECRUITER') {
+                        alert('⛔ TRUY CẬP BỊ TỪ CHỐI\n\nTrang này chỉ dành cho ADMIN.\nBạn không có quyền truy cập.\n\nRole của bạn: RECRUITER');
+                        window.location.href = 'recruiter.html';
+                    } else if (roleUpper === 'CANDIDATE') {
+                        alert('⛔ TRUY CẬP BỊ TỪ CHỐI\n\nTrang này chỉ dành cho ADMIN.\nBạn không có quyền truy cập.\n\nRole của bạn: CANDIDATE');
+                        window.location.href = 'index.html';
+                    } else {
+                        alert('⛔ TRUY CẬP BỊ TỪ CHỐI\n\nTrang này chỉ dành cho ADMIN.\nBạn không có quyền truy cập.\n\nRole của bạn: ' + tokenPayload.role);
+                        window.location.href = 'index.html';
+                    }
+                    return false;
+                }
+
+                // Display admin name
+                if (tokenPayload.username) {
+                    document.getElementById('adminName').textContent = tokenPayload.username;
+                    document.getElementById('adminAvatar').textContent = tokenPayload.username.charAt(0).toUpperCase();
+                }
+                
+                console.log('✅ Auth check passed, user is ADMIN');
+            } catch (e) {
+                console.error('❌ Error parsing token:', e);
+                alert('Lỗi khi xác thực token. Vui lòng đăng nhập lại với tài khoản ADMIN.');
+                localStorage.clear();
+                window.location.href = 'admin-login.html';
+                return false;
+            }
+
+            return true;
+        }
+
+        // Parse JWT token
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Get auth headers
+        function getAuthHeaders() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Vui lòng đăng nhập lại với tài khoản ADMIN');
+                window.location.href = 'admin-login.html';
+                return {};
+            }
+            return {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            };
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Bạn có chắc muốn đăng xuất?')) {
+                console.log('🚪 Logging out...');
+                
+                // Clear all storage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Clear cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                // Redirect to admin login
+                window.location.href = 'admin-login.html';
+            }
+        }
+
+        // Fetch dashboard statistics
+        async function fetchStats() {
+            try {
+                const headers = getAuthHeaders();
+                if (!headers || !headers.Authorization) return;
+
+                console.log('📊 Fetching dashboard stats...');
+                
+                const response = await fetch(`${API_BASE_URL}/admin/stats`, {
+                    headers: headers
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    alert('Phiên đăng nhập đã hết hạn hoặc bạn không có quyền truy cập');
+                    window.location.href = 'admin-login.html';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch statistics');
+                }
+
+                const data = await response.json();
+                console.log('✅ Stats data:', data);
+
+                if (data.success && data.data) {
+                    document.getElementById('companiesCount').textContent = data.data.companies || 0;
+                    document.getElementById('candidatesCount').textContent = data.data.candidates || 0;
+                    document.getElementById('testsCount').textContent = data.data.tests || 0;
+                    document.getElementById('cvsCount').textContent = data.data.cvs || 0;
+                }
+
+            } catch (error) {
+                console.error('❌ Error fetching stats:', error);
+                document.getElementById('companiesCount').textContent = '--';
+                document.getElementById('candidatesCount').textContent = '--';
+                document.getElementById('testsCount').textContent = '--';
+                document.getElementById('cvsCount').textContent = '--';
+            }
+        }
+
+        // Navigation functions
+        function showDashboard(e) {
+            if (e) e.preventDefault();
+            
+            // Hide all content sections
+            document.getElementById('dashboardContent').classList.remove('hidden');
+            document.getElementById('recruitersContent').classList.add('hidden');
+            document.getElementById('candidatesContent').classList.add('hidden');
+            
+            // Update navigation
+            document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+            document.getElementById('navDashboard').classList.add('active');
+            
+            fetchStats();
+        }
+
+        function showRecruiters(e) {
+            if (e) e.preventDefault();
+            
+            // Hide all content sections
+            document.getElementById('dashboardContent').classList.add('hidden');
+            document.getElementById('recruitersContent').classList.remove('hidden');
+            document.getElementById('candidatesContent').classList.add('hidden');
+            
+            // Update navigation
+            document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+            document.getElementById('navRecruiters').classList.add('active');
+            
+            fetchRecruiters();
+        }
+
+        // Recruiters Management
+        let allRecruiters = [];
+        let allCompanies = [];
+
+        async function fetchCompanies() {
+            try {
+                const headers = getAuthHeaders();
+                const timestamp = Date.now();
+                const response = await fetch(`${API_BASE_URL}/admin/companies?_t=${timestamp}`, { 
+                    headers,
+                    cache: 'no-store'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    allCompanies = data.data;
+                    // Populate company dropdown
+                    const select = document.getElementById('recruiterCompany');
+                    select.innerHTML = '<option value="">Chọn công ty...</option>';
+                    allCompanies.forEach(company => {
+                        select.innerHTML += `<option value="${company.company_id}">${company.companyName}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching companies:', error);
+            }
+        }
+
+        async function fetchRecruiters() {
+            try {
+                const headers = getAuthHeaders();
+                const timestamp = Date.now();
+                const response = await fetch(`${API_BASE_URL}/admin/users?_t=${timestamp}`, { 
+                    headers,
+                    cache: 'no-store'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Filter only recruiters
+                    allRecruiters = data.data.filter(user => user.role_name === 'RECRUITER');
+                    renderRecruitersTable();
+                    document.getElementById('totalRecruiters').textContent = allRecruiters.length;
+                    document.getElementById('lastUpdateRecruiters').textContent = new Date().toLocaleTimeString();
+                }
+            } catch (error) {
+                console.error('Error fetching recruiters:', error);
+                document.getElementById('recruitersTableBody').innerHTML = `
+                    <tr><td colspan="7" class="px-6 py-8 text-center text-red-600">
+                        ❌ Không thể tải danh sách recruiters
+                    </td></tr>
+                `;
+            }
+        }
+
+        function filterRecruiters() {
+            const searchTerm = document.getElementById('searchRecruiter').value.toLowerCase();
+            const filtered = allRecruiters.filter(r => 
+                r.username.toLowerCase().includes(searchTerm) ||
+                r.email.toLowerCase().includes(searchTerm) ||
+                (r.company_name && r.company_name.toLowerCase().includes(searchTerm))
+            );
+            renderRecruitersTable(filtered);
+        }
+
+        function renderRecruitersTable(recruiters = allRecruiters) {
+            const tbody = document.getElementById('recruitersTableBody');
+            
+            if (!recruiters || recruiters.length === 0) {
+                tbody.innerHTML = `
+                                <tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                        Không có recruiters nào
+                    </td></tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = recruiters.map(r => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">${r.user_id}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${r.username}</td>
+                    <td class="px-6 py-4 text-sm text-blue-600">${r.email}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${r.company_name || '-'}</td>
+                    <td class="px-6 py-4 text-sm">
+                        ${r.is_active ? 
+                            '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Active</span>' :
+                            '<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Inactive</span>'
+                        }
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${new Date(r.created_at).toLocaleDateString()}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center gap-2">
+                            <button onclick="viewRecruiter(${r.user_id})" 
+                                class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium">
+                                View
+                            </button>
+                            <button onclick="editRecruiter(${r.user_id})" 
+                                class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-medium">
+                                Edit
+                            </button>
+                            <button onclick="deleteRecruiter(${r.user_id}, '${r.username}')" 
+                                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium">
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function viewRecruiter(userId) {
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, { headers });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const r = data.data;
+                    document.getElementById('viewRecruiterId').textContent = r.user_id;
+                    document.getElementById('viewRecruiterUsername').textContent = r.username;
+                    document.getElementById('viewRecruiterEmail').textContent = r.email;
+                    document.getElementById('viewRecruiterCompany').textContent = r.company_name || 'N/A';
+                    document.getElementById('viewRecruiterStatus').innerHTML = r.is_active ?
+                        '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Active</span>' :
+                        '<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Inactive</span>';
+                    document.getElementById('viewRecruiterCreated').textContent = new Date(r.created_at).toLocaleString();
+                    document.getElementById('viewRecruiterUpdated').textContent = new Date(r.updated_at).toLocaleString();
+                    
+                    document.getElementById('viewRecruiterModal').classList.remove('hidden');
+                    document.getElementById('viewRecruiterModal').classList.add('flex');
+                }
+            } catch (error) {
+                alert('Không thể tải thông tin recruiter');
+            }
+        }
+
+        function closeViewRecruiterModal() {
+            document.getElementById('viewRecruiterModal').classList.add('hidden');
+            document.getElementById('viewRecruiterModal').classList.remove('flex');
+        }
+
+        function openCreateRecruiterModal() {
+            document.getElementById('recruiterModalTitle').textContent = 'Tạo Recruiter mới';
+            document.getElementById('recruiterAction').value = 'create';
+            document.getElementById('recruiterId').value = '';
+            document.getElementById('recruiterForm').reset();
+            document.getElementById('passwordField').classList.remove('hidden');
+            document.getElementById('recruiterPassword').required = true;
+            document.getElementById('recruiterSubmitText').textContent = 'Tạo';
+            
+            document.getElementById('recruiterModal').classList.remove('hidden');
+            document.getElementById('recruiterModal').classList.add('flex');
+        }
+
+        async function editRecruiter(userId) {
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, { headers });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const r = data.data;
+                    document.getElementById('recruiterModalTitle').textContent = 'Chỉnh sửa Recruiter';
+                    document.getElementById('recruiterAction').value = 'edit';
+                    document.getElementById('recruiterId').value = r.user_id;
+                    document.getElementById('recruiterUsername').value = r.username;
+                    document.getElementById('recruiterEmail').value = r.email;
+                    document.getElementById('recruiterCompany').value = r.company_id || '';
+                    document.getElementById('recruiterStatus').value = r.is_active;
+                    document.getElementById('passwordField').classList.add('hidden');
+                    document.getElementById('recruiterPassword').required = false;
+                    document.getElementById('recruiterSubmitText').textContent = 'Lưu';
+                    
+                    document.getElementById('recruiterModal').classList.remove('hidden');
+                    document.getElementById('recruiterModal').classList.add('flex');
+                }
+            } catch (error) {
+                alert('Không thể tải thông tin recruiter');
+            }
+        }
+
+        function closeRecruiterModal() {
+            document.getElementById('recruiterModal').classList.add('hidden');
+            document.getElementById('recruiterModal').classList.remove('flex');
+        }
+
+        async function submitRecruiter(e) {
+            e.preventDefault();
+            
+            const action = document.getElementById('recruiterAction').value;
+            const userId = document.getElementById('recruiterId').value;
+            const headers = getAuthHeaders();
+            
+            const payload = {
+                username: document.getElementById('recruiterUsername').value,
+                email: document.getElementById('recruiterEmail').value,
+                company_id: document.getElementById('recruiterCompany').value || null,
+                is_active: parseInt(document.getElementById('recruiterStatus').value)
+            };
+
+            if (action === 'create') {
+                payload.password = document.getElementById('recruiterPassword').value;
+                payload.role_id = 2; // RECRUITER role
+            }
+
+            try {
+                const url = action === 'create' ? 
+                    `${API_BASE_URL}/admin/users` : 
+                    `${API_BASE_URL}/admin/users/${userId}`;
+                const method = action === 'create' ? 'POST' : 'PUT';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers,
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(action === 'create' ? 'Tạo recruiter thành công!' : 'Cập nhật recruiter thành công!');
+                    closeRecruiterModal();
+                    fetchRecruiters();
+                } else {
+                    alert(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                alert('Không thể lưu recruiter');
+            }
+        }
+
+        async function deleteRecruiter(userId, username) {
+            if (!confirm(`Bạn có chắc muốn xóa recruiter "${username}"?\n\nHành động này không thể hoàn tác.`)) {
+                return;
+            }
+
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Xóa recruiter thành công!');
+                    fetchRecruiters();
+                } else {
+                    alert(data.message || 'Không thể xóa recruiter');
+                }
+            } catch (error) {
+                alert('Có lỗi xảy ra khi xóa recruiter');
+            }
+        }
+
+        function refreshRecruiters() {
+            document.getElementById('searchRecruiter').value = '';
+            fetchRecruiters();
+        }
+
+        // ==================== CANDIDATES MANAGEMENT ====================
+        let allCandidates = [];
+
+        function showCandidates(e) {
+            e.preventDefault();
+            console.log('Showing Candidates');
+            
+            // Hide all content sections
+            document.getElementById('dashboardContent').classList.add('hidden');
+            document.getElementById('recruitersContent').classList.add('hidden');
+            document.getElementById('candidatesContent').classList.remove('hidden');
+            
+            // Update navigation
+            document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+            document.getElementById('navCandidates').classList.add('active');
+            
+            // Fetch candidates data
+            fetchCandidates();
+        }
+
+        async function fetchCandidates() {
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/users`, { headers });
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Filter only candidates (role_name = 'CANDIDATE')
+                    allCandidates = data.data.filter(user => user.role_name === 'CANDIDATE');
+                    renderCandidatesTable();
+                    document.getElementById('totalCandidates').textContent = allCandidates.length;
+                    document.getElementById('lastUpdateCandidates').textContent = new Date().toLocaleTimeString();
+                }
+            } catch (error) {
+                console.error('Error fetching candidates:', error);
+                document.getElementById('candidatesTableBody').innerHTML = 
+                    '<tr><td colspan="7" class="px-6 py-8 text-center text-red-500">Không thể tải danh sách candidates</td></tr>';
+            }
+        }
+
+        function filterCandidates() {
+            const searchTerm = document.getElementById('searchCandidate').value.toLowerCase();
+            const filtered = allCandidates.filter(c => 
+                c.username.toLowerCase().includes(searchTerm) ||
+                c.email.toLowerCase().includes(searchTerm) ||
+                (c.company_name && c.company_name.toLowerCase().includes(searchTerm))
+            );
+            renderCandidatesTable(filtered);
+        }
+
+        function renderCandidatesTable(candidates = allCandidates) {
+            const tbody = document.getElementById('candidatesTableBody');
+            
+            if (!candidates || candidates.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                        Không có candidates nào
+                    </td></tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = candidates.map(c => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">${c.user_id}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${c.username}</td>
+                    <td class="px-6 py-4 text-sm text-blue-600">${c.email}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${c.company_name || '-'}</td>
+                    <td class="px-6 py-4 text-sm">
+                        ${c.is_active ? 
+                            '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Active</span>' :
+                            '<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Inactive</span>'
+                        }
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${new Date(c.created_at).toLocaleDateString()}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center gap-2">
+                            <button onclick="viewCandidate(${c.user_id})" 
+                                class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium">
+                                View
+                            </button>
+                            <button onclick="editCandidate(${c.user_id})" 
+                                class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-medium">
+                                Edit
+                            </button>
+                            <button onclick="deleteCandidate(${c.user_id}, '${c.username}')" 
+                                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium">
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function viewCandidate(userId) {
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, { headers });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const c = data.data;
+                    document.getElementById('viewCandidateId').textContent = c.user_id;
+                    document.getElementById('viewCandidateUsername').textContent = c.username;
+                    document.getElementById('viewCandidateEmail').textContent = c.email;
+                    document.getElementById('viewCandidateCompany').textContent = c.company_name || 'N/A';
+                    document.getElementById('viewCandidateStatus').innerHTML = c.is_active ?
+                        '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Active</span>' :
+                        '<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Inactive</span>';
+                    document.getElementById('viewCandidateCreated').textContent = new Date(c.created_at).toLocaleString();
+                    document.getElementById('viewCandidateUpdated').textContent = new Date(c.updated_at).toLocaleString();
+                    
+                    document.getElementById('viewCandidateModal').classList.remove('hidden');
+                    document.getElementById('viewCandidateModal').classList.add('flex');
+                }
+            } catch (error) {
+                alert('Không thể tải thông tin candidate');
+            }
+        }
+
+        function closeViewCandidateModal() {
+            document.getElementById('viewCandidateModal').classList.add('hidden');
+            document.getElementById('viewCandidateModal').classList.remove('flex');
+        }
+
+        function openCreateCandidateModal() {
+            document.getElementById('candidateModalTitle').textContent = 'Tạo Candidate mới';
+            document.getElementById('candidateAction').value = 'create';
+            document.getElementById('candidateId').value = '';
+            document.getElementById('candidateForm').reset();
+            document.getElementById('candidatePasswordField').classList.remove('hidden');
+            document.getElementById('candidatePassword').required = true;
+            document.getElementById('candidateSubmitText').textContent = 'Tạo';
+            
+            // Populate companies dropdown
+            const select = document.getElementById('candidateCompany');
+            select.innerHTML = '<option value="">Chọn công ty...</option>' +
+                allCompanies.map(c => `<option value="${c.company_id}">${c.companyName}</option>`).join('');
+            
+            document.getElementById('candidateModal').classList.remove('hidden');
+            document.getElementById('candidateModal').classList.add('flex');
+        }
+
+        async function editCandidate(userId) {
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, { headers });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const c = data.data;
+                    
+                    document.getElementById('candidateModalTitle').textContent = 'Chỉnh sửa Candidate';
+                    document.getElementById('candidateAction').value = 'edit';
+                    document.getElementById('candidateId').value = c.user_id;
+                    document.getElementById('candidateUsername').value = c.username;
+                    document.getElementById('candidateEmail').value = c.email;
+                    document.getElementById('candidateStatus').value = c.is_active ? '1' : '0';
+                    
+                    // Populate companies and set selected
+                    const select = document.getElementById('candidateCompany');
+                    select.innerHTML = '<option value="">Chọn công ty...</option>' +
+                        allCompanies.map(comp => `<option value="${comp.company_id}">${comp.companyName}</option>`).join('');
+                    if (c.company_id) {
+                        select.value = c.company_id;
+                    }
+                    
+                    // Hide password field for edit
+                    document.getElementById('candidatePasswordField').classList.add('hidden');
+                    document.getElementById('candidatePassword').required = false;
+                    document.getElementById('candidateSubmitText').textContent = 'Cập nhật';
+                    
+                    document.getElementById('candidateModal').classList.remove('hidden');
+                    document.getElementById('candidateModal').classList.add('flex');
+                }
+            } catch (error) {
+                alert('Không thể tải thông tin candidate');
+            }
+        }
+
+        function closeCandidateModal() {
+            document.getElementById('candidateModal').classList.add('hidden');
+            document.getElementById('candidateModal').classList.remove('flex');
+            document.getElementById('candidateForm').reset();
+        }
+
+        async function submitCandidate(e) {
+            e.preventDefault();
+            
+            const action = document.getElementById('candidateAction').value;
+            const userId = document.getElementById('candidateId').value;
+            const headers = getAuthHeaders();
+            
+            const payload = {
+                username: document.getElementById('candidateUsername').value,
+                email: document.getElementById('candidateEmail').value,
+                company_id: document.getElementById('candidateCompany').value || null,
+                is_active: parseInt(document.getElementById('candidateStatus').value)
+            };
+
+            if (action === 'create') {
+                payload.password = document.getElementById('candidatePassword').value;
+                payload.role_id = 3; // CANDIDATE role
+            }
+
+            try {
+                const url = action === 'create' ? 
+                    `${API_BASE_URL}/admin/users` : 
+                    `${API_BASE_URL}/admin/users/${userId}`;
+                const method = action === 'create' ? 'POST' : 'PUT';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers,
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(action === 'create' ? 'Tạo candidate thành công!' : 'Cập nhật candidate thành công!');
+                    closeCandidateModal();
+                    fetchCandidates();
+                } else {
+                    alert(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                alert('Không thể lưu candidate');
+            }
+        }
+
+        async function deleteCandidate(userId, username) {
+            if (!confirm(`Bạn có chắc muốn xóa candidate "${username}"?\n\nHành động này không thể hoàn tác.`)) {
+                return;
+            }
+
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Xóa candidate thành công!');
+                    fetchCandidates();
+                } else {
+                    alert(data.message || 'Không thể xóa candidate');
+                }
+            } catch (error) {
+                alert('Có lỗi xảy ra khi xóa candidate');
+            }
+        }
+
+        function refreshCandidates() {
+            document.getElementById('searchCandidate').value = '';
+            fetchCandidates();
+        }
+
+        // ==================== NOTIFICATION SYSTEM ====================
+        let notificationPanelVisible = false;
+        let allNotifications = [];
+
+        // Toggle notification panel
+        function toggleNotifications() {
+            const panel = document.getElementById('notificationPanel');
+            notificationPanelVisible = !notificationPanelVisible;
+            
+            if (notificationPanelVisible) {
+                panel.classList.remove('hidden');
+                fetchNotifications();
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+
+        // Close notification panel when clicking outside
+        document.addEventListener('click', function(event) {
+            const panel = document.getElementById('notificationPanel');
+            const bellButton = event.target.closest('[onclick="toggleNotifications()"]');
+            
+            if (notificationPanelVisible && !panel.contains(event.target) && !bellButton) {
+                toggleNotifications();
+            }
+        });
+
+        // Fetch notifications from API
+        async function fetchNotifications() {
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/notifications?limit=50`, { headers });
+                const data = await response.json();
+                
+                if (data.success) {
+                    allNotifications = data.data;
+                    renderNotifications(allNotifications);
+                    updateNotificationBadge(data.unreadCount);
+                }
+            } catch (error) {
+                console.error('Error fetching notifications:', error);
+                document.getElementById('notificationList').innerHTML = `
+                    <div class="p-8 text-center text-red-500">
+                        <p class="font-medium">Không thể tải thông báo</p>
+                        <button onclick="fetchNotifications()" class="mt-2 text-sm text-blue-600 hover:underline">Thử lại</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Render notifications
+        function renderNotifications(notifications) {
+            const container = document.getElementById('notificationList');
+            document.getElementById('totalNotificationsCount').textContent = notifications.length;
+            
+            if (!notifications || notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        <p class="font-medium">Không có thông báo</p>
+                        <p class="text-sm mt-1">Tất cả thông báo sẽ hiển thị ở đây</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = notifications.map(n => {
+                const priorityColors = {
+                    'CRITICAL': 'bg-red-50 border-l-4 border-red-500',
+                    'HIGH': 'bg-orange-50 border-l-4 border-orange-500',
+                    'MEDIUM': 'bg-yellow-50 border-l-4 border-yellow-500',
+                    'LOW': 'bg-blue-50 border-l-4 border-blue-500'
+                };
+                const priorityClass = priorityColors[n.priority] || priorityColors['MEDIUM'];
+                const unreadClass = !n.is_read ? 'bg-blue-50' : 'bg-white';
+                
+                return `
+                    <div class="p-4 hover:bg-gray-50 transition ${unreadClass} ${priorityClass}">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-semibold text-sm text-gray-900 flex-1 pr-2">${n.title}</h4>
+                            <span class="text-xs px-2 py-1 rounded-full font-medium ${
+                                n.priority === 'CRITICAL' ? 'bg-red-100 text-red-800' :
+                                n.priority === 'HIGH' ? 'bg-orange-100 text-orange-800' :
+                                n.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-blue-100 text-blue-800'
+                            }">${n.priority}</span>
+                        </div>
+                        <p class="text-sm text-gray-700 mb-2">${n.message}</p>
+                        ${n.related_data ? `
+                            <div class="text-xs text-gray-600 bg-gray-100 rounded px-2 py-1 mb-2">
+                                ${n.related_data.username ? `<p>👤 <strong>User:</strong> ${n.related_data.username} (${n.related_data.email})</p>` : ''}
+                                ${n.related_data.ip_address ? `<p>🌐 <strong>IP:</strong> ${n.related_data.ip_address}</p>` : ''}
+                            </div>
+                        ` : ''}
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-xs text-gray-500">
+                                ${new Date(n.created_at).toLocaleString('vi-VN')}
+                            </span>
+                            <div class="flex gap-2">
+                                ${!n.is_read ? `
+                                    <button onclick="markNotificationRead(${n.notification_id})" 
+                                        class="text-xs px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition">
+                                        Đánh dấu đã đọc
+                                    </button>
+                                ` : ''}
+                                ${n.related_user_id ? `
+                                    <button onclick="viewUserFromNotification(${n.related_user_id})" 
+                                        class="text-xs px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded transition">
+                                        Xem User
+                                    </button>
+                                ` : ''}
+                                <button onclick="deleteNotification(${n.notification_id})" 
+                                    class="text-xs px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded transition">
+                                    Xóa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update notification badge
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notificationBadge');
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Mark single notification as read
+        async function markNotificationRead(id) {
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/notifications/${id}/read`, {
+                    method: 'PUT',
+                    headers
+                });
+                
+                if (response.ok) {
+                    fetchNotifications(); // Refresh
+                }
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+
+        // Mark all notifications as read
+        async function markAllNotificationsRead() {
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/notifications/read-all`, {
+                    method: 'PUT',
+                    headers
+                });
+                
+                if (response.ok) {
+                    fetchNotifications(); // Refresh
+                    alert('Đã đánh dấu tất cả thông báo là đã đọc');
+                }
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+                alert('Không thể đánh dấu tất cả đã đọc');
+            }
+        }
+
+        // Delete single notification
+        async function deleteNotification(id) {
+            if (!confirm('Bạn có chắc muốn xóa thông báo này?')) {
+                return;
+            }
+
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/notifications/${id}`, {
+                    method: 'DELETE',
+                    headers
+                });
+                
+                if (response.ok) {
+                    fetchNotifications(); // Refresh
+                }
+            } catch (error) {
+                console.error('Error deleting notification:', error);
+                alert('Không thể xóa thông báo');
+            }
+        }
+
+        // Delete all read notifications
+        async function deleteReadNotifications() {
+            if (!confirm('Bạn có chắc muốn xóa tất cả thông báo đã đọc?')) {
+                return;
+            }
+
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/notifications/read`, {
+                    method: 'DELETE',
+                    headers
+                });
+                
+                if (response.ok) {
+                    fetchNotifications(); // Refresh
+                    alert('Đã xóa tất cả thông báo đã đọc');
+                }
+            } catch (error) {
+                console.error('Error deleting read notifications:', error);
+                alert('Không thể xóa thông báo');
+            }
+        }
+
+        // View user from notification
+        async function viewUserFromNotification(userId) {
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, { headers });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const user = data.data;
+                    const role = user.role_name;
+                    
+                    // Close notification panel
+                    toggleNotifications();
+                    
+                    // Navigate to appropriate section
+                    if (role === 'RECRUITER') {
+                        showRecruiters(new Event('click'));
+                        setTimeout(() => viewRecruiter(userId), 500);
+                    } else if (role === 'CANDIDATE') {
+                        showCandidates(new Event('click'));
+                        setTimeout(() => viewCandidate(userId), 500);
+                    }
+                }
+            } catch (error) {
+                console.error('Error viewing user:', error);
+                alert('Không thể xem thông tin user');
+            }
+        }
+
+        // Fetch unread count periodically
+        async function fetchUnreadCount() {
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/notifications/unread-count`, { headers });
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateNotificationBadge(data.unreadCount);
+                }
+            } catch (error) {
+                console.error('Error fetching unread count:', error);
+            }
+        }
+
+        // Poll for new notifications every 30 seconds
+        setInterval(fetchUnreadCount, 30000);
+
+        // Initialize page
+        async function init() {
+            console.log('🚀 Initializing Admin Dashboard...');
+            
+            // Check authentication first
+            if (!checkAuth()) {
+                return;
+            }
+
+            // Fetch initial data
+            await fetchStats();
+            await fetchCompanies();
+            
+            // Fetch notification count
+            await fetchUnreadCount();
+            
+            console.log('✅ Admin Dashboard initialized');
+        }
+
+        // Cache busting: Reload on fresh login
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                // Page loaded from back/forward cache
+                window.location.reload();
+            }
+        });
+
+        // Fresh login detection
+        const loginTimestamp = localStorage.getItem('login_timestamp');
+        if (loginTimestamp) {
+            const timeSinceLogin = Date.now() - parseInt(loginTimestamp);
+            if (timeSinceLogin < 5000) { // Within 5 seconds of login
+                if (!sessionStorage.getItem('admin_reloaded_after_login')) {
+                    sessionStorage.setItem('admin_reloaded_after_login', 'true');
+                    console.log('🔄 Fresh login detected, reloading to clear cache...');
+                    window.location.reload();
+                }
+            }
+        }
+
+        // Run on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>

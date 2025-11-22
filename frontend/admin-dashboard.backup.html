@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - CS60</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Professional Light Mode Theme */
+        body {
+            background-color: #f3f4f6;
+        }
+        
+        .card-shadow {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .card-shadow-lg {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar {
+            background-color: #1e293b;
+        }
+
+        .sidebar-link {
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-link.active {
+            background-color: rgba(99, 102, 241, 0.2);
+            border-left: 4px solid #6366f1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Layout Container -->
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar w-64 flex-shrink-0 overflow-y-auto">
+            <div class="p-6">
+                <!-- Logo -->
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">CS</span>
+                    </div>
+                    <div>
+                        <h2 class="text-white font-bold text-lg">CS60 Admin</h2>
+                        <p class="text-gray-400 text-xs">Control Panel</p>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="space-y-2">
+                    <a href="#" class="sidebar-link active flex items-center gap-3 px-4 py-3 text-white rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span class="font-medium">Dashboard</span>
+                    </a>
+
+                    <a href="#users" class="sidebar-link flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <span class="font-medium">User Management</span>
+                    </a>
+
+                    <a href="#logs" class="sidebar-link flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span class="font-medium">System Logs</span>
+                    </a>
+
+                    <div class="border-t border-gray-700 my-4"></div>
+
+                    <button onclick="logout()" class="sidebar-link flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white rounded-lg w-full">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        <span class="font-medium">Logout</span>
+                    </button>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-10 card-shadow">
+                <div class="px-8 py-4 flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">📊 Tổng quan hệ thống</h1>
+                        <p class="text-sm text-gray-600 mt-1">Quản lý và giám sát toàn bộ hệ thống</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <p class="text-sm font-medium text-gray-900" id="adminName">Admin User</p>
+                            <p class="text-xs text-gray-500">Administrator</p>
+                        </div>
+                        <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
+                            <span class="text-white font-bold text-sm" id="adminAvatar">A</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="p-8">
+                
+                <!-- Statistics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- Total Recruiters Card -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow hover:shadow-lg transition">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Recruiters</p>
+                                <p class="text-4xl font-bold text-blue-600 mt-3" id="recruitersCount">0</p>
+                                <p class="text-xs text-gray-500 mt-2">Active recruiters in system</p>
+                            </div>
+                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Candidates Card -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow hover:shadow-lg transition">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Candidates</p>
+                                <p class="text-4xl font-bold text-green-600 mt-3" id="candidatesCount">0</p>
+                                <p class="text-xs text-gray-500 mt-2">Registered candidates</p>
+                            </div>
+                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Tests Card -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow hover:shadow-lg transition">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Tests</p>
+                                <p class="text-4xl font-bold text-purple-600 mt-3" id="testsCount">0</p>
+                                <p class="text-xs text-gray-500 mt-2">Available assessments</p>
+                            </div>
+                            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Table Section -->
+                <div class="bg-white rounded-xl border border-gray-200 card-shadow">
+                    <!-- Table Header -->
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">👥 Danh sách người dùng mới</h2>
+                            <p class="text-sm text-gray-600 mt-1">Quản lý tất cả người dùng trong hệ thống</p>
+                        </div>
+                        <button onclick="refreshUsers()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition shadow-md font-medium text-sm">
+                            🔄 Làm mới
+                        </button>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ID</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Username</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Role</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Company</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="7" class="px-6 py-12 text-center text-gray-500 font-medium">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <svg class="animate-spin h-8 w-8 text-indigo-600 mb-3" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Đang tải dữ liệu...
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Table Footer -->
+                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                        <p class="text-sm text-gray-600">
+                            Tổng số: <span id="totalUsers" class="font-semibold text-gray-900">0</span> người dùng
+                        </p>
+                        <div class="text-xs text-gray-500">
+                            Cập nhật lần cuối: <span id="lastUpdate">--:--</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        let allUsers = [];
+
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            
+            console.log('🔐 Auth Check:', {
+                hasToken: !!token,
+                tokenLength: token ? token.length : 0
+            });
+            
+            if (!token) {
+                console.error('❌ No token found');
+                alert('Vui lòng đăng nhập để truy cập trang này');
+                window.location.href = 'login.html';
+                return false;
+            }
+
+            // Parse token to check role
+            try {
+                const tokenPayload = parseJwt(token);
+                console.log('🔍 Token Payload:', tokenPayload);
+                
+                if (tokenPayload.role && tokenPayload.role.toUpperCase() !== 'ADMIN') {
+                    console.error('❌ User is not ADMIN');
+                    alert('Bạn không có quyền truy cập trang này. Chỉ Admin mới được phép.');
+                    window.location.href = 'index.html';
+                    return false;
+                }
+
+                // Display admin name
+                if (tokenPayload.username) {
+                    document.getElementById('adminName').textContent = tokenPayload.username;
+                    document.getElementById('adminAvatar').textContent = tokenPayload.username.charAt(0).toUpperCase();
+                }
+            } catch (e) {
+                console.error('❌ Error parsing token:', e);
+            }
+
+            return true;
+        }
+
+        // Parse JWT token
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Get auth headers
+        function getAuthHeaders() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Vui lòng đăng nhập lại');
+                window.location.href = 'login.html';
+                return null;
+            }
+            
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+                // Clear all storage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Clear cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                // Redirect to login
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Fetch dashboard statistics
+        async function fetchStats() {
+            try {
+                const headers = getAuthHeaders();
+                if (!headers) return;
+
+                console.log('📊 Fetching dashboard stats...');
+                
+                const response = await fetch(`${API_BASE_URL}/admin/stats`, {
+                    headers: headers
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    alert('Phiên đăng nhập đã hết hạn hoặc bạn không có quyền truy cập');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch statistics');
+                }
+
+                const data = await response.json();
+                console.log('✅ Stats data:', data);
+
+                if (data.success && data.data) {
+                    document.getElementById('recruitersCount').textContent = data.data.recruiters || 0;
+                    document.getElementById('candidatesCount').textContent = data.data.candidates || 0;
+                    document.getElementById('testsCount').textContent = data.data.tests || 0;
+                }
+
+            } catch (error) {
+                console.error('❌ Error fetching stats:', error);
+                document.getElementById('recruitersCount').textContent = '--';
+                document.getElementById('candidatesCount').textContent = '--';
+                document.getElementById('testsCount').textContent = '--';
+            }
+        }
+
+        // Get role badge HTML
+        function getRoleBadge(roleName) {
+            if (!roleName) return '<span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">N/A</span>';
+            
+            const roleUpper = roleName.toUpperCase();
+            
+            const badges = {
+                'ADMIN': '<span class="px-2.5 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">ADMIN</span>',
+                'RECRUITER': '<span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">RECRUITER</span>',
+                'CANDIDATE': '<span class="px-2.5 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">CANDIDATE</span>'
+            };
+            
+            return badges[roleUpper] || `<span class="px-2.5 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">${roleName}</span>`;
+        }
+
+        // Get status badge HTML
+        function getStatusBadge(isActive) {
+            if (isActive === true || isActive === 1) {
+                return '<span class="px-2.5 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-green-600 rounded-full"></span>Active</span>';
+            } else {
+                return '<span class="px-2.5 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-gray-600 rounded-full"></span>Inactive</span>';
+            }
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Fetch all users
+        async function fetchUsers() {
+            try {
+                const headers = getAuthHeaders();
+                if (!headers) return;
+
+                console.log('👥 Fetching users...');
+                
+                const response = await fetch(`${API_BASE_URL}/admin/users`, {
+                    headers: headers
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    alert('Phiên đăng nhập đã hết hạn hoặc bạn không có quyền truy cập');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch users');
+                }
+
+                const data = await response.json();
+                console.log('✅ Users data:', data);
+
+                if (data.success && Array.isArray(data.data)) {
+                    allUsers = data.data;
+                    renderUsersTable();
+                    updateLastUpdate();
+                } else {
+                    throw new Error('Invalid data format');
+                }
+
+            } catch (error) {
+                console.error('❌ Error fetching users:', error);
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-8 text-center text-red-600 font-medium">
+                            ❌ Lỗi khi tải dữ liệu: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Render users table
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+
+            if (allUsers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center text-gray-500 font-medium">
+                            Không có người dùng nào
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('totalUsers').textContent = '0';
+                return;
+            }
+
+            tbody.innerHTML = allUsers.map(user => `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4 text-sm text-gray-900 font-medium">${user.user_id}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3">
+                                ${user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <span class="text-sm font-semibold text-gray-900">${user.username || '-'}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-indigo-600">${user.email || '-'}</td>
+                    <td class="px-6 py-4">${getRoleBadge(user.role_name)}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${user.company_name || '-'}</td>
+                    <td class="px-6 py-4">${getStatusBadge(user.is_active)}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex justify-center gap-2">
+                            <button onclick="viewUser(${user.user_id})" 
+                                class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm shadow-sm font-medium"
+                                title="Xem chi tiết">
+                                👁️ View
+                            </button>
+                            <button onclick="deleteUser(${user.user_id}, '${user.username}')" 
+                                class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition text-sm shadow-sm font-medium"
+                                title="Xóa người dùng">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.getElementById('totalUsers').textContent = allUsers.length;
+        }
+
+        // View user details
+        function viewUser(userId) {
+            const user = allUsers.find(u => u.user_id === userId);
+            if (user) {
+                alert(`User Details:\n\nID: ${user.user_id}\nUsername: ${user.username}\nEmail: ${user.email}\nRole: ${user.role_name}\nCompany: ${user.company_name || 'N/A'}\nStatus: ${user.is_active ? 'Active' : 'Inactive'}\nCreated: ${formatDate(user.created_at)}`);
+            }
+        }
+
+        // Delete user
+        async function deleteUser(userId, username) {
+            if (!confirm(`⚠️ Bạn có chắc chắn muốn xóa người dùng "${username}"?\n\nHành động này không thể hoàn tác!`)) {
+                return;
+            }
+
+            try {
+                const headers = getAuthHeaders();
+                if (!headers) return;
+
+                console.log(`🗑️ Deleting user ${userId}...`);
+
+                const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: headers
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    alert('Phiên đăng nhập đã hết hạn hoặc bạn không có quyền thực hiện thao tác này');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    alert('✅ Đã xóa người dùng thành công!');
+                    fetchUsers(); // Reload list
+                } else {
+                    throw new Error(data.message || 'Failed to delete user');
+                }
+
+            } catch (error) {
+                console.error('❌ Error deleting user:', error);
+                alert('❌ Lỗi khi xóa người dùng: ' + error.message);
+            }
+        }
+
+        // Refresh users
+        function refreshUsers() {
+            fetchStats();
+            fetchUsers();
+        }
+
+        // Update last update time
+        function updateLastUpdate() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('vi-VN', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('lastUpdate').textContent = timeString;
+        }
+
+        // Initialize dashboard
+        if (checkAuth()) {
+            console.log('✅ Auth check passed, loading dashboard...');
+            fetchStats();
+            fetchUsers();
+            
+            // Auto refresh every 30 seconds
+            setInterval(() => {
+                fetchStats();
+                fetchUsers();
+            }, 30000);
+        }
+    </script>
+</body>
+</html>
