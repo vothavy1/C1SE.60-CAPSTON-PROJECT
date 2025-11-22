@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔄 Test Quick Switch Company</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: white;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    .status-box {
+      background: rgba(255,255,255,0.2);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .status-box h2 {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      border-bottom: 2px solid rgba(255,255,255,0.3);
+      padding-bottom: 10px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .info-label {
+      font-weight: bold;
+      color: #ffd700;
+    }
+    .info-value {
+      color: #ffffff;
+    }
+    .btn-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 25px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    button.success {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    button.danger {
+      background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+    }
+    button.warning {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    .log-box {
+      background: rgba(0,0,0,0.4);
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+    }
+    .log-entry {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 3px solid #667eea;
+      padding-left: 10px;
+    }
+    .log-success { border-left-color: #38ef7d; color: #38ef7d; }
+    .log-error { border-left-color: #f45c43; color: #f45c43; }
+    .log-warning { border-left-color: #ffd700; color: #ffd700; }
+    .log-info { border-left-color: #667eea; color: #87ceeb; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔄 TEST QUICK SWITCH COMPANY</h1>
+    
+    <div class="status-box">
+      <h2>📊 TRẠNG THÁI HIỆN TẠI</h2>
+      <div id="currentStatus">
+        <div class="info-row">
+          <span class="info-label">Token:</span>
+          <span class="info-value" id="tokenStatus">Đang kiểm tra...</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Company ID:</span>
+          <span class="info-value" id="companyId">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Username:</span>
+          <span class="info-value" id="username">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Role:</span>
+          <span class="info-value" id="role">-</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-box">
+      <h2>🎯 QUICK LOGIN</h2>
+      <div class="btn-group">
+        <button class="success" onclick="quickLogin('recruitment@cs60.com', 'password123', 'CS60 - Company 2')">
+          🏢 Login CS60<br><small>(Company 2)</small>
+        </button>
+        <button class="success" onclick="quickLogin('b@test.com', 'password123', 'Digital - Company 3')">
+          🏢 Login Digital<br><small>(Company 3)</small>
+        </button>
+        <button class="success" onclick="quickLogin('recruiter@test.com', 'password123', 'ABC Corp - Company 1')">
+          🏢 Login ABC Corp<br><small>(Company 1)</small>
+        </button>
+      </div>
+    </div>
+
+    <div class="status-box">
+      <h2>🧹 ACTIONS</h2>
+      <div class="btn-group">
+        <button class="danger" onclick="fullLogout()">
+          🚪 Logout & Clear All
+        </button>
+        <button class="warning" onclick="checkCurrentToken()">
+          🔍 Check Token
+        </button>
+        <button onclick="location.reload()">
+          🔄 Refresh Page
+        </button>
+      </div>
+    </div>
+
+    <div class="status-box">
+      <h2>📝 LOG</h2>
+      <div class="log-box" id="logBox"></div>
+    </div>
+  </div>
+
+  <script>
+    // Logging function
+    function log(message, type = 'info') {
+      const logBox = document.getElementById('logBox');
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      const timestamp = new Date().toLocaleTimeString();
+      entry.textContent = `[${timestamp}] ${message}`;
+      logBox.appendChild(entry);
+      logBox.scrollTop = logBox.scrollHeight;
+      console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+
+    // Check current token
+    function checkCurrentToken() {
+      log('🔍 Checking current token...', 'info');
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        document.getElementById('tokenStatus').textContent = '❌ Không có token';
+        document.getElementById('companyId').textContent = '-';
+        document.getElementById('username').textContent = '-';
+        document.getElementById('role').textContent = '-';
+        log('❌ Không tìm thấy token trong localStorage', 'error');
+        return null;
+      }
+
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        document.getElementById('tokenStatus').textContent = '✅ Có token';
+        document.getElementById('companyId').textContent = payload.company_id || '❌ Không có';
+        document.getElementById('username').textContent = payload.username || '-';
+        document.getElementById('role').textContent = payload.role || '-';
+        
+        log(`✅ Token hợp lệ: ${payload.username} (Company: ${payload.company_id})`, 'success');
+        return payload;
+      } catch (error) {
+        document.getElementById('tokenStatus').textContent = '❌ Token không hợp lệ';
+        log(`❌ Lỗi parse token: ${error.message}`, 'error');
+        return null;
+      }
+    }
+
+    // Full logout
+    function fullLogout() {
+      log('🧹 Starting full logout...', 'warning');
+      
+      // Clear localStorage
+      localStorage.clear();
+      log('✅ localStorage cleared', 'success');
+      
+      // Clear sessionStorage
+      sessionStorage.clear();
+      log('✅ sessionStorage cleared', 'success');
+      
+      // Clear cookies
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      });
+      log('✅ Cookies cleared', 'success');
+      
+      // Update UI
+      checkCurrentToken();
+      log('🎉 Logout hoàn tất!', 'success');
+    }
+
+    // Quick login
+    async function quickLogin(email, password, companyName) {
+      log(`🔐 Attempting login for ${companyName}...`, 'info');
+      
+      // STEP 1: Clear old token
+      log('🧹 Clearing old session...', 'warning');
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      try {
+        // STEP 2: Login API call
+        log(`📡 Calling login API for ${email}...`, 'info');
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Login failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const token = data.token || data.data?.token;
+        const user = data.user || data.data?.user;
+
+        if (!token) {
+          throw new Error('No token received');
+        }
+
+        // STEP 3: Save new token
+        localStorage.setItem('token', token);
+        
+        if (user) {
+          const sessionUser = {
+            user_id: user.userId || user.user_id,
+            username: user.username,
+            email: user.email,
+            fullName: user.fullName || user.full_name || '',
+            role: user.role
+          };
+          localStorage.setItem('session_user', JSON.stringify(sessionUser));
+        }
+
+        log(`✅ Login thành công! Company: ${companyName}`, 'success');
+        
+        // STEP 4: Verify token
+        const payload = checkCurrentToken();
+        if (payload) {
+          log(`🎉 Token verified: Company ID = ${payload.company_id}`, 'success');
+          log(`⏱️ Bạn có thể switch ngay lập tức - không cần đợi 5 phút!`, 'success');
+        }
+
+      } catch (error) {
+        log(`❌ Login failed: ${error.message}`, 'error');
+        alert(`Login thất bại: ${error.message}`);
+      }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      log('🚀 Page loaded', 'info');
+      checkCurrentToken();
+    });
+  </script>
+</body>
+</html>

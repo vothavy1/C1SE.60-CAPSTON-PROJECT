@@ -118,9 +118,17 @@
 
         // Logout
         function logout() {
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('user_info');
-            window.location.href = 'index.html';
+            // 🔥 XÓA TẤT CẢ DỮ LIỆU
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Clear cookies
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            // Force reload to clear cache
+            window.location.href = 'index.html?t=' + Date.now();
         }
 
         // Format date

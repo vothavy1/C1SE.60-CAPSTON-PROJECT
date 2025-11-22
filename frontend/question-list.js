@@ -123,13 +123,13 @@ function renderQuestions(questions) {
         } else if (question.question_type === 'TEXT') {
             optionsHtml = `
                 <div class="options-list">
-                    <p class="text-muted mb-0"><i class="bi bi-pencil"></i> Câu hỏi tự luận - Không có đáp án trắc nghiệm</p>
+                    <p class="text-white mb-0"><i class="bi bi-pencil"></i> Câu hỏi tự luận - Không có đáp án trắc nghiệm</p>
                 </div>
             `;
         } else if (question.question_type === 'CODING') {
             optionsHtml = `
                 <div class="options-list">
-                    <p class="text-muted mb-0"><i class="bi bi-code-slash"></i> Câu hỏi Coding - Đánh giá bằng test cases</p>
+                    <p class="text-white mb-0"><i class="bi bi-code-slash"></i> Câu hỏi Coding - Đánh giá bằng test cases</p>
                 </div>
             `;
         }
@@ -139,7 +139,7 @@ function renderQuestions(questions) {
                 <div class="question-header">
                     <div class="flex-grow-1">
                         <div class="question-title">
-                            <i class="bi bi-question-circle-fill text-primary"></i>
+                            <i class="bi bi-question-circle-fill text-white"></i>
                             ${question.question_title || 'Không có tiêu đề'}
                         </div>
                         <div>
@@ -149,11 +149,11 @@ function renderQuestions(questions) {
                         </div>
                     </div>
                     <div class="text-end">
-                        <button class="action-btn btn-edit" onclick="editQuestion(${question.question_id})">
-                            <i class="bi bi-pencil"></i> Sửa
+                        <button class="action-btn btn-edit" onclick="editQuestion(${question.question_id})" title="Chỉnh sửa câu hỏi">
+                            <i class="bi bi-pencil-square"></i> Sửa
                         </button>
-                        <button class="action-btn btn-delete" onclick="deleteQuestion(${question.question_id})">
-                            <i class="bi bi-trash"></i> Xóa
+                        <button class="action-btn btn-delete" onclick="deleteQuestion(${question.question_id})" title="Xóa câu hỏi">
+                            <i class="bi bi-trash-fill"></i> Xóa
                         </button>
                     </div>
                 </div>
@@ -161,7 +161,7 @@ function renderQuestions(questions) {
                     <strong>Nội dung:</strong> ${question.question_text}
                 </div>
                 ${optionsHtml}
-                <div class="mt-3 text-muted" style="font-size: 0.85rem;">
+                <div class="mt-3 text-white" style="font-size: 0.85rem;">
                     <i class="bi bi-calendar"></i> Tạo ngày: ${formatDate(question.created_at)}
                     ${question.Creator ? ` | <i class="bi bi-person"></i> ${question.Creator.full_name || question.Creator.username}` : ''}
                 </div>
@@ -232,7 +232,7 @@ function renderPagination(pagination) {
                 </li>
             </ul>
         </nav>
-        <div class="text-center mt-2 text-muted">
+        <div class="text-center mt-2 text-white">
             <small>Tổng số ${total} câu hỏi</small>
         </div>
     `;
@@ -257,18 +257,31 @@ function editQuestion(id) {
 }
 
 /**
- * Xóa câu hỏi
+ * Xóa câu hỏi với confirmation dialog đẹp hơn
  */
 async function deleteQuestion(id) {
-    if (!confirm('Bạn có chắc chắn muốn xóa câu hỏi này không?')) {
+    // Custom confirmation with details
+    const confirmed = confirm('⚠️ XÁC NHẬN XÓA CÂU HỎI\n\n' +
+        'Bạn có chắc chắn muốn xóa câu hỏi này không?\n' +
+        'Hành động này KHÔNG THỂ hoàn tác!\n\n' +
+        'Nhấn OK để xóa, Cancel để hủy.');
+    
+    if (!confirmed) {
         return;
     }
 
     const token = localStorage.getItem('token');
     if (!token) {
+        alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
         window.location.href = 'login.html';
         return;
     }
+
+    // Show loading state on the delete button
+    const deleteBtn = event.target.closest('button');
+    const originalHTML = deleteBtn.innerHTML;
+    deleteBtn.disabled = true;
+    deleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang xóa...';
 
     try {
         const response = await fetch(`${API_BASE_URL}/questions/${id}`, {
@@ -280,16 +293,72 @@ async function deleteQuestion(id) {
         });
 
         if (response.ok) {
-            alert('Đã xóa câu hỏi thành công!');
-            fetchQuestions(currentPage, currentFilters);
+            // Success message
+            showSuccessMessage('✅ Đã xóa câu hỏi thành công!');
+            
+            // Remove with animation
+            const questionCard = deleteBtn.closest('.question-card');
+            if (questionCard) {
+                questionCard.style.transition = 'all 0.3s ease';
+                questionCard.style.opacity = '0';
+                questionCard.style.transform = 'translateX(-20px)';
+                
+                setTimeout(() => {
+                    fetchQuestions(currentPage, currentFilters);
+                }, 300);
+            } else {
+                fetchQuestions(currentPage, currentFilters);
+            }
         } else {
             const error = await response.json();
-            alert('Lỗi: ' + (error.message || 'Không thể xóa câu hỏi'));
+            showErrorMessage('❌ Lỗi: ' + (error.message || 'Không thể xóa câu hỏi'));
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalHTML;
         }
     } catch (error) {
         console.error('Error deleting question:', error);
-        alert('Đã xảy ra lỗi khi xóa câu hỏi');
+        showErrorMessage('❌ Đã xảy ra lỗi khi xóa câu hỏi: ' + error.message);
+        deleteBtn.disabled = false;
+        deleteBtn.innerHTML = originalHTML;
     }
+}
+
+/**
+ * Show success message
+ */
+function showSuccessMessage(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.style.minWidth = '300px';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+
+/**
+ * Show error message
+ */
+function showErrorMessage(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.style.minWidth = '300px';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
 }
 
 /**

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>🔍 Debug Company Filter</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+        }
+        .box {
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        h2 { color: #00ff00; }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        button:hover { background: #00cc00; }
+        .error { color: #ff0000; }
+        .success { color: #00ff00; }
+        .warning { color: #ffaa00; }
+        pre {
+            background: #000;
+            padding: 15px;
+            border: 1px solid #333;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 DEBUG COMPANY FILTER</h1>
+    
+    <div class="box">
+        <h2>BƯỚC 1: Kiểm tra Token</h2>
+        <button onclick="checkToken()">🔑 Check My Token</button>
+        <pre id="tokenInfo"></pre>
+    </div>
+
+    <div class="box">
+        <h2>BƯỚC 2: Test API với Current Token</h2>
+        <button onclick="testAPI()">🚀 Test Get Candidates API</button>
+        <pre id="apiResult"></pre>
+    </div>
+
+    <div class="box">
+        <h2>BƯỚC 3: Giải pháp</h2>
+        <button onclick="location.href='quick-logout.html'">🚪 Đăng xuất & Login lại</button>
+        <button onclick="fixData()">🔧 Fix Database (Update Candidate 16)</button>
+    </div>
+
+    <script>
+        function log(id, msg, type = 'info') {
+            const el = document.getElementById(id);
+            const colors = { error: '#ff0000', success: '#00ff00', warning: '#ffaa00', info: '#00ff00' };
+            el.innerHTML += `<span style="color: ${colors[type]}">${msg}</span>\n`;
+        }
+
+        function clear(id) {
+            document.getElementById(id).innerHTML = '';
+        }
+
+        function checkToken() {
+            clear('tokenInfo');
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                log('tokenInfo', '❌ KHÔNG CÓ TOKEN!', 'error');
+                log('tokenInfo', 'Bạn chưa đăng nhập.', 'error');
+                return null;
+            }
+
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                
+                log('tokenInfo', '✅ TOKEN TỒN TẠI\n', 'success');
+                log('tokenInfo', 'PAYLOAD:', 'info');
+                log('tokenInfo', JSON.stringify(payload, null, 2), 'info');
+                log('tokenInfo', '\n📋 PHÂN TÍCH:', 'info');
+                log('tokenInfo', `User ID: ${payload.id}`, 'info');
+                log('tokenInfo', `Username: ${payload.username}`, 'info');
+                log('tokenInfo', `Role: ${payload.role}`, 'info');
+                
+                if (payload.company_id) {
+                    log('tokenInfo', `Company ID: ${payload.company_id} ✅`, 'success');
+                    log('tokenInfo', `\n✅ Token có company_id = ${payload.company_id}`, 'success');
+                    
+                    if (payload.company_id === 1) {
+                        log('tokenInfo', '✅ Đây là tài khoản CS60 (company 1)', 'success');
+                        log('tokenInfo', '✅ KHÔNG NÊN thấy candidate ID 16 (company 2)!', 'success');
+                    } else {
+                        log('tokenInfo', `⚠️ Đây là company ${payload.company_id}, KHÔNG PHẢI CS60!`, 'warning');
+                    }
+                } else {
+                    log('tokenInfo', 'Company ID: KHÔNG CÓ ❌', 'error');
+                    log('tokenInfo', '\n❌ Token THIẾU company_id!', 'error');
+                    log('tokenInfo', 'Cần đăng xuất và đăng nhập lại!', 'error');
+                }
+                
+                return payload;
+            } catch (e) {
+                log('tokenInfo', `❌ LỖI DECODE: ${e.message}`, 'error');
+                return null;
+            }
+        }
+
+        async function testAPI() {
+            clear('apiResult');
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                log('apiResult', '❌ Không có token!', 'error');
+                return;
+            }
+
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            log('apiResult', `🚀 Testing API với token company_id = ${payload.company_id}\n`, 'info');
+
+            try {
+                const response = await fetch('http://localhost:5000/api/candidates?limit=100', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    log('apiResult', `✅ API SUCCESS! Status: ${response.status}\n`, 'success');
+                    log('apiResult', `Total: ${data.data.length} candidates\n`, 'info');
+
+                    const byCompany = {};
+                    data.data.forEach(c => {
+                        byCompany[c.company_id] = (byCompany[c.company_id] || 0) + 1;
+                    });
+
+                    log('apiResult', '📊 BREAKDOWN BY COMPANY:', 'info');
+                    Object.keys(byCompany).forEach(cid => {
+                        log('apiResult', `  Company ${cid}: ${byCompany[cid]} candidates`, 'info');
+                    });
+
+                    // Check if bug exists
+                    const candidate16 = data.data.find(c => c.candidate_id === 16);
+                    if (candidate16) {
+                        log('apiResult', `\n⚠️ Tìm thấy Candidate ID 16:`, 'warning');
+                        log('apiResult', `   Name: ${candidate16.first_name} ${candidate16.last_name}`, 'warning');
+                        log('apiResult', `   Company: ${candidate16.company_id}`, 'warning');
+                        
+                        if (payload.company_id === 1 && candidate16.company_id === 2) {
+                            log('apiResult', '\n❌ BUG XÁC NHẬN!', 'error');
+                            log('apiResult', 'User company 1 thấy candidate company 2!', 'error');
+                            log('apiResult', 'Backend filter KHÔNG HOẠT ĐỘNG!', 'error');
+                        }
+                    } else {
+                        log('apiResult', '\n✅ Không thấy candidate ID 16', 'success');
+                        log('apiResult', 'Filter hoạt động đúng!', 'success');
+                    }
+
+                    log('apiResult', '\n📦 SAMPLE DATA (first 3):', 'info');
+                    data.data.slice(0, 3).forEach(c => {
+                        log('apiResult', `  ID ${c.candidate_id}: ${c.first_name} ${c.last_name} (Company ${c.company_id})`, 'info');
+                    });
+
+                } else {
+                    log('apiResult', `❌ API ERROR: ${response.status}`, 'error');
+                    log('apiResult', JSON.stringify(data, null, 2), 'error');
+                }
+
+            } catch (e) {
+                log('apiResult', `❌ FETCH ERROR: ${e.message}`, 'error');
+            }
+        }
+
+        function fixData() {
+            alert('⚠️ Chức năng này cần chạy SQL command.\n\nHãy chạy trong terminal:\n\ndocker exec -it cs60_mysql mysql -u cs60user -pcs60password -D cs60_recruitment -e "UPDATE candidates SET company_id = 1 WHERE candidate_id = 16;"');
+        }
+
+        // Auto check on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                checkToken();
+            } else {
+                document.getElementById('tokenInfo').innerHTML = '<span style="color:#ff0000">❌ Bạn chưa đăng nhập!</span>';
+            }
+        });
+    </script>
+</body>
+</html>

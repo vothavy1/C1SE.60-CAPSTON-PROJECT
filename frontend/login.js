@@ -17,7 +17,10 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         const response = await fetch('http://localhost:5000/api/auth/login', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
             },
             body: JSON.stringify({
                 email,
@@ -28,6 +31,10 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         if (response.ok) {
             const data = await response.json();
             console.log('Login response:', data); // Debug log
+            
+            // 🔥 XÓA HẾT TOKEN CŨ TRƯỚC KHI LƯU TOKEN MỚI
+            localStorage.clear(); // Xóa tất cả để tránh conflict
+            sessionStorage.clear(); // Xóa cả session storage
             
             // Lưu token vào localStorage
             const token = data.token || data.data?.token;

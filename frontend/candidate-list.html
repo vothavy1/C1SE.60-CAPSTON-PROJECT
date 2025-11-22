@@ -255,6 +255,20 @@
       return headers;
     }
 
+    // Parse JWT token
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        return null;
+      }
+    }
+
     // Check authentication
     function checkAuth() {
       const token = localStorage.getItem('token');
@@ -270,6 +284,34 @@
         alert('Vui lòng đăng nhập lại');
         window.location.href = 'login.html';
         return false;
+      }
+
+      // Parse token to check company_id
+      const tokenPayload = parseJwt(token);
+      if (tokenPayload) {
+        console.log('🔍 Token Payload:', tokenPayload);
+        
+        // Check if token has company_id (for recruiter role)
+        if (tokenPayload.role && tokenPayload.role.toUpperCase() === 'RECRUITER' && !tokenPayload.company_id) {
+          console.error('⚠️ Token không có company_id - cần login lại!');
+          
+          // Show warning banner
+          const warningBanner = document.createElement('div');
+          warningBanner.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-4 rounded-lg shadow-2xl border-2 border-red-400';
+          warningBanner.innerHTML = `
+            <div class="flex items-center gap-4">
+              <span class="text-3xl">⚠️</span>
+              <div>
+                <p class="font-bold text-lg">CẢNH BÁO: Token cũ không có Company ID!</p>
+                <p class="text-sm mt-1">Bạn đang thấy dữ liệu của TẤT CẢ công ty. Vui lòng đăng xuất và đăng nhập lại!</p>
+              </div>
+              <button onclick="logout()" class="ml-4 bg-white text-red-600 px-4 py-2 rounded font-bold hover:bg-gray-100">
+                Đăng xuất ngay
+              </button>
+            </div>
+          `;
+          document.body.appendChild(warningBanner);
+        }
       }
 
       const session = JSON.parse(localStorage.getItem('session_user') || 'null');
@@ -294,10 +336,17 @@
 
     // Logout
     function logout() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('session_user');
-      window.location.href = 'index.html';
+      // 🔥 XÓA TẤT CẢ DỮ LIỆU
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear cookies nếu có
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      });
+      
+      // Force reload to clear cache
+      window.location.href = 'index.html?t=' + Date.now();
     }
 
     // Get status text only (no colored badges)
@@ -337,8 +386,14 @@
         });
 
         if (response.status === 401 || response.status === 403) {
-          alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
-          window.location.href = 'login.html';
+          const errorData = await response.json().catch(() => ({}));
+          if (errorData.error_code === 'OLD_TOKEN') {
+            alert('⚠️ TOKEN CŨ KHÔNG HỢP LỆ!\n\nHệ thống đã được cập nhật để bảo mật dữ liệu theo công ty.\n\nBạn đang dùng token cũ không có company_id.\n\n➡️ VUI LÒNG ĐĂNG XUẤT VÀ ĐĂNG NHẬP LẠI!');
+            logout();
+          } else {
+            alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+            window.location.href = 'login.html';
+          }
           return;
         }
 

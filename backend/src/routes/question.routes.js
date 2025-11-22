@@ -11,24 +11,24 @@ router.use(authenticate);
 // RESTRICTED ROUTES - Only RECRUITER and ADMIN
 // ==========================================
 // Get all questions
-router.get('/', authorize(['QUESTION_MANAGEMENT'], { allowedRoles: ['recruiter', 'admin'] }), questionController.getAllQuestions);
+router.get('/', authorize(['RECRUITER', 'ADMIN']), questionController.getAllQuestions);
 
 // Get question by ID
-router.get('/:id', authorize(['QUESTION_MANAGEMENT'], { allowedRoles: ['recruiter', 'admin'] }), questionController.getQuestionById);
+router.get('/:id', authorize(['RECRUITER', 'ADMIN']), questionController.getQuestionById);
 
 // Create new question
-router.post('/', authorize(['QUESTION_MANAGEMENT'], { allowedRoles: ['recruiter', 'admin'] }), createQuestionValidation, questionController.createQuestion);
+router.post('/', authorize(['RECRUITER', 'ADMIN']), createQuestionValidation, questionController.createQuestion);
 
 // Update question
-router.put('/:id', authorize(['QUESTION_MANAGEMENT'], { allowedRoles: ['recruiter', 'admin'] }), questionController.updateQuestion);
+router.put('/:id', authorize(['RECRUITER', 'ADMIN']), questionController.updateQuestion);
 
 // Delete question
-router.delete('/:id', authorize(['QUESTION_MANAGEMENT'], { allowedRoles: ['recruiter', 'admin'] }), questionController.deleteQuestion);
+router.delete('/:id', authorize(['RECRUITER', 'ADMIN']), questionController.deleteQuestion);
 
-// Category routes
-router.get('/categories/all', authorize(['QUESTION_MANAGEMENT']), questionController.getAllCategories);
-router.post('/categories', authorize(['QUESTION_MANAGEMENT']), questionController.createCategory);
-router.put('/categories/:id', authorize(['QUESTION_MANAGEMENT']), questionController.updateCategory);
-router.delete('/categories/:id', authorize(['QUESTION_MANAGEMENT']), questionController.deleteCategory);
+// Category routes - GET doesn't need special permission, just auth
+router.get('/categories/all', questionController.getAllCategories);
+router.post('/categories', authorize(['RECRUITER', 'ADMIN']), questionController.createCategory);
+router.put('/categories/:id', authorize(['RECRUITER', 'ADMIN']), questionController.updateCategory);
+router.delete('/categories/:id', authorize(['RECRUITER', 'ADMIN']), questionController.deleteCategory);
 
 module.exports = router;

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>🔍 Check Token</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #000;
+            padding: 20px;
+            border: 2px solid #00ff00;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 15px;
+            border: 1px solid #00ff00;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .error { color: #ff0000; }
+        .warning { color: #ffaa00; }
+        .success { color: #00ff00; }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #00aa00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 TOKEN CHECKER</h1>
+        <button onclick="checkToken()">🔑 Kiểm tra Token</button>
+        <button onclick="clearAndLogout()">🚪 Đăng xuất & Clear</button>
+        <button onclick="location.href='index.html'">🏠 Về trang chủ</button>
+        
+        <h2>📊 Kết quả:</h2>
+        <pre id="output"></pre>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const className = type === 'error' ? 'error' : type === 'warning' ? 'warning' : type === 'success' ? 'success' : '';
+            output.innerHTML += `<span class="${className}">${message}</span>\n`;
+        }
+
+        function checkToken() {
+            document.getElementById('output').innerHTML = '';
+            
+            log('🔍 KIỂM TRA TOKEN...', 'info');
+            log('='.repeat(60));
+            
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                log('❌ KHÔNG TÌM THẤY TOKEN!', 'error');
+                log('Bạn chưa đăng nhập hoặc token đã bị xóa.', 'error');
+                return;
+            }
+            
+            log(`✅ Token tồn tại (length: ${token.length})`, 'success');
+            log('');
+            
+            try {
+                // Decode JWT
+                const parts = token.split('.');
+                if (parts.length !== 3) {
+                    log('❌ Token không đúng định dạng JWT!', 'error');
+                    return;
+                }
+                
+                const payload = JSON.parse(atob(parts[1]));
+                
+                log('📦 PAYLOAD:', 'success');
+                log(JSON.stringify(payload, null, 2), 'success');
+                log('');
+                
+                log('📋 THÔNG TIN CHI TIẾT:', 'info');
+                log('='.repeat(60));
+                log(`👤 User ID: ${payload.id || 'KHÔNG CÓ'}`, payload.id ? 'success' : 'error');
+                log(`👤 Username: ${payload.username || 'KHÔNG CÓ'}`, payload.username ? 'success' : 'error');
+                log(`🎭 Role: ${payload.role || 'KHÔNG CÓ'}`, payload.role ? 'success' : 'error');
+                
+                // CRITICAL: Check company_id
+                if (payload.company_id) {
+                    log(`🏢 Company ID: ${payload.company_id}`, 'success');
+                    log('✅ Token CÓ company_id - ĐÚNG!', 'success');
+                } else {
+                    log(`🏢 Company ID: KHÔNG CÓ`, 'error');
+                    log('❌ TOKEN THIẾU COMPANY_ID!', 'error');
+                    log('', 'error');
+                    log('⚠️ CẢNH BÁO:', 'warning');
+                    log('Token này không có company_id!', 'warning');
+                    log('Điều này có nghĩa là:', 'warning');
+                    log('  - Token được tạo trước khi hệ thống có company_id', 'warning');
+                    log('  - Bạn sẽ thấy dữ liệu của TẤT CẢ công ty', 'warning');
+                    log('', 'warning');
+                    log('🔧 GIẢI PHÁP:', 'error');
+                    log('1. Nhấn nút "Đăng xuất & Clear"', 'error');
+                    log('2. Đăng nhập lại', 'error');
+                    log('3. Token mới sẽ có company_id', 'error');
+                }
+                
+                log('');
+                log('⏰ THỜI GIAN:', 'info');
+                if (payload.iat) {
+                    const issuedAt = new Date(payload.iat * 1000);
+                    log(`Tạo lúc: ${issuedAt.toLocaleString('vi-VN')}`, 'info');
+                }
+                if (payload.exp) {
+                    const expiresAt = new Date(payload.exp * 1000);
+                    const now = new Date();
+                    const isExpired = now > expiresAt;
+                    log(`Hết hạn: ${expiresAt.toLocaleString('vi-VN')}`, isExpired ? 'error' : 'success');
+                    if (isExpired) {
+                        log('❌ TOKEN ĐÃ HẾT HẠN!', 'error');
+                    } else {
+                        const remaining = Math.floor((expiresAt - now) / 1000 / 60);
+                        log(`⏳ Còn lại: ${remaining} phút`, 'success');
+                    }
+                }
+                
+            } catch (error) {
+                log('❌ LỖI KHI DECODE TOKEN!', 'error');
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function clearAndLogout() {
+            if (confirm('⚠️ BẠN CHẮC CHẮN MUỐN ĐĂNG XUẤT?\n\nTất cả dữ liệu session sẽ bị xóa.')) {
+                localStorage.clear();
+                sessionStorage.clear();
+                log('✅ Đã xóa tất cả dữ liệu local storage', 'success');
+                log('🔄 Chuyển đến trang đăng nhập...', 'info');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+            }
+        }
+
+        // Auto check on load
+        window.addEventListener('DOMContentLoaded', () => {
+            checkToken();
+        });
+    </script>
+</body>
+</html>

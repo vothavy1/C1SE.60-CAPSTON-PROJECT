@@ -43,11 +43,40 @@ const authenticate = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
     }
 
+    // IMPORTANT: Always use company_id from database, not from token
+    // This ensures we always have the latest company_id even if token is old
+    const userRole = user.Role?.role_name?.toUpperCase();
+    
+    // CRITICAL: Enforce company_id requirement for recruiters
+    if (userRole === 'RECRUITER') {
+      // Check if token is missing company_id (old token)
+      if (!decoded.company_id && user.company_id) {
+        logger.warn(`⚠️ Token cũ thiếu company_id cho user ${user.username}. Token cần được làm mới!`);
+        // Return error to force re-login
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Token cũ không hợp lệ. Vui lòng đăng xuất và đăng nhập lại để cập nhật quyền truy cập.',
+          error_code: 'OLD_TOKEN'
+        });
+      }
+      
+      // Check if user has no company_id in database
+      if (!user.company_id) {
+        logger.error(`❌ Recruiter ${user.username} (ID: ${user.user_id}) không có company_id!`);
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Tài khoản recruiter chưa được gán vào công ty nào. Vui lòng liên hệ admin để được hỗ trợ.',
+          error_code: 'NO_COMPANY'
+        });
+      }
+    }
+
     // Add user info to request with standardized userId
     req.user = {
       ...user.toJSON(),
       userId: user.user_id,  // Standardize key
-      user_id: user.user_id  // Keep for backward compatibility
+      user_id: user.user_id,  // Keep for backward compatibility
+      company_id: user.company_id  // Always use company_id from database
     };
     next();
   } catch (error) {

@@ -8,6 +8,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="style.css">
     <style>
+        /* Đảm bảo text chính màu trắng rõ ràng */
+        body {
+            background-color: #1a202c;
+        }
+        
         .question-card {
             background: #2d3748;
             border-radius: 10px;
@@ -29,13 +34,14 @@
         .question-title {
             font-size: 1.1rem;
             font-weight: 600;
-            color: #e2e8f0;
+            color: #ffffff;
             margin-bottom: 10px;
         }
         .question-text {
-            color: #cbd5e0;
+            color: #ffffff;
             margin-bottom: 15px;
             line-height: 1.6;
+            font-size: 1rem;
         }
         .badge-type {
             padding: 5px 12px;
@@ -63,6 +69,12 @@
             padding: 15px;
             margin-top: 10px;
         }
+        .options-list h6 {
+            color: #ffffff;
+        }
+        .options-list p {
+            color: #e2e8f0;
+        }
         .option-item {
             padding: 10px;
             margin: 8px 0;
@@ -71,10 +83,18 @@
             border-left: 3px solid transparent;
             display: flex;
             align-items: center;
+            color: #ffffff;
+            font-size: 0.95rem;
+        }
+        .option-item span {
+            color: #ffffff;
         }
         .option-item.correct {
             border-left-color: #48bb78;
             background: #22543d;
+        }
+        .option-item.correct span {
+            color: #ffffff;
         }
         .option-item i {
             margin-right: 10px;
@@ -87,27 +107,41 @@
             color: #718096;
         }
         .action-btn {
-            padding: 6px 12px;
-            border-radius: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
             border: none;
             cursor: pointer;
             font-size: 0.9rem;
             margin: 0 4px;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .action-btn:active {
+            transform: translateY(0);
+        }
+        .action-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
         .btn-edit {
-            background: #4299e1;
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
             color: white;
         }
         .btn-edit:hover {
-            background: #3182ce;
+            background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
         }
         .btn-delete {
-            background: #f56565;
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
             color: white;
         }
         .btn-delete:hover {
-            background: #e53e3e;
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
         }
         .filter-section {
             background: #2d3748;
@@ -131,7 +165,7 @@
         .no-questions {
             text-align: center;
             padding: 60px 20px;
-            color: #a0aec0;
+            color: #ffffff;
         }
         .no-questions i {
             font-size: 4rem;
@@ -141,6 +175,7 @@
         .loading {
             text-align: center;
             padding: 40px;
+            color: #ffffff;
         }
         .spinner {
             border: 4px solid #2d3748;
@@ -154,6 +189,14 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        /* Override Bootstrap text-muted */
+        .text-muted {
+            color: #ffffff !important;
+        }
+        /* Đảm bảo tất cả text đều trắng */
+        p, h6, small, .text-center {
+            color: #ffffff !important;
         }
     </style>
 </head>

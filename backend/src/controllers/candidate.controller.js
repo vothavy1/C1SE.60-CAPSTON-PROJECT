@@ -166,23 +166,40 @@ exports.getAllCandidates = async (req, res) => {
     const offset = (page - 1) * limit;
     const whereClause = {};
     
-    // Filter by company for recruiters
+    // Filter by company for recruiters - ONLY ADMIN can see all
     const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
-    console.log(`👤 User: ${req.user?.username}, Role: ${userRole}, Company ID: ${req.user?.company_id}`);
+    console.log('\n' + '='.repeat(80));
+    console.log(`📍 GET ALL CANDIDATES REQUEST`);
+    console.log(`👤 User: ${req.user?.username} (ID: ${req.user?.user_id})`);
+    console.log(`🎭 Role: ${userRole}`);
+    console.log(`🏢 Company ID from user: ${req.user?.company_id}`);
+    console.log('='.repeat(80));
     
     if (userRole === 'RECRUITER') {
-      if (req.user.company_id) {
-        whereClause.company_id = req.user.company_id;
-        console.log(`🔒 RECRUITER FILTER APPLIED: Only showing candidates with company_id = ${req.user.company_id}`);
-      } else {
-        console.warn(`⚠️ WARNING: Recruiter ${req.user?.username} has NO company_id! Cannot filter candidates.`);
+      // CRITICAL: Recruiters MUST have company_id and can ONLY see their company's candidates
+      if (!req.user.company_id) {
+        console.error(`❌ BLOCKED: Recruiter ${req.user?.username} has NO company_id!`);
         return res.status(403).json({
           success: false,
-          message: 'Tài khoản recruiter chưa được gán vào công ty nào. Vui lòng liên hệ admin.'
+          message: 'Tài khoản recruiter chưa được gán vào công ty. Vui lòng liên hệ admin.',
+          error_code: 'NO_COMPANY'
         });
       }
+      
+      // Force filter by company_id
+      whereClause.company_id = req.user.company_id;
+      console.log(`🔒 RECRUITER FILTER APPLIED: company_id = ${req.user.company_id}`);
+      
+    } else if (userRole === 'ADMIN') {
+      // Only ADMIN can see all candidates from all companies
+      console.log(`👑 ADMIN ACCESS: Showing ALL candidates from ALL companies`);
     } else {
-      console.log(`👑 ADMIN/OTHER: No company filter applied`);
+      // Other roles (like CANDIDATE) should not access this endpoint
+      console.warn(`⚠️ BLOCKED: Role ${userRole} tried to access candidate list`);
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền truy cập danh sách ứng viên'
+      });
     }
     
     // Add filter by status if provided
@@ -201,6 +218,9 @@ exports.getAllCandidates = async (req, res) => {
       ];
     }
     
+    // DEBUG: Log final whereClause before query
+    console.log(`\n🔍 WHERE CLAUSE FOR QUERY:`, JSON.stringify(whereClause, null, 2));
+    
     // Get candidates with pagination
     const { count, rows: candidates } = await Candidate.findAndCountAll({
       where: whereClause,
@@ -216,6 +236,36 @@ exports.getAllCandidates = async (req, res) => {
         }
       ]
     });
+    
+    console.log(`📊 QUERY RESULT: Found ${count} candidates (page ${page}, showing ${candidates.length} items)`);
+    if (candidates.length > 0) {
+      console.log(`📋 First candidate: ID=${candidates[0].candidate_id}, Company=${candidates[0].company_id}, Name=${candidates[0].first_name} ${candidates[0].last_name}`);
+    }
+    console.log('='.repeat(80) + '\n');
+    
+    // CRITICAL SECURITY CHECK: Double-verify no candidates from wrong company leak through
+    if (userRole === 'RECRUITER' && req.user.company_id) {
+      const wrongCompanyCandidates = candidates.filter(c => c.company_id !== req.user.company_id);
+      if (wrongCompanyCandidates.length > 0) {
+        console.error(`🚨 SECURITY BREACH DETECTED! User company ${req.user.company_id} received candidates from other companies:`);
+        wrongCompanyCandidates.forEach(c => {
+          console.error(`  ❌ Candidate ID ${c.candidate_id} has company_id ${c.company_id}`);
+        });
+        // FILTER OUT wrong company candidates as safety net
+        const filteredCandidates = candidates.filter(c => c.company_id === req.user.company_id);
+        return res.status(200).json({
+          success: true,
+          message: 'Candidates retrieved successfully',
+          data: filteredCandidates,
+          pagination: {
+            total: filteredCandidates.length,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalPages: Math.ceil(filteredCandidates.length / limit)
+          }
+        });
+      }
+    }
     
     return res.status(200).json({
       success: true,
@@ -275,13 +325,25 @@ exports.getCandidateById = async (req, res) => {
 
     // Check if recruiter can access this candidate
     const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
-    if (userRole === 'RECRUITER' && req.user.company_id) {
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
       if (candidate.company_id !== req.user.company_id) {
         return res.status(403).json({
           success: false,
           message: 'Bạn không có quyền xem ứng viên của công ty khác'
         });
       }
+    } else if (userRole !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền truy cập'
+      });
     }
     
     return res.status(200).json({
@@ -370,7 +432,15 @@ exports.updateCandidate = async (req, res) => {
 
     // Check if recruiter can update this candidate
     const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
-    if (userRole === 'RECRUITER' && req.user.company_id) {
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        await t.rollback();
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
       if (candidate.company_id !== req.user.company_id) {
         await t.rollback();
         return res.status(403).json({
@@ -378,6 +448,12 @@ exports.updateCandidate = async (req, res) => {
           message: 'Bạn không có quyền chỉnh sửa ứng viên của công ty khác'
         });
       }
+    } else if (userRole !== 'ADMIN') {
+      await t.rollback();
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền chỉnh sửa ứng viên'
+      });
     }
     
     // Check if email is being changed and if it's already in use
@@ -606,13 +682,25 @@ exports.viewCandidateCV = async (req, res) => {
 
     // Check if recruiter can view this candidate's CV
     const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
-    if (userRole === 'RECRUITER' && req.user.company_id) {
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
       if (candidate.company_id !== req.user.company_id) {
         return res.status(403).json({
           success: false,
           message: 'Bạn không có quyền xem CV của ứng viên công ty khác'
         });
       }
+    } else if (userRole !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền xem CV'
+      });
     }
 
     // Get primary resume
@@ -706,13 +794,25 @@ exports.downloadCandidateCV = async (req, res) => {
 
     // Check if recruiter can download this candidate's CV
     const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
-    if (userRole === 'RECRUITER' && req.user.company_id) {
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
       if (candidate.company_id !== req.user.company_id) {
         return res.status(403).json({
           success: false,
           message: 'Bạn không có quyền tải CV của ứng viên công ty khác'
         });
       }
+    } else if (userRole !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền tải CV'
+      });
     }
 
     // Get primary resume
@@ -799,7 +899,15 @@ exports.deleteCandidate = async (req, res) => {
 
     // Check if recruiter can delete this candidate
     const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
-    if (userRole === 'RECRUITER' && req.user.company_id) {
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        await t.rollback();
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
       if (candidate.company_id !== req.user.company_id) {
         await t.rollback();
         return res.status(403).json({
@@ -807,6 +915,12 @@ exports.deleteCandidate = async (req, res) => {
           message: 'Bạn không có quyền xóa ứng viên của công ty khác'
         });
       }
+    } else if (userRole !== 'ADMIN') {
+      await t.rollback();
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền xóa ứng viên'
+      });
     }
     
     // Delete candidate

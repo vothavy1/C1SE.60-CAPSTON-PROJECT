@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Test Get Question</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #000;
+            padding: 20px;
+            border: 2px solid #00ff00;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            background: #1a1a1a;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            font-family: monospace;
+        }
+        button {
+            cursor: pointer;
+        }
+        button:hover {
+            background: #00ff00;
+            color: #000;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 15px;
+            border: 1px solid #00ff00;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+        .info { color: #00aaff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 DEBUG - Test Get Question API</h1>
+        
+        <div>
+            <label>Question ID:</label>
+            <input type="number" id="questionId" value="57" placeholder="Nhập ID câu hỏi">
+        </div>
+        
+        <button onclick="testGetQuestion()">📡 Test API Get Question</button>
+        <button onclick="clearOutput()">🗑️ Clear Output</button>
+        
+        <h2>📊 Output:</h2>
+        <pre id="output">Nhấn button để test API...</pre>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+        
+        async function testGetQuestion() {
+            clearOutput();
+            
+            const questionId = document.getElementById('questionId').value;
+            const token = localStorage.getItem('token');
+            
+            log('🚀 Starting API test...', 'info');
+            log(`📌 Question ID: ${questionId}`, 'info');
+            log(`🔑 Token: ${token ? 'EXISTS (length: ' + token.length + ')' : 'NOT FOUND'}`, token ? 'success' : 'error');
+            
+            if (!token) {
+                log('❌ NO TOKEN - Please login first!', 'error');
+                log('Redirecting to login...', 'info');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                return;
+            }
+            
+            try {
+                log(`\n📡 Sending GET request to: ${API_BASE_URL}/questions/${questionId}`, 'info');
+                
+                const startTime = Date.now();
+                const response = await fetch(`${API_BASE_URL}/questions/${questionId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const duration = Date.now() - startTime;
+                log(`\n⏱️ Response time: ${duration}ms`, 'info');
+                log(`📊 Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                
+                const contentType = response.headers.get('content-type');
+                log(`📄 Content-Type: ${contentType}`, 'info');
+                
+                let data;
+                try {
+                    data = await response.json();
+                    log(`\n✅ Response parsed as JSON`, 'success');
+                } catch (parseError) {
+                    log(`\n❌ Failed to parse JSON: ${parseError.message}`, 'error');
+                    const text = await response.text();
+                    log(`Raw response: ${text}`, 'error');
+                    return;
+                }
+                
+                if (response.ok) {
+                    log(`\n✅ SUCCESS!`, 'success');
+                    log(`\n📦 Response Data:`, 'success');
+                    log(JSON.stringify(data, null, 2), 'success');
+                    
+                    if (data.data) {
+                        const question = data.data;
+                        log(`\n📋 Question Details:`, 'info');
+                        log(`  - ID: ${question.question_id}`, 'info');
+                        log(`  - Title: ${question.question_title}`, 'info');
+                        log(`  - Type: ${question.question_type}`, 'info');
+                        log(`  - Difficulty: ${question.difficulty_level}`, 'info');
+                        log(`  - Company ID: ${question.company_id || 'NULL'}`, 'info');
+                        
+                        if (question.QuestionOptions) {
+                            log(`  - Options: ${question.QuestionOptions.length}`, 'info');
+                        }
+                    }
+                } else {
+                    log(`\n❌ ERROR!`, 'error');
+                    log(`Message: ${data.message || 'Unknown error'}`, 'error');
+                    
+                    if (response.status === 403) {
+                        log(`\n⚠️ PERMISSION DENIED!`, 'error');
+                        log(`This usually means:`, 'info');
+                        log(`  1. Token doesn't have company_id`, 'info');
+                        log(`  2. Question belongs to different company`, 'info');
+                        log(`  3. User role doesn't have access`, 'info');
+                    } else if (response.status === 404) {
+                        log(`\n⚠️ NOT FOUND!`, 'error');
+                        log(`Question ID ${questionId} doesn't exist in database`, 'info');
+                    }
+                    
+                    log(`\nFull error response:`, 'error');
+                    log(JSON.stringify(data, null, 2), 'error');
+                }
+                
+            } catch (error) {
+                log(`\n💥 NETWORK ERROR!`, 'error');
+                log(`Error: ${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'error');
+            }
+        }
+        
+        // Auto-load question ID from URL if present
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            if (id) {
+                document.getElementById('questionId').value = id;
+                log(`📌 Auto-loaded Question ID from URL: ${id}`, 'info');
+            }
+        });
+    </script>
+</body>
+</html>

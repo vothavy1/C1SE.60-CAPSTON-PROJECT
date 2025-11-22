@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm tra Token - Debug</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-800 via-indigo-900 to-slate-900 min-h-screen text-white p-8">
+    
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">🔍 Kiểm tra JWT Token</h1>
+        
+        <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 mb-6 border border-white/20">
+            <h2 class="text-xl font-bold mb-4">Token hiện tại trong localStorage:</h2>
+            <div id="tokenInfo" class="space-y-4"></div>
+        </div>
+
+        <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            <h2 class="text-xl font-bold mb-4">Token Payload (decoded):</h2>
+            <pre id="tokenPayload" class="bg-black/30 p-4 rounded overflow-auto text-sm"></pre>
+        </div>
+
+        <div class="mt-6 flex gap-4">
+            <button onclick="clearAndReload()" class="bg-red-600 hover:bg-red-500 px-6 py-3 rounded-lg font-semibold transition">
+                🗑️ Xóa Token & Reload
+            </button>
+            <button onclick="window.location.href='login.html'" class="bg-green-600 hover:bg-green-500 px-6 py-3 rounded-lg font-semibold transition">
+                ➡️ Đi đến Trang Login
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function checkToken() {
+            const token = localStorage.getItem('token');
+            const session = JSON.parse(localStorage.getItem('session_user') || 'null');
+            
+            const tokenInfoDiv = document.getElementById('tokenInfo');
+            const tokenPayloadDiv = document.getElementById('tokenPayload');
+            
+            let html = '';
+            
+            if (!token) {
+                html += '<p class="text-red-400 font-bold">❌ Không tìm thấy token trong localStorage</p>';
+                tokenInfoDiv.innerHTML = html;
+                tokenPayloadDiv.textContent = 'No token found';
+                return;
+            }
+            
+            html += `<p class="text-green-400 font-bold">✅ Token tồn tại</p>`;
+            html += `<p class="text-sm text-gray-300 break-all">Token: ${token.substring(0, 50)}...</p>`;
+            
+            const payload = parseJwt(token);
+            
+            if (payload) {
+                html += '<div class="mt-4 space-y-2">';
+                html += '<p class="font-bold text-yellow-300">📋 Thông tin trong Token:</p>';
+                html += `<p>• User ID: <span class="text-cyan-300">${payload.id || 'N/A'}</span></p>`;
+                html += `<p>• Username: <span class="text-cyan-300">${payload.username || 'N/A'}</span></p>`;
+                html += `<p>• Role: <span class="text-cyan-300">${payload.role || 'N/A'}</span></p>`;
+                html += `<p class="font-bold ${payload.company_id ? 'text-green-400' : 'text-red-400'}">• Company ID: <span class="text-cyan-300">${payload.company_id || '❌ KHÔNG CÓ (CẦN LOGIN LẠI!)'}</span></p>`;
+                html += `<p>• Issued At: <span class="text-gray-400">${payload.iat ? new Date(payload.iat * 1000).toLocaleString('vi-VN') : 'N/A'}</span></p>`;
+                html += `<p>• Expires At: <span class="text-gray-400">${payload.exp ? new Date(payload.exp * 1000).toLocaleString('vi-VN') : 'N/A'}</span></p>`;
+                html += '</div>';
+                
+                tokenPayloadDiv.textContent = JSON.stringify(payload, null, 2);
+                
+                if (!payload.company_id) {
+                    html += `
+                        <div class="mt-4 bg-red-600/20 border border-red-500 rounded p-4">
+                            <p class="font-bold text-red-300">⚠️ CẢNH BÁO:</p>
+                            <p class="text-sm mt-2">Token của bạn KHÔNG có company_id. Điều này có nghĩa là:</p>
+                            <ul class="list-disc list-inside text-sm mt-2 space-y-1">
+                                <li>Bạn đang dùng token cũ (trước khi có tính năng multi-tenancy)</li>
+                                <li>Filtering theo công ty SẼ KHÔNG hoạt động</li>
+                                <li>Bạn có thể thấy dữ liệu của TẤT CẢ công ty</li>
+                            </ul>
+                            <p class="font-bold mt-3 text-yellow-300">✅ GIẢI PHÁP: Đăng xuất và đăng nhập lại!</p>
+                        </div>
+                    `;
+                }
+            } else {
+                html += '<p class="text-red-400 mt-4">❌ Không thể decode token</p>';
+                tokenPayloadDiv.textContent = 'Invalid token format';
+            }
+            
+            if (session) {
+                html += '<div class="mt-4 space-y-2">';
+                html += '<p class="font-bold text-yellow-300">📋 Session User:</p>';
+                html += `<pre class="text-sm text-gray-300">${JSON.stringify(session, null, 2)}</pre>`;
+                html += '</div>';
+            }
+            
+            tokenInfoDiv.innerHTML = html;
+        }
+
+        function clearAndReload() {
+            if (confirm('Bạn có chắc muốn xóa token và reload trang?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('session_user');
+                alert('Đã xóa token! Trang sẽ reload...');
+                location.reload();
+            }
+        }
+
+        // Run on load
+        checkToken();
+    </script>
+
+</body>
+</html>

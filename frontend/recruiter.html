@@ -102,11 +102,17 @@
     })();
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
-      try {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('session_user');
-      } catch(_) {}
-      location.href = 'index.html';
+      // 🔥 XÓA TẤT CẢ DỮ LIỆU
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear cookies
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      });
+      
+      // Force reload to clear cache
+      location.href = 'index.html?t=' + Date.now();
     });
   </script>
 </body>
