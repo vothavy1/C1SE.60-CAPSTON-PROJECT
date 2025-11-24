@@ -89,4 +89,29 @@ router.get(
   reportController.getNotifications
 );
 
+// ===== 5. RECRUITMENT REPORTS (ADMIN & RECRUITER) =====
+// Get all reports from recruitment_reports table
+router.get(
+  '/all-reports',
+  authMiddleware.verifyToken,
+  authMiddleware.authorize(['ADMIN', 'RECRUITER']),
+  reportController.getAllReports
+);
+
+// Update report (ADMIN only)
+router.put(
+  '/:reportId',
+  authMiddleware.verifyToken,
+  authMiddleware.authorize(['ADMIN']),
+  reportController.updateReport
+);
+
+// Delete report (ADMIN only)
+router.delete(
+  '/:reportId',
+  authMiddleware.verifyToken,
+  authMiddleware.authorize(['ADMIN']),
+  reportController.deleteReport
+);
+
 module.exports = router;

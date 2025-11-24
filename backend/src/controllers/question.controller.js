@@ -72,6 +72,10 @@ const questionController = {
             model: User,
             as: 'Creator',
             attributes: ['user_id', 'username', 'full_name']
+          },
+          {
+            model: require('../models').Company,
+            attributes: ['company_id', 'companyName', 'companyCode']
           }
         ],
         order: [['created_at', 'DESC']]

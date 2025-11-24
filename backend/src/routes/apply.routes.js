@@ -4,7 +4,8 @@ const applyController = require('../controllers/apply.controller');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
 
 // Public route - anyone can apply
-router.post('/apply', 
+// Mounted at /api/apply, so this becomes /api/apply/
+router.post('/', 
   applyController.upload.single('cv'), 
   applyController.applyJob
 );

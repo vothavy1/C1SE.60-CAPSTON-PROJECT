@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Delete Function</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">🧪 Test Delete Report Function</h1>
+    
+    <div class="bg-gray-800 rounded-lg p-6 mb-6">
+      <h2 class="text-xl font-bold mb-4">Test Controls</h2>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block mb-2">Report ID:</label>
+          <input type="number" id="testReportId" value="25" class="bg-gray-700 text-white px-4 py-2 rounded w-full">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Report Name:</label>
+          <input type="text" id="testReportName" value="Test Report" class="bg-gray-700 text-white px-4 py-2 rounded w-full">
+        </div>
+        
+        <button onclick="testDelete()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold w-full">
+          🗑️ Test Delete Function
+        </button>
+      </div>
+    </div>
+    
+    <div class="bg-gray-800 rounded-lg p-6">
+      <h2 class="text-xl font-bold mb-4">Console Output</h2>
+      <div id="output" class="bg-black p-4 rounded font-mono text-sm h-96 overflow-auto"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:5000/api';
+    const token = localStorage.getItem('token');
+    
+    function log(message, type = 'info') {
+      const outputDiv = document.getElementById('output');
+      const timestamp = new Date().toLocaleTimeString();
+      const colors = {
+        'info': 'text-blue-400',
+        'success': 'text-green-400',
+        'error': 'text-red-400',
+        'warning': 'text-yellow-400'
+      };
+      
+      outputDiv.innerHTML += `<div class="${colors[type]}">[${timestamp}] ${message}</div>`;
+      outputDiv.scrollTop = outputDiv.scrollHeight;
+      console.log(message);
+    }
+    
+    async function testDelete() {
+      const reportId = document.getElementById('testReportId').value;
+      const reportName = document.getElementById('testReportName').value;
+      
+      log('=== Starting Delete Test ===', 'info');
+      log(`Report ID: ${reportId}`, 'info');
+      log(`Report Name: ${reportName}`, 'info');
+      log(`Token: ${token ? 'Found' : 'NOT FOUND!'}`, token ? 'success' : 'error');
+      
+      if (!token) {
+        log('❌ No token found! Please login first.', 'error');
+        alert('Vui lòng đăng nhập trước!');
+        return;
+      }
+      
+      try {
+        const url = `${API_BASE_URL}/reports/${reportId}`;
+        log(`🌐 Sending DELETE to: ${url}`, 'info');
+        
+        const response = await fetch(url, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        log(`📡 Response status: ${response.status} ${response.statusText}`, 
+            response.ok ? 'success' : 'error');
+        
+        const contentType = response.headers.get('content-type');
+        log(`📦 Content-Type: ${contentType}`, 'info');
+        
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          log(`📄 Response data: ${JSON.stringify(data, null, 2)}`, 
+              response.ok ? 'success' : 'error');
+          
+          if (response.ok) {
+            log('✅ DELETE SUCCESSFUL!', 'success');
+            alert('✅ Xóa báo cáo thành công!');
+          } else {
+            log(`❌ DELETE FAILED: ${data.message}`, 'error');
+            alert(`❌ Lỗi: ${data.message}`);
+          }
+        } else {
+          const text = await response.text();
+          log(`📄 Response text: ${text}`, 'error');
+          log('❌ Response is not JSON!', 'error');
+        }
+        
+      } catch (error) {
+        log(`❌ Exception: ${error.message}`, 'error');
+        log(`❌ Stack: ${error.stack}`, 'error');
+        alert(`❌ Lỗi: ${error.message}`);
+      }
+      
+      log('=== Test Completed ===', 'info');
+    }
+    
+    // Initial check
+    log('🚀 Test page loaded', 'success');
+    log(`Token status: ${token ? 'Found' : 'Not found'}`, token ? 'success' : 'warning');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        log(`User role: ${payload.role || 'Unknown'}`, 'info');
+        log(`User ID: ${payload.id || 'Unknown'}`, 'info');
+      } catch (e) {
+        log('⚠️ Cannot decode token', 'warning');
+      }
+    }
+  </script>
+</body>
+</html>

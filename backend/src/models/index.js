@@ -72,6 +72,14 @@ QuestionOption.belongsTo(Question, { foreignKey: 'question_id' });
 Question.hasMany(CodingQuestionTemplate, { foreignKey: 'question_id' });
 CodingQuestionTemplate.belongsTo(Question, { foreignKey: 'question_id' });
 
+// Company - Test
+Company.hasMany(Test, { foreignKey: 'company_id' });
+Test.belongsTo(Company, { foreignKey: 'company_id' });
+
+// Company - Question
+Company.hasMany(Question, { foreignKey: 'company_id' });
+Question.belongsTo(Company, { foreignKey: 'company_id' });
+
 // User - Test
 User.hasMany(Test, { foreignKey: 'created_by', as: 'CreatedTests' });
 Test.belongsTo(User, { foreignKey: 'created_by', as: 'Creator' });
@@ -87,6 +95,10 @@ Question.hasMany(TestQuestion, { foreignKey: 'question_id' });
 // TestQuestion - Test
 TestQuestion.belongsTo(Test, { foreignKey: 'test_id' });
 Test.hasMany(TestQuestion, { foreignKey: 'test_id' });
+
+// Company - JobPosition
+Company.hasMany(JobPosition, { foreignKey: 'company_id' });
+JobPosition.belongsTo(Company, { foreignKey: 'company_id' });
 
 // User - JobPosition
 User.hasMany(JobPosition, { foreignKey: 'created_by', as: 'CreatedPositions' });

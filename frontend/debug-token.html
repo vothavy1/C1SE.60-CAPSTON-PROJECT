@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Token Debug - Check Company ID</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .json-key { color: #0066cc; font-weight: bold; }
+    .json-string { color: #008800; }
+    .json-number { color: #cc6600; }
+    .json-boolean { color: #990099; }
+    .json-null { color: #999999; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-600 to-purple-600 min-h-screen p-6">
+  <div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-2xl shadow-2xl p-8">
+      <h1 class="text-3xl font-bold text-indigo-600 mb-6">🔍 Token & Company ID Debug</h1>
+      
+      <!-- Token Info -->
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <span>🎫</span> Token Information
+        </h2>
+        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <pre id="tokenInfo" class="text-sm overflow-x-auto whitespace-pre-wrap">Loading...</pre>
+        </div>
+      </div>
+
+      <!-- Session User Info -->
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <span>👤</span> Session User (localStorage.session_user)
+        </h2>
+        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <pre id="sessionUserInfo" class="text-sm overflow-x-auto whitespace-pre-wrap">Loading...</pre>
+        </div>
+      </div>
+
+      <!-- Company ID Check -->
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <span>🏢</span> Company ID Check
+        </h2>
+        <div id="companyCheck" class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <p class="text-gray-600">Checking...</p>
+        </div>
+      </div>
+
+      <!-- Recommendations -->
+      <div id="recommendations" class="mb-6 hidden">
+        <h2 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <span>💡</span> Khuyến Nghị
+        </h2>
+        <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+          <ul id="recommendationsList" class="list-disc list-inside space-y-2 text-yellow-800"></ul>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-4">
+        <a href="force-logout.html" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg text-center transition duration-200">
+          🚪 Force Logout (Clear All)
+        </a>
+        <a href="login.html" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-center transition duration-200">
+          🔐 Đăng Nhập Lại
+        </a>
+        <button onclick="location.reload()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition duration-200">
+          🔄 Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const recommendations = [];
+
+    // 1. Check Token
+    const token = localStorage.getItem('token');
+    const tokenInfoDiv = document.getElementById('tokenInfo');
+    
+    if (!token) {
+      tokenInfoDiv.innerHTML = '<span class="text-red-600 font-bold">❌ Không có token - Chưa đăng nhập</span>';
+      recommendations.push('Bạn chưa đăng nhập. Hãy đăng nhập để nhận token.');
+    } else {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        tokenInfoDiv.innerHTML = `
+<span class="text-green-600 font-bold">✅ Token tìm thấy</span>
+
+<strong>Token Payload:</strong>
+${JSON.stringify(payload, null, 2)}
+
+<strong>Token Issued:</strong> ${payload.iat ? new Date(payload.iat * 1000).toLocaleString('vi-VN') : 'N/A'}
+<strong>Token Expires:</strong> ${payload.exp ? new Date(payload.exp * 1000).toLocaleString('vi-VN') : 'N/A'}
+<strong>Time Until Expiry:</strong> ${payload.exp ? Math.round((payload.exp * 1000 - Date.now()) / 1000 / 60 / 60) + ' hours' : 'N/A'}
+        `;
+
+        // Check if token has company_id
+        if (!payload.company_id && payload.role !== 'ADMIN' && payload.role !== 'CANDIDATE') {
+          recommendations.push('⚠️ Token KHÔNG có company_id! Đây là token cũ. Bạn cần đăng xuất và đăng nhập lại để nhận token mới.');
+        } else if (payload.company_id) {
+          tokenInfoDiv.innerHTML += `\n<strong class="text-green-600">✅ Token có company_id: ${payload.company_id}</strong>`;
+        }
+      } catch (e) {
+        tokenInfoDiv.innerHTML = '<span class="text-red-600 font-bold">❌ Token không hợp lệ - Không thể decode</span>';
+        recommendations.push('Token bị lỗi hoặc không hợp lệ. Hãy đăng xuất và đăng nhập lại.');
+      }
+    }
+
+    // 2. Check Session User
+    const sessionUserStr = localStorage.getItem('session_user');
+    const sessionUserDiv = document.getElementById('sessionUserInfo');
+    
+    if (!sessionUserStr) {
+      sessionUserDiv.innerHTML = '<span class="text-red-600 font-bold">❌ Không có session_user</span>';
+      recommendations.push('Không tìm thấy session_user trong localStorage.');
+    } else {
+      try {
+        const sessionUser = JSON.parse(sessionUserStr);
+        sessionUserDiv.innerHTML = `
+<span class="text-green-600 font-bold">✅ Session User tìm thấy</span>
+
+${JSON.stringify(sessionUser, null, 2)}
+        `;
+
+        // Check if session_user has company_id
+        if (!sessionUser.company_id && sessionUser.role === 'RECRUITER') {
+          recommendations.push('⚠️ Session user KHÔNG có company_id! Recruiter phải có company_id. Hãy đăng nhập lại.');
+        } else if (sessionUser.company_id) {
+          sessionUserDiv.innerHTML += `\n<strong class="text-green-600">✅ Session có company_id: ${sessionUser.company_id}</strong>`;
+        }
+      } catch (e) {
+        sessionUserDiv.innerHTML = '<span class="text-red-600 font-bold">❌ Session user không hợp lệ - JSON bị lỗi</span>';
+        recommendations.push('Session user bị lỗi. Hãy đăng xuất và đăng nhập lại.');
+      }
+    }
+
+    // 3. Company ID Check
+    const companyCheckDiv = document.getElementById('companyCheck');
+    let tokenCompanyId = null;
+    let sessionCompanyId = null;
+    let userRole = null;
+
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        tokenCompanyId = payload.company_id;
+        userRole = payload.role;
+      } catch (e) {}
+    }
+
+    if (sessionUserStr) {
+      try {
+        const sessionUser = JSON.parse(sessionUserStr);
+        sessionCompanyId = sessionUser.company_id;
+        userRole = userRole || sessionUser.role;
+      } catch (e) {}
+    }
+
+    if (userRole === 'ADMIN') {
+      companyCheckDiv.innerHTML = `
+        <p class="text-blue-600 font-bold">✅ Bạn là ADMIN - Không cần company_id</p>
+        <p class="text-gray-600 text-sm mt-2">Admin có thể xem dữ liệu của tất cả công ty.</p>
+      `;
+    } else if (userRole === 'CANDIDATE') {
+      companyCheckDiv.innerHTML = `
+        <p class="text-blue-600 font-bold">✅ Bạn là CANDIDATE</p>
+        <p class="text-gray-600 text-sm mt-2">Company ID: ${sessionCompanyId || 'N/A'}</p>
+      `;
+    } else if (userRole === 'RECRUITER') {
+      if (!tokenCompanyId && !sessionCompanyId) {
+        companyCheckDiv.innerHTML = `
+          <p class="text-red-600 font-bold">❌ RECRUITER KHÔNG CÓ COMPANY_ID!</p>
+          <p class="text-gray-600 text-sm mt-2">Token: ${tokenCompanyId || 'Không có'}</p>
+          <p class="text-gray-600 text-sm">Session: ${sessionCompanyId || 'Không có'}</p>
+          <p class="text-red-600 text-sm mt-2 font-semibold">⚠️ Đây là lý do bạn thấy dữ liệu của tất cả công ty!</p>
+        `;
+        recommendations.push('🚨 <strong>VẤN ĐỀ CHÍNH:</strong> Recruiter không có company_id. Backend sẽ không filter được dữ liệu theo công ty. HÃY ĐĂNG XUẤT VÀ ĐĂNG NHẬP LẠI NGAY!');
+      } else {
+        const companyId = tokenCompanyId || sessionCompanyId;
+        companyCheckDiv.innerHTML = `
+          <p class="text-green-600 font-bold">✅ RECRUITER CÓ COMPANY_ID</p>
+          <p class="text-gray-600 text-sm mt-2">Company ID: <strong class="text-green-600">${companyId}</strong></p>
+          <p class="text-gray-600 text-sm">Token: ${tokenCompanyId || 'Không có'}</p>
+          <p class="text-gray-600 text-sm">Session: ${sessionCompanyId || 'Không có'}</p>
+          <p class="text-green-600 text-sm mt-2 font-semibold">✅ Backend sẽ filter dữ liệu theo company_id này.</p>
+        `;
+      }
+    } else {
+      companyCheckDiv.innerHTML = `
+        <p class="text-gray-600">Role không xác định: ${userRole || 'N/A'}</p>
+      `;
+    }
+
+    // 4. Show Recommendations
+    if (recommendations.length > 0) {
+      const recommendationsDiv = document.getElementById('recommendations');
+      const recommendationsList = document.getElementById('recommendationsList');
+      recommendationsDiv.classList.remove('hidden');
+      
+      recommendationsList.innerHTML = recommendations.map(r => `<li>${r}</li>`).join('');
+    }
+  </script>
+</body>
+</html>

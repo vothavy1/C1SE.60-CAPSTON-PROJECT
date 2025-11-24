@@ -1090,4 +1090,239 @@ exports.saveTestCompletionData = async (candidateTestData) => {
   }
 };
 
+// ===== 5. RECRUITMENT REPORTS (ADMIN & RECRUITER) =====
+// Get all reports from recruitment_reports table
+exports.getAllReports = async (req, res) => {
+  try {
+    const { report_type, limit = 100, offset = 0 } = req.query;
+
+    console.log('📋 Fetching reports from recruitment_reports...');
+
+    // 🔒 COMPANY FILTER - Recruiter chỉ xem báo cáo của công ty mình
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    console.log(`👤 User: ${req.user?.username}, Role: ${userRole}, Company ID: ${req.user?.company_id}`);
+
+    // Build where clause
+    const whereClause = {};
+    if (report_type) {
+      whereClause.report_type = report_type;
+    }
+
+    // Fetch all reports with creator info
+    const reports = await RecruitmentReport.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: User,
+          as: 'Creator',
+          attributes: ['user_id', 'username', 'full_name', 'company_id']
+        }
+      ],
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    // Filter by company if recruiter
+    let filteredReports = reports;
+    if (userRole === 'RECRUITER' && req.user.company_id) {
+      filteredReports = reports.filter(report => {
+        // Check if creator belongs to same company
+        if (report.Creator?.company_id === req.user.company_id) return true;
+        
+        // Check if report parameters contain company_id
+        const params = report.parameters;
+        if (params && params.company_id === req.user.company_id) return true;
+        
+        // Check if report is related to candidate from same company
+        if (params && params.candidate_company_id === req.user.company_id) return true;
+        
+        return false;
+      });
+      console.log(`🔒 RECRUITER FILTER: ${reports.length} total, ${filteredReports.length} for company ${req.user.company_id}`);
+    }
+
+    // Format data for response
+    const reportsData = filteredReports.map(report => ({
+      report_id: report.report_id,
+      report_name: report.report_name,
+      report_type: report.report_type,
+      parameters: report.parameters, // Already parsed by getter
+      created_by: report.created_by,
+      creator_name: report.Creator?.full_name || report.Creator?.username || 'System',
+      created_at: report.created_at
+    }));
+
+    console.log(`✅ Found ${reportsData.length} reports`);
+
+    return res.status(200).json({
+      success: true,
+      count: reportsData.length,
+      data: reportsData
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching all reports:', error);
+    logger.error(`Error fetching all reports: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch reports',
+      error: error.message
+    });
+  }
+};
+
+// ===== 6. UPDATE REPORT (ADMIN ONLY) =====
+exports.updateReport = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const { report_name } = req.body;
+    const userId = req.user?.user_id || req.user?.userId;
+    const username = req.user?.username || 'Unknown';
+
+    console.log(`✏️ [ADMIN] User ${username} (ID: ${userId}) attempting to update report ${reportId}...`);
+    console.log(`📝 New name: "${report_name}"`);
+
+    // Validate reportId
+    if (!reportId || isNaN(reportId)) {
+      console.log(`❌ Invalid report ID: ${reportId}`);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid report ID'
+      });
+    }
+
+    // Validate report_name
+    if (!report_name || report_name.trim() === '') {
+      console.log(`❌ Report name is empty`);
+      return res.status(400).json({
+        success: false,
+        message: 'Tên báo cáo không được để trống'
+      });
+    }
+
+    // Find report
+    const report = await RecruitmentReport.findByPk(reportId);
+    if (!report) {
+      console.log(`❌ Report ${reportId} not found in database`);
+      return res.status(404).json({
+        success: false,
+        message: `Báo cáo #${reportId} không tồn tại`
+      });
+    }
+
+    const oldName = report.report_name;
+    console.log(`📄 Found report: "${oldName}" (Type: ${report.report_type})`);
+
+    // Check if name actually changed
+    if (oldName === report_name.trim()) {
+      console.log(`⚠️ Report name unchanged`);
+      return res.status(200).json({
+        success: true,
+        message: 'Tên báo cáo không thay đổi',
+        data: {
+          report_id: report.report_id,
+          report_name: report.report_name,
+          report_type: report.report_type
+        }
+      });
+    }
+
+    // Update report
+    report.report_name = report_name.trim();
+    await report.save();
+
+    console.log(`✅ [ADMIN] Report ${reportId} updated: "${oldName}" → "${report.report_name}" by ${username}`);
+    logger.info(`Report updated: ID=${reportId}, Old="${oldName}", New="${report.report_name}" by user ${username} (${userId})`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Đã cập nhật báo cáo thành công',
+      data: {
+        report_id: report.report_id,
+        report_name: report.report_name,
+        report_type: report.report_type,
+        updated_at: new Date(),
+        updated_by: username
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error updating report:', error);
+    console.error('❌ Error stack:', error.stack);
+    logger.error(`Error updating report: ${error.message}`, { stack: error.stack });
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi cập nhật báo cáo',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+};
+
+// ===== 7. DELETE REPORT (ADMIN ONLY) =====
+exports.deleteReport = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const userId = req.user?.user_id || req.user?.userId;
+    const username = req.user?.username || 'Unknown';
+
+    console.log(`🗑️ [ADMIN] User ${username} (ID: ${userId}) attempting to delete report ${reportId}...`);
+
+    // Validate reportId
+    if (!reportId || isNaN(reportId)) {
+      console.log(`❌ Invalid report ID: ${reportId}`);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid report ID'
+      });
+    }
+
+    // Find report
+    const report = await RecruitmentReport.findByPk(reportId);
+    if (!report) {
+      console.log(`❌ Report ${reportId} not found in database`);
+      return res.status(404).json({
+        success: false,
+        message: `Báo cáo #${reportId} không tồn tại`
+      });
+    }
+
+    console.log(`📄 Found report: "${report.report_name}" (Type: ${report.report_type})`);
+
+    // Store info for logging
+    const reportInfo = {
+      report_id: report.report_id,
+      report_name: report.report_name,
+      report_type: report.report_type,
+      created_at: report.created_at
+    };
+
+    // Delete report
+    await report.destroy();
+
+    console.log(`✅ [ADMIN] Report ${reportId} deleted successfully by ${username}`);
+    logger.info(`Report deleted: ${JSON.stringify(reportInfo)} by user ${username} (${userId})`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Đã xóa báo cáo thành công',
+      data: {
+        report_id: parseInt(reportId),
+        deleted_at: new Date(),
+        deleted_by: username
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error deleting report:', error);
+    console.error('❌ Error stack:', error.stack);
+    logger.error(`Error deleting report: ${error.message}`, { stack: error.stack });
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi xóa báo cáo',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+};
+
 module.exports = exports;

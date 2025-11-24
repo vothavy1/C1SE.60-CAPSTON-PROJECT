@@ -34,10 +34,10 @@ const adminController = {
       `);
       const tests = testResult[0].count;
 
-      // Query to count CVs (candidate profiles)
+      // Query to count CVs (candidate resumes)
       const [cvResult] = await sequelize.query(`
         SELECT COUNT(*) as count 
-        FROM candidate_profiles
+        FROM candidate_resumes
       `);
       const cvs = cvResult[0].count;
 

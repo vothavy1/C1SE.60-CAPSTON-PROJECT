@@ -14,6 +14,8 @@ const candidateTestRoutes = require('./candidateTest.routes');
 const reportRoutes = require('./report.routes');
 const applyRoutes = require('./apply.routes');
 const companyRoutes = require('./company.routes');
+const jobPositionRoutes = require('./jobPosition.routes');
+const applicationRoutes = require('./application.routes');
 
 // Use route modules
 router.use('/auth', authRoutes);
@@ -24,10 +26,12 @@ router.use('/tests', testRoutes);
 router.use('/candidates', candidateRoutes);
 router.use('/companies', companyRoutes);
 router.use('/jobs', jobRoutes);
+router.use('/job-positions', jobPositionRoutes);
+router.use('/applications', applicationRoutes);
 router.use('/interviews', interviewRoutes);
 router.use('/candidate-tests', candidateTestRoutes);
 router.use('/reports', reportRoutes);
-router.use('/', applyRoutes); // Apply routes are at root level (/api/apply, /api/candidates)
+router.use('/apply', applyRoutes); // Apply routes: /api/apply/apply, /api/apply/candidates
 
 // Health check endpoint
 router.get('/health', (req, res) => {

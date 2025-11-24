@@ -143,6 +143,7 @@ const testController = {
           'passing_score',
           'is_active',
           'created_by',
+          'company_id',
           'created_at',
           'updated_at'
         ],
@@ -151,6 +152,10 @@ const testController = {
             model: User,
             as: 'Creator',
             attributes: ['user_id', 'username', 'full_name']
+          },
+          {
+            model: require('../models').Company,
+            attributes: ['company_id', 'companyName', 'companyCode']
           }
         ],
         order: [['created_at', 'DESC']]

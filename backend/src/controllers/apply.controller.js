@@ -175,7 +175,7 @@ const getCandidates = async (req, res) => {
       include: [
         {
           model: CandidateResume,
-          attributes: ['resume_id', 'resume_type', 'file_path', 'file_name', 'uploaded_at'],
+          attributes: ['resume_id', 'file_type', 'file_path', 'file_name', 'file_size', 'uploaded_at', 'is_primary'],
           required: false
         }
       ],
