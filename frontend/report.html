@@ -110,8 +110,21 @@
           <span class="text-2xl">⚠️</span>
           Báo Cáo Vi Phạm Công Ty
         </h3>
-        <div class="flex gap-2">
-          <select id="recruiterViolationTypeFilter" class="bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30 hover:border-orange-400/50 transition cursor-pointer">
+      </div>
+      
+      <!-- Date Filter Section -->
+      <div class="flex flex-wrap gap-3 mb-6 bg-purple-900/30 p-4 rounded-lg border border-purple-400/20">
+        <div class="flex items-center gap-2">
+          <label class="text-white font-semibold text-sm">📅 Từ ngày:</label>
+          <input type="date" id="recruiterStartDate" class="bg-purple-900/50 text-white px-3 py-2 rounded-lg border border-purple-400/30 hover:border-orange-400/50 transition cursor-pointer text-sm">
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-white font-semibold text-sm">📅 Đến ngày:</label>
+          <input type="date" id="recruiterEndDate" class="bg-purple-900/50 text-white px-3 py-2 rounded-lg border border-purple-400/30 hover:border-orange-400/50 transition cursor-pointer text-sm">
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-white font-semibold text-sm">🏷️ Loại:</label>
+          <select id="recruiterViolationTypeFilter" class="bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30 hover:border-orange-400/50 transition cursor-pointer text-sm">
             <option value="">Tất cả loại vi phạm</option>
             <option value="TAB_SWITCH">Chuyển tab</option>
             <option value="COPY_PASTE">Sao chép dán</option>
@@ -123,6 +136,12 @@
             <option value="NONE">Không vi phạm</option>
           </select>
         </div>
+        <button id="applyRecruiterFilter" class="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-lg transition font-semibold text-sm shadow-lg">
+          🔍 Lọc Dữ Liệu
+        </button>
+        <button id="resetRecruiterFilter" class="bg-gray-500/50 hover:bg-gray-600/50 text-white px-4 py-2 rounded-lg transition font-semibold text-sm">
+          🔄 Đặt Lại
+        </button>
       </div>
       
       <!-- Violations Table -->
@@ -156,8 +175,25 @@
     <!-- Admin: All Reports from Database Only -->
     <div id="adminSection" class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-400/30" style="display: none;">
       <div class="flex justify-between items-center mb-6">
-        <div class="flex gap-2">
-          <select id="dbReportTypeFilter" class="bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30 hover:border-blue-400/50 transition cursor-pointer">
+        <h3 class="text-xl font-semibold text-white flex items-center gap-2">
+          <span class="text-2xl">📊</span>
+          Quản Lý Tất Cả Báo Cáo
+        </h3>
+      </div>
+      
+      <!-- Date Filter Section -->
+      <div class="flex flex-wrap gap-3 mb-6 bg-purple-900/30 p-4 rounded-lg border border-purple-400/20">
+        <div class="flex items-center gap-2">
+          <label class="text-white font-semibold text-sm">📅 Từ ngày:</label>
+          <input type="date" id="adminStartDate" class="bg-purple-900/50 text-white px-3 py-2 rounded-lg border border-purple-400/30 hover:border-blue-400/50 transition cursor-pointer text-sm">
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-white font-semibold text-sm">📅 Đến ngày:</label>
+          <input type="date" id="adminEndDate" class="bg-purple-900/50 text-white px-3 py-2 rounded-lg border border-purple-400/30 hover:border-blue-400/50 transition cursor-pointer text-sm">
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-white font-semibold text-sm">🏷️ Loại:</label>
+          <select id="dbReportTypeFilter" class="bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30 hover:border-blue-400/50 transition cursor-pointer text-sm">
             <option value="">Tất cả loại báo cáo</option>
             <option value="VIOLATION">Vi phạm</option>
             <option value="STATISTICS">Thống kê</option>
@@ -165,10 +201,16 @@
             <option value="NOTIFICATION">Thông báo</option>
             <option value="CUSTOM">Tùy chỉnh</option>
           </select>
-          <button id="refreshDbReportsBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition">
-            🔄 Làm Mới
-          </button>
         </div>
+        <button id="applyAdminFilter" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-4 py-2 rounded-lg transition font-semibold text-sm shadow-lg">
+          🔍 Lọc Dữ Liệu
+        </button>
+        <button id="resetAdminFilter" class="bg-gray-500/50 hover:bg-gray-600/50 text-white px-4 py-2 rounded-lg transition font-semibold text-sm">
+          🔄 Đặt Lại
+        </button>
+        <button id="refreshDbReportsBtn" class="bg-green-500/50 hover:bg-green-600/50 text-white px-4 py-2 rounded-lg transition font-semibold text-sm">
+          🔄 Làm Mới
+        </button>
       </div>
 
       <!-- Database Reports Table -->
@@ -376,9 +418,23 @@
     async function loadRecruiterViolations() {
       try {
         console.log('⚠️ [RECRUITER] Loading violations from API...');
-        const filter = document.getElementById('recruiterViolationTypeFilter').value;
+        
+        // Get filter values
+        const violationType = document.getElementById('recruiterViolationTypeFilter').value;
+        const startDate = document.getElementById('recruiterStartDate').value;
+        const endDate = document.getElementById('recruiterEndDate').value;
+        
+        // Build URL with filters
         let url = `${API_BASE_URL}/reports/violations`;
-        if (filter) url += `?violationType=${filter}`;
+        const params = [];
+        
+        if (violationType) params.push(`violationType=${violationType}`);
+        if (startDate) params.push(`startDate=${startDate}`);
+        if (endDate) params.push(`endDate=${endDate}`);
+        
+        if (params.length > 0) {
+          url += '?' + params.join('&');
+        }
 
         console.log('⚠️ Fetching from:', url);
         const response = await fetch(url, {
@@ -484,9 +540,23 @@
     async function loadDatabaseReports() {
       try {
         console.log('📁 [ADMIN] Loading all reports from database...');
-        const filter = document.getElementById('dbReportTypeFilter').value;
+        
+        // Get filter values
+        const reportType = document.getElementById('dbReportTypeFilter').value;
+        const startDate = document.getElementById('adminStartDate').value;
+        const endDate = document.getElementById('adminEndDate').value;
+        
+        // Build URL with filters
         let url = `${API_BASE_URL}/reports/all-reports`;
-        if (filter) url += `?report_type=${filter}`;
+        const params = [];
+        
+        if (reportType) params.push(`report_type=${reportType}`);
+        if (startDate) params.push(`startDate=${startDate}`);
+        if (endDate) params.push(`endDate=${endDate}`);
+        
+        if (params.length > 0) {
+          url += '?' + params.join('&');
+        }
 
         console.log('📁 Fetching from:', url);
         const response = await fetch(url, {
@@ -786,13 +856,37 @@
 
     // Recruiter event listeners
     if (userRole === 'RECRUITER') {
-      document.getElementById('recruiterViolationTypeFilter').addEventListener('change', loadRecruiterViolations);
+      document.getElementById('applyRecruiterFilter').addEventListener('click', loadRecruiterViolations);
+      document.getElementById('resetRecruiterFilter').addEventListener('click', () => {
+        document.getElementById('recruiterStartDate').value = '';
+        document.getElementById('recruiterEndDate').value = '';
+        document.getElementById('recruiterViolationTypeFilter').value = '';
+        loadRecruiterViolations();
+      });
+      
+      // Set default date range (last 30 days)
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+      document.getElementById('recruiterEndDate').value = today.toISOString().split('T')[0];
+      document.getElementById('recruiterStartDate').value = thirtyDaysAgo.toISOString().split('T')[0];
     }
 
     // Admin event listeners
     if (userRole === 'ADMIN') {
       document.getElementById('refreshDbReportsBtn').addEventListener('click', loadDatabaseReports);
-      document.getElementById('dbReportTypeFilter').addEventListener('change', loadDatabaseReports);
+      document.getElementById('applyAdminFilter').addEventListener('click', loadDatabaseReports);
+      document.getElementById('resetAdminFilter').addEventListener('click', () => {
+        document.getElementById('adminStartDate').value = '';
+        document.getElementById('adminEndDate').value = '';
+        document.getElementById('dbReportTypeFilter').value = '';
+        loadDatabaseReports();
+      });
+      
+      // Set default date range (last 30 days)
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+      document.getElementById('adminEndDate').value = today.toISOString().split('T')[0];
+      document.getElementById('adminStartDate').value = thirtyDaysAgo.toISOString().split('T')[0];
       
       // Delete modal listeners
       document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDelete);

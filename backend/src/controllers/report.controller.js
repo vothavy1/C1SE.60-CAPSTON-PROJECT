@@ -138,6 +138,7 @@ exports.getViolations = async (req, res) => {
     const { violationType, candidateTestId, startDate, endDate } = req.query;
     
     console.log('📊 Fetching ALL candidate tests with violations info...');
+    console.log('🔍 Filters:', { violationType, candidateTestId, startDate, endDate });
     
     // 🔒 COMPANY FILTER - Recruiter chỉ xem báo cáo của công ty mình
     const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
@@ -164,6 +165,21 @@ exports.getViolations = async (req, res) => {
     
     if (candidateTestId) {
       testWhereClause.candidate_test_id = candidateTestId;
+    }
+    
+    // Add date range filter
+    if (startDate || endDate) {
+      testWhereClause.end_time = {};
+      if (startDate) {
+        testWhereClause.end_time[Op.gte] = new Date(startDate);
+        console.log('📅 Start date filter:', startDate);
+      }
+      if (endDate) {
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999); // Include entire end date
+        testWhereClause.end_time[Op.lte] = endDateTime;
+        console.log('📅 End date filter:', endDate);
+      }
     }
     
     // Fetch ALL completed candidate tests
@@ -629,11 +645,27 @@ exports.getActivityLogs = async (req, res) => {
     const { candidate_test_id, event_type, startDate, endDate } = req.query;
 
     console.log('📋 Fetching activity logs from database...');
+    console.log('🔍 Filters:', { candidate_test_id, event_type, startDate, endDate });
 
-    // Build where clause
+    // Build where clause with date filter
     const whereClause = {
       report_type: 'ACTIVITY_LOG'
     };
+    
+    // Add date range filter for created_at
+    if (startDate || endDate) {
+      whereClause.created_at = {};
+      if (startDate) {
+        whereClause.created_at[Op.gte] = new Date(startDate);
+        console.log('📅 Start date filter:', startDate);
+      }
+      if (endDate) {
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999);
+        whereClause.created_at[Op.lte] = endDateTime;
+        console.log('📅 End date filter:', endDate);
+      }
+    }
 
     // Fetch activity logs from recruitment_reports
     const activityReports = await RecruitmentReport.findAll({
@@ -1094,18 +1126,34 @@ exports.saveTestCompletionData = async (candidateTestData) => {
 // Get all reports from recruitment_reports table
 exports.getAllReports = async (req, res) => {
   try {
-    const { report_type, limit = 100, offset = 0 } = req.query;
+    const { report_type, limit = 100, offset = 0, startDate, endDate } = req.query;
 
     console.log('📋 Fetching reports from recruitment_reports...');
+    console.log('🔍 Filters:', { report_type, startDate, endDate, limit, offset });
 
     // 🔒 COMPANY FILTER - Recruiter chỉ xem báo cáo của công ty mình
     const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
     console.log(`👤 User: ${req.user?.username}, Role: ${userRole}, Company ID: ${req.user?.company_id}`);
 
-    // Build where clause
+    // Build where clause with date filter
     const whereClause = {};
     if (report_type) {
       whereClause.report_type = report_type;
+    }
+    
+    // Add date range filter
+    if (startDate || endDate) {
+      whereClause.created_at = {};
+      if (startDate) {
+        whereClause.created_at[Op.gte] = new Date(startDate);
+        console.log('📅 Start date filter:', startDate);
+      }
+      if (endDate) {
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999); // Include entire end date
+        whereClause.created_at[Op.lte] = endDateTime;
+        console.log('📅 End date filter:', endDate);
+      }
     }
 
     // Fetch all reports with creator info

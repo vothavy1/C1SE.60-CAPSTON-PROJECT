@@ -16,6 +16,7 @@ const applyRoutes = require('./apply.routes');
 const companyRoutes = require('./company.routes');
 const jobPositionRoutes = require('./jobPosition.routes');
 const applicationRoutes = require('./application.routes');
+const settingsRoutes = require('./settings.routes');
 
 // Use route modules
 router.use('/auth', authRoutes);
@@ -32,6 +33,7 @@ router.use('/interviews', interviewRoutes);
 router.use('/candidate-tests', candidateTestRoutes);
 router.use('/reports', reportRoutes);
 router.use('/apply', applyRoutes); // Apply routes: /api/apply/apply, /api/apply/candidates
+router.use('/settings', settingsRoutes); // Settings routes (Admin only)
 
 // Health check endpoint
 router.get('/health', (req, res) => {
