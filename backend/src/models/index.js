@@ -53,7 +53,7 @@ User.hasOne(Candidate, { foreignKey: 'user_id' });
 Candidate.belongsTo(User, { foreignKey: 'user_id' });
 
 // Candidate - CandidateResume
-Candidate.hasMany(CandidateResume, { foreignKey: 'candidate_id' });
+Candidate.hasMany(CandidateResume, { foreignKey: 'candidate_id', as: 'CandidateResumes' });
 CandidateResume.belongsTo(Candidate, { foreignKey: 'candidate_id' });
 
 // User - Question

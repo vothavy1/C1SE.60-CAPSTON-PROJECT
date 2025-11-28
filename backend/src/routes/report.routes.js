@@ -98,6 +98,14 @@ router.get(
   reportController.getAllReports
 );
 
+// Get single report by ID (ADMIN only)
+router.get(
+  '/:reportId',
+  authMiddleware.verifyToken,
+  authMiddleware.authorize(['ADMIN']),
+  reportController.getReportById
+);
+
 // Update report (ADMIN only)
 router.put(
   '/:reportId',

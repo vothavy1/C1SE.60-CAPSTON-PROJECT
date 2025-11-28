@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Báo Cáo & Thống Kê - ExamPro</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
   <style>
     .stat-card {
       transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -18,7 +20,7 @@
       transition: all 0.3s ease;
     }
     .tab-button.active {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      background: #1976d2;
       color: white;
     }
     .tab-button.active::after {
@@ -28,7 +30,7 @@
       left: 0;
       right: 0;
       height: 3px;
-      background: #fbbf24;
+      background: #1976d2;
     }
     
     /* Modal styles */
@@ -83,17 +85,18 @@
   </style>
 </head>
 
-<body class="bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-800 min-h-screen text-white font-sans">
+<body class="light-mode min-h-screen transition-colors duration-300">
 
   <!-- Navigation Header -->
-  <header class="bg-white/10 backdrop-blur-md shadow-lg border-b border-purple-400/30">
+  <header class="header-bg backdrop-blur-md shadow-lg border-b sticky top-0 z-50 transition-colors duration-300">
     <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
-      <h1 class="text-2xl font-bold text-white tracking-wide">📊 Báo Cáo & Thống Kê</h1>
+      <h1 class="text-2xl font-bold tracking-wide">📊 Báo Cáo & Thống Kê</h1>
       <div class="flex items-center gap-4">
-        <button id="refreshBtn" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+        <div class="theme-toggle" id="themeToggle" title="Chuyển đổi sáng/tối"></div>
+        <button id="refreshBtn" class="btn-primary px-4 py-2 rounded-lg transition">
           🔄 Làm Mới
         </button>
-        <a href="recruiter.html" class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+        <a href="recruiter.html" class="btn-secondary px-4 py-2 rounded-lg transition">
           ← Quay Lại
         </a>
       </div>
@@ -104,27 +107,27 @@
   <main class="max-w-7xl mx-auto p-6">
 
     <!-- Recruiter: Violations Section Only -->
-    <div id="recruiterSection" class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-400/30 min-h-[500px]" style="display: none;">
+    <div id="recruiterSection" class="content-card rounded-2xl p-6 min-h-[500px]" style="display: none;">
       <div class="flex justify-between items-center mb-6">
-        <h3 class="text-xl font-semibold text-white flex items-center gap-2">
+        <h3 class="text-xl font-semibold flex items-center gap-2">
           <span class="text-2xl">⚠️</span>
           Báo Cáo Vi Phạm Công Ty
         </h3>
       </div>
       
       <!-- Date Filter Section -->
-      <div class="flex flex-wrap gap-3 mb-6 bg-purple-900/30 p-4 rounded-lg border border-purple-400/20">
+      <div class="flex flex-wrap gap-3 mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
         <div class="flex items-center gap-2">
-          <label class="text-white font-semibold text-sm">📅 Từ ngày:</label>
-          <input type="date" id="recruiterStartDate" class="bg-purple-900/50 text-white px-3 py-2 rounded-lg border border-purple-400/30 hover:border-orange-400/50 transition cursor-pointer text-sm">
+          <label class="font-semibold text-sm">📅 Từ ngày:</label>
+          <input type="date" id="recruiterStartDate" class="bg-white px-3 py-2 rounded-lg border border-gray-300 hover:border-blue-500 transition cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div class="flex items-center gap-2">
-          <label class="text-white font-semibold text-sm">📅 Đến ngày:</label>
-          <input type="date" id="recruiterEndDate" class="bg-purple-900/50 text-white px-3 py-2 rounded-lg border border-purple-400/30 hover:border-orange-400/50 transition cursor-pointer text-sm">
+          <label class="font-semibold text-sm">📅 Đến ngày:</label>
+          <input type="date" id="recruiterEndDate" class="bg-white px-3 py-2 rounded-lg border border-gray-300 hover:border-blue-500 transition cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div class="flex items-center gap-2">
-          <label class="text-white font-semibold text-sm">🏷️ Loại:</label>
-          <select id="recruiterViolationTypeFilter" class="bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30 hover:border-orange-400/50 transition cursor-pointer text-sm">
+          <label class="font-semibold text-sm">🏷️ Loại:</label>
+          <select id="recruiterViolationTypeFilter" class="bg-white px-4 py-2 rounded-lg border border-gray-300 hover:border-blue-500 transition cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Tất cả loại vi phạm</option>
             <option value="TAB_SWITCH">Chuyển tab</option>
             <option value="COPY_PASTE">Sao chép dán</option>
@@ -136,18 +139,18 @@
             <option value="NONE">Không vi phạm</option>
           </select>
         </div>
-        <button id="applyRecruiterFilter" class="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-lg transition font-semibold text-sm shadow-lg">
+        <button id="applyRecruiterFilter" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-semibold text-sm shadow-lg">
           🔍 Lọc Dữ Liệu
         </button>
-        <button id="resetRecruiterFilter" class="bg-gray-500/50 hover:bg-gray-600/50 text-white px-4 py-2 rounded-lg transition font-semibold text-sm">
+        <button id="resetRecruiterFilter" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition font-semibold text-sm">
           🔄 Đặt Lại
         </button>
       </div>
       
       <!-- Violations Table -->
-      <div class="overflow-x-auto rounded-lg border border-orange-400/20">
+      <div class="overflow-x-auto rounded-lg border border-gray-200">
         <table class="w-full text-left border-collapse">
-          <thead class="bg-gradient-to-r from-orange-500/30 to-red-500/30 text-orange-100">
+          <thead class="bg-blue-600 text-white">
             <tr>
               <th class="px-4 py-3 font-semibold">ID</th>
               <th class="px-4 py-3 font-semibold">Tên Ứng Viên</th>
@@ -158,11 +161,11 @@
               <th class="px-4 py-3 font-semibold">Kết Quả</th>
             </tr>
           </thead>
-          <tbody id="recruiterViolationsList" class="text-white bg-purple-900/20">
+          <tbody id="recruiterViolationsList" class="bg-white">
             <tr>
-              <td colspan="7" class="text-center text-purple-300 py-8">
+              <td colspan="7" class="text-center text-gray-500 py-8">
                 <div class="flex flex-col items-center gap-2">
-                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400"></div>
+                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   <span>Đang tải dữ liệu vi phạm...</span>
                 </div>
               </td>
@@ -173,27 +176,27 @@
     </div>
 
     <!-- Admin: All Reports from Database Only -->
-    <div id="adminSection" class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-400/30" style="display: none;">
+    <div id="adminSection" class="content-card rounded-2xl p-6" style="display: none;">
       <div class="flex justify-between items-center mb-6">
-        <h3 class="text-xl font-semibold text-white flex items-center gap-2">
+        <h3 class="text-xl font-semibold flex items-center gap-2">
           <span class="text-2xl">📊</span>
           Quản Lý Tất Cả Báo Cáo
         </h3>
       </div>
       
       <!-- Date Filter Section -->
-      <div class="flex flex-wrap gap-3 mb-6 bg-purple-900/30 p-4 rounded-lg border border-purple-400/20">
+      <div class="flex flex-wrap gap-3 mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
         <div class="flex items-center gap-2">
-          <label class="text-white font-semibold text-sm">📅 Từ ngày:</label>
-          <input type="date" id="adminStartDate" class="bg-purple-900/50 text-white px-3 py-2 rounded-lg border border-purple-400/30 hover:border-blue-400/50 transition cursor-pointer text-sm">
+          <label class="font-semibold text-sm">📅 Từ ngày:</label>
+          <input type="date" id="adminStartDate" class="bg-white px-3 py-2 rounded-lg border border-gray-300 hover:border-blue-500 transition cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div class="flex items-center gap-2">
-          <label class="text-white font-semibold text-sm">📅 Đến ngày:</label>
-          <input type="date" id="adminEndDate" class="bg-purple-900/50 text-white px-3 py-2 rounded-lg border border-purple-400/30 hover:border-blue-400/50 transition cursor-pointer text-sm">
+          <label class="font-semibold text-sm">📅 Đến ngày:</label>
+          <input type="date" id="adminEndDate" class="bg-white px-3 py-2 rounded-lg border border-gray-300 hover:border-blue-500 transition cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div class="flex items-center gap-2">
-          <label class="text-white font-semibold text-sm">🏷️ Loại:</label>
-          <select id="dbReportTypeFilter" class="bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30 hover:border-blue-400/50 transition cursor-pointer text-sm">
+          <label class="font-semibold text-sm">🏷️ Loại:</label>
+          <select id="dbReportTypeFilter" class="bg-white px-4 py-2 rounded-lg border border-gray-300 hover:border-blue-500 transition cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Tất cả loại báo cáo</option>
             <option value="VIOLATION">Vi phạm</option>
             <option value="STATISTICS">Thống kê</option>
@@ -202,21 +205,21 @@
             <option value="CUSTOM">Tùy chỉnh</option>
           </select>
         </div>
-        <button id="applyAdminFilter" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-4 py-2 rounded-lg transition font-semibold text-sm shadow-lg">
+        <button id="applyAdminFilter" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-semibold text-sm shadow-lg">
           🔍 Lọc Dữ Liệu
         </button>
-        <button id="resetAdminFilter" class="bg-gray-500/50 hover:bg-gray-600/50 text-white px-4 py-2 rounded-lg transition font-semibold text-sm">
+        <button id="resetAdminFilter" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition font-semibold text-sm">
           🔄 Đặt Lại
         </button>
-        <button id="refreshDbReportsBtn" class="bg-green-500/50 hover:bg-green-600/50 text-white px-4 py-2 rounded-lg transition font-semibold text-sm">
+        <button id="refreshDbReportsBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition font-semibold text-sm">
           🔄 Làm Mới
         </button>
       </div>
 
       <!-- Database Reports Table -->
-      <div class="overflow-x-auto rounded-lg border border-blue-400/20">
+      <div class="overflow-x-auto rounded-lg border border-gray-200">
         <table class="w-full text-left border-collapse">
-          <thead class="bg-gradient-to-r from-blue-500/30 to-purple-500/30 text-blue-100">
+          <thead class="bg-blue-600 text-white">
             <tr>
               <th class="px-4 py-3 font-semibold">ID</th>
               <th class="px-4 py-3 font-semibold">Tên Báo Cáo</th>
@@ -227,11 +230,11 @@
               <th class="px-4 py-3 font-semibold text-center">Hành Động</th>
             </tr>
           </thead>
-          <tbody id="dbReportsList" class="text-white bg-purple-900/20">
+          <tbody id="dbReportsList" class="bg-white">
             <tr>
-              <td colspan="6" class="text-center text-purple-300 py-8">
+              <td colspan="6" class="text-center text-gray-500 py-8">
                 <div class="flex flex-col items-center gap-2">
-                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   <span>Đang tải danh sách báo cáo từ database...</span>
                 </div>
               </td>
@@ -461,11 +464,11 @@
           console.log('ℹ️ No violations found, showing empty message');
           violationsList.innerHTML = `
             <tr>
-              <td colspan="7" class="text-center text-purple-300 py-12">
+              <td colspan="7" class="text-center text-gray-500 py-12">
                 <div class="flex flex-col items-center gap-3">
                   <span class="text-5xl">✅</span>
                   <span class="text-lg font-semibold">Không có vi phạm nào được ghi nhận</span>
-                  <span class="text-sm text-purple-400">Tất cả ứng viên đang tuân thủ quy định</span>
+                  <span class="text-sm text-gray-400">Tất cả ứng viên đang tuân thủ quy định</span>
                 </div>
               </td>
             </tr>
@@ -502,13 +505,13 @@
           }[v.violation_type] || `<span class="px-2 py-1 bg-gray-500/20 text-gray-300 rounded text-xs">${v.violation_type || 'N/A'}</span>`;
           
           return `
-            <tr class="border-b border-orange-400/10 hover:bg-orange-500/10 transition-colors">
-              <td class="px-4 py-3 font-mono text-sm text-purple-300">#${v.candidateId || v.candidate_id || 'N/A'}</td>
-              <td class="px-4 py-3 font-medium">${v.candidate_name || 'Unknown'}</td>
-              <td class="px-4 py-3 text-sm text-purple-300 max-w-xs truncate" title="${v.test_name || 'N/A'}">${v.test_name || 'N/A'}</td>
-              <td class="px-4 py-3 text-xs text-purple-300">${timestamp}</td>
+            <tr class="border-b border-gray-200 hover:bg-blue-50 transition-colors">
+              <td class="px-4 py-3 font-mono text-sm text-gray-600">#${v.candidateId || v.candidate_id || 'N/A'}</td>
+              <td class="px-4 py-3 font-medium text-gray-800">${v.candidate_name || 'Unknown'}</td>
+              <td class="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title="${v.test_name || 'N/A'}">${v.test_name || 'N/A'}</td>
+              <td class="px-4 py-3 text-xs text-gray-600">${timestamp}</td>
               <td class="px-4 py-3">${typeDisplay}</td>
-              <td class="px-4 py-3 font-bold text-center ${score >= 50 ? 'text-green-300' : 'text-red-300'}">${score}</td>
+              <td class="px-4 py-3 font-bold text-center ${score >= 50 ? 'text-green-600' : 'text-red-600'}">${score}</td>
               <td class="px-4 py-3 text-center">${resultBadge}</td>
             </tr>
           `;
@@ -583,11 +586,11 @@
           console.log('ℹ️ No reports found in database');
           reportsList.innerHTML = `
             <tr>
-              <td colspan="7" class="text-center text-purple-300 py-12">
+              <td colspan="7" class="text-center text-gray-500 py-12">
                 <div class="flex flex-col items-center gap-3">
                   <span class="text-5xl">📭</span>
                   <span class="text-lg font-semibold">Chưa có báo cáo nào trong database</span>
-                  <span class="text-sm text-purple-400">Báo cáo sẽ tự động được tạo khi có hoạt động trong hệ thống</span>
+                  <span class="text-sm text-gray-400">Báo cáo sẽ tự động được tạo khi có hoạt động trong hệ thống</span>
                 </div>
               </td>
             </tr>
@@ -606,33 +609,33 @@
           
           // Format report type badge
           const typeColors = {
-            'VIOLATION': 'bg-red-500/20 text-red-300',
-            'STATISTICS': 'bg-blue-500/20 text-blue-300',
-            'ACTIVITY_LOG': 'bg-green-500/20 text-green-300',
-            'NOTIFICATION': 'bg-yellow-500/20 text-yellow-300',
-            'CUSTOM': 'bg-purple-500/20 text-purple-300',
-            'CANDIDATE_PIPELINE': 'bg-indigo-500/20 text-indigo-300',
-            'TEST_PERFORMANCE': 'bg-teal-500/20 text-teal-300',
-            'INTERVIEWER_EFFICIENCY': 'bg-orange-500/20 text-orange-300',
-            'HIRING_METRICS': 'bg-pink-500/20 text-pink-300'
+            'VIOLATION': 'bg-red-100 text-red-800',
+            'STATISTICS': 'bg-blue-100 text-blue-800',
+            'ACTIVITY_LOG': 'bg-green-100 text-green-800',
+            'NOTIFICATION': 'bg-yellow-100 text-yellow-800',
+            'CUSTOM': 'bg-purple-100 text-purple-800',
+            'CANDIDATE_PIPELINE': 'bg-indigo-100 text-indigo-800',
+            'TEST_PERFORMANCE': 'bg-teal-100 text-teal-800',
+            'INTERVIEWER_EFFICIENCY': 'bg-orange-100 text-orange-800',
+            'HIRING_METRICS': 'bg-pink-100 text-pink-800'
           };
-          const typeColor = typeColors[r.report_type] || 'bg-gray-500/20 text-gray-300';
+          const typeColor = typeColors[r.report_type] || 'bg-gray-100 text-gray-800';
           
           // Truncate long report names
           const reportName = r.report_name.length > 50 ? 
             r.report_name.substring(0, 47) + '...' : r.report_name;
           
           return `
-            <tr class="border-b border-blue-400/10 hover:bg-blue-500/10 transition-colors">
-              <td class="px-4 py-3 font-mono text-sm text-purple-300">#${r.report_id}</td>
-              <td class="px-4 py-3 font-medium" title="${r.report_name}">${reportName}</td>
+            <tr class="border-b border-gray-200 hover:bg-blue-50 transition-colors">
+              <td class="px-4 py-3 font-mono text-sm text-gray-600">#${r.report_id}</td>
+              <td class="px-4 py-3 font-medium text-gray-800" title="${r.report_name}">${reportName}</td>
               <td class="px-4 py-3">
                 <span class="px-3 py-1 ${typeColor} rounded-full text-xs font-semibold">${r.report_type}</span>
               </td>
-              <td class="px-4 py-3 text-sm text-purple-300">${r.creator_name}</td>
-              <td class="px-4 py-3 text-xs text-purple-300">${createdAt}</td>
+              <td class="px-4 py-3 text-sm text-gray-600">${r.creator_name}</td>
+              <td class="px-4 py-3 text-xs text-gray-600">${createdAt}</td>
               <td class="px-4 py-3 text-center">
-                <button onclick="viewDbReportDetails(${r.report_id}, ${JSON.stringify(r.parameters).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 rounded transition text-sm">
+                <button onclick="viewDbReportDetails(${r.report_id}, ${JSON.stringify(r.parameters).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition text-sm">
                   Xem Chi Tiết
                 </button>
               </td>
@@ -832,12 +835,8 @@
       try {
         console.log(`👁️ Viewing database report ${reportId}...`);
         
-        // Format parameters for display
-        const paramsDisplay = parameters && Object.keys(parameters).length > 0 ? 
-          JSON.stringify(parameters, null, 2) : 'Không có dữ liệu bổ sung';
-
-        alert(`Chi Tiết Báo Cáo #${reportId}\n\n` +
-              `Dữ liệu Parameters:\n${paramsDisplay}`);
+        // Open report detail page in new tab
+        window.open(`report-detail.html?id=${reportId}`, '_blank');
 
       } catch (error) {
         console.error('❌ Error viewing report details:', error);
@@ -929,6 +928,11 @@
     } else if (userRole === 'RECRUITER') {
       document.getElementById('recruiterSection').style.display = 'block';
       loadRecruiterViolations();
+    }
+
+    // Setup theme toggle
+    if (window.ThemeManager) {
+      ThemeManager.setupToggle('themeToggle');
     }
   </script>
 

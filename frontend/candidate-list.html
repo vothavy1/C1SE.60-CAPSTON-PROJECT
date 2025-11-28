@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Danh Sách Ứng Viên - Recruiter</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
   <style>
     .status-badge {
       @apply px-3 py-1 rounded-full text-xs font-semibold inline-block;
@@ -25,17 +27,18 @@
     }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen text-gray-900">
+<body class="light-mode min-h-screen transition-colors duration-300">
   
   <!-- Header -->
-  <header class="bg-white shadow-md sticky top-0 z-50 border-b border-gray-200">
+  <header class="header-bg shadow-md sticky top-0 z-50 border-b transition-colors duration-300">
     <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
       <div class="flex items-center gap-4">
-        <a href="recruiter.html" class="text-2xl text-gray-700 hover:text-indigo-600 transition">←</a>
-        <h1 class="text-2xl md:text-3xl font-bold text-gray-900">📋 Quản Lý Ứng Viên</h1>
+        <a href="recruiter.html" class="text-2xl hover:opacity-70 transition">←</a>
+        <h1 class="text-2xl md:text-3xl font-bold">📋 Quản Lý Ứng Viên</h1>
       </div>
       <div class="flex items-center gap-4">
-        <span id="userName" class="text-gray-700 font-medium">Xin chào!</span>
+        <div class="theme-toggle" id="themeToggle" title="Chuyển đổi sáng/tối"></div>
+        <span id="userName" class="font-medium">Xin chào!</span>
         <button onclick="logout()" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition shadow-md">
           Đăng xuất
         </button>
@@ -47,12 +50,12 @@
   <main class="max-w-7xl mx-auto mt-6 p-6">
     
     <!-- Actions Bar -->
-    <div class="bg-white rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-center justify-between border border-gray-200 card-shadow">
+    <div class="content-card rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-center justify-between border transition-all duration-300">
       <div class="flex gap-3 flex-wrap">
-        <button onclick="showAddModal()" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition shadow-md">
+        <button onclick="showAddModal()" class="btn-primary px-4 py-2 rounded-lg transition shadow-md">
           ➕ Thêm ứng viên
         </button>
-        <button onclick="refreshList()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition shadow-md">
+        <button onclick="refreshList()" class="btn-secondary px-4 py-2 rounded-lg transition shadow-md">
           Làm mới
         </button>
       </div>
@@ -63,32 +66,32 @@
           id="searchInput" 
           type="text" 
           placeholder="Tìm theo tên, email, vị trí..." 
-          class="flex-1 px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          class="flex-1 px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-colors duration-300"
           onkeyup="searchCandidates()"
         />
         <div class="flex gap-2 items-center">
-          <label class="text-sm whitespace-nowrap text-gray-700 font-medium">Từ ngày:</label>
+          <label class="text-sm whitespace-nowrap font-medium">Từ ngày:</label>
           <input 
             id="fromDate" 
             type="date" 
             onchange="filterByDate()" 
-            class="px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+            class="px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-colors duration-300 text-sm"
           />
         </div>
         <div class="flex gap-2 items-center">
-          <label class="text-sm whitespace-nowrap text-gray-700 font-medium">Đến ngày:</label>
+          <label class="text-sm whitespace-nowrap font-medium">Đến ngày:</label>
           <input 
             id="toDate" 
             type="date" 
             onchange="filterByDate()" 
-            class="px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+            class="px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-colors duration-300 text-sm"
           />
         </div>
       </div>
     </div>
 
     <!-- Candidates Table -->
-    <div class="bg-white rounded-xl overflow-hidden border border-gray-200 card-shadow">
+    <div class="content-card rounded-xl overflow-hidden border transition-all duration-300">
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
@@ -155,13 +158,21 @@
         <div>
           <label class="block text-sm font-semibold mb-2 text-gray-700">Email *</label>
           <input type="email" id="email" required 
+            pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
+            placeholder="example123@gmail.com"
+            title="Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)"
             class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+          <small class="text-gray-500 text-xs mt-1 block">Email phải có dạng: chữ và số @gmail.com</small>
         </div>
 
         <div>
           <label class="block text-sm font-semibold mb-2 text-gray-700">Số điện thoại *</label>
           <input type="tel" id="phone" required
+            pattern="[0-9]{10,11}"
+            placeholder="0912345678"
+            title="Số điện thoại chỉ được phép nhập số (10-11 chữ số)"
             class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+          <small class="text-gray-500 text-xs mt-1 block">Chỉ được nhập số, từ 10-11 chữ số</small>
         </div>
 
         <div>
@@ -423,7 +434,7 @@
         
         // Add timestamp to prevent caching
         const timestamp = new Date().getTime();
-        const response = await fetch(`${API_BASE_URL}/candidates?_t=${timestamp}`, {
+        const response = await fetch(`${API_BASE_URL}/apply/candidates?_t=${timestamp}`, {
           headers: headers,
           cache: 'no-store' // Force no caching
         });
@@ -432,6 +443,9 @@
           const errorData = await response.json().catch(() => ({}));
           if (errorData.error_code === 'OLD_TOKEN') {
             alert('⚠️ TOKEN CŨ KHÔNG HỢP LỆ!\n\nHệ thống đã được cập nhật để bảo mật dữ liệu theo công ty.\n\nBạn đang dùng token cũ không có company_id.\n\n➡️ VUI LÒNG ĐĂNG XUẤT VÀ ĐĂNG NHẬP LẠI!');
+            logout();
+          } else if (errorData.error_code === 'COMPANY_MISMATCH' || errorData.force_logout) {
+            alert('🚨 PHÁT HIỆN THAY ĐỔI CÔNG TY!\n\n' + (errorData.message || 'Công ty của bạn đã được thay đổi trong hệ thống.') + '\n\n➡️ VUI LÒNG ĐĂNG NHẬP LẠI để cập nhật quyền truy cập!');
             logout();
           } else {
             alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
@@ -508,27 +522,39 @@
           <td class="px-6 py-4">
             <div class="flex justify-center gap-2 flex-wrap">
               <button onclick="viewCV(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition text-sm shadow-sm" title="Xem CV trong tab mới">
+                class="px-3 py-1 rounded transition text-sm shadow-sm font-medium" 
+                style="background-color: #2563eb !important; color: white !important;" 
+                title="Xem CV trong tab mới">
                 Xem
               </button>
               <button onclick="downloadCV(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition text-sm shadow-sm" title="Tải CV về máy">
+                class="px-3 py-1 rounded transition text-sm shadow-sm font-medium" 
+                style="background-color: #4f46e5 !important; color: white !important;" 
+                title="Tải CV về máy">
                 Tải
               </button>
               <button onclick="updateStatusPass(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition text-sm shadow-sm" title="Pass">
+                class="px-3 py-1 rounded transition text-sm shadow-sm font-medium" 
+                style="background-color: #16a34a !important; color: white !important;" 
+                title="Pass">
                 Pass
               </button>
               <button onclick="updateStatusFail(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded transition text-sm shadow-sm" title="Fail">
+                class="px-3 py-1 rounded transition text-sm shadow-sm font-medium" 
+                style="background-color: #dc2626 !important; color: white !important;" 
+                title="Fail">
                 Fail
               </button>
               <button onclick="editCandidate(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded transition text-sm shadow-sm" title="Sửa">
+                class="px-3 py-1 rounded transition text-sm shadow-sm font-medium" 
+                style="background-color: #eab308 !important; color: white !important;" 
+                title="Sửa">
                 Sửa
               </button>
               <button onclick="deleteCandidate(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded transition text-sm shadow-sm" title="Xóa">
+                class="px-3 py-1 rounded transition text-sm shadow-sm font-medium" 
+                style="background-color: #6b7280 !important; color: white !important;" 
+                title="Xóa">
                 Xóa
               </button>
             </div>
@@ -668,7 +694,7 @@
       }
       
       // Open in new tab with token in Authorization header via fetch and blob
-      const url = `${API_BASE_URL}/candidates/${id}/cv`;
+      const url = `${API_BASE_URL}/apply/candidates/${id}/cv`;
       
       fetch(url, {
         headers: {
@@ -704,7 +730,7 @@
         return;
       }
       
-      const url = `${API_BASE_URL}/candidates/${id}/cv/download`;
+      const url = `${API_BASE_URL}/apply/candidates/${id}/cv/download`;
       
       fetch(url, {
         headers: {
@@ -757,7 +783,7 @@
         const headers = getAuthHeaders();
         if (!headers) return; // Already redirected to login
         
-        const response = await fetch(`${API_BASE_URL}/candidates/${id}/status`, {
+        const response = await fetch(`${API_BASE_URL}/apply/candidates/${id}/status`, {
           method: 'PUT',
           headers: headers,
           body: JSON.stringify({ 
@@ -804,7 +830,7 @@
         const headers = getAuthHeaders();
         if (!headers) return; // Already redirected to login
         
-        const response = await fetch(`${API_BASE_URL}/candidates/${id}/status`, {
+        const response = await fetch(`${API_BASE_URL}/apply/candidates/${id}/status`, {
           method: 'PUT',
           headers: headers,
           body: JSON.stringify({ 
@@ -851,7 +877,7 @@
         const headers = getAuthHeaders();
         if (!headers) return; // Already redirected to login
         
-        const response = await fetch(`${API_BASE_URL}/candidates/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/apply/candidates/${id}`, {
           headers: headers
         });
 
@@ -898,7 +924,7 @@
         const headers = getAuthHeaders();
         if (!headers) return; // Already redirected to login
         
-        const response = await fetch(`${API_BASE_URL}/candidates/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/apply/candidates/${id}`, {
           method: 'DELETE',
           headers: headers
         });
@@ -919,17 +945,79 @@
       }
     }
 
+    // Real-time validation for email
+    document.getElementById('email').addEventListener('input', function(e) {
+      const email = e.target.value;
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+      
+      if (email && !emailPattern.test(email)) {
+        e.target.setCustomValidity('Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)');
+        e.target.classList.add('border-red-500');
+        e.target.classList.remove('border-gray-300');
+      } else {
+        e.target.setCustomValidity('');
+        e.target.classList.remove('border-red-500');
+        e.target.classList.add('border-gray-300');
+      }
+    });
+
+    // Real-time validation for phone - only allow numbers
+    document.getElementById('phone').addEventListener('input', function(e) {
+      // Remove any non-digit characters
+      let phone = e.target.value.replace(/\D/g, '');
+      e.target.value = phone;
+      
+      const phonePattern = /^[0-9]{10,11}$/;
+      
+      if (phone && !phonePattern.test(phone)) {
+        e.target.setCustomValidity('Số điện thoại phải từ 10-11 chữ số');
+        e.target.classList.add('border-red-500');
+        e.target.classList.remove('border-gray-300');
+      } else {
+        e.target.setCustomValidity('');
+        e.target.classList.remove('border-red-500');
+        e.target.classList.add('border-gray-300');
+      }
+    });
+
+    // Prevent non-numeric input on phone field
+    document.getElementById('phone').addEventListener('keypress', function(e) {
+      // Allow only numbers (0-9)
+      if (e.key < '0' || e.key > '9') {
+        e.preventDefault();
+      }
+    });
+
     // Handle form submit
     document.getElementById('candidateForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      // Final validation before submit
+      const email = document.getElementById('email').value;
+      const phone = document.getElementById('phone').value;
+      
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+      const phonePattern = /^[0-9]{10,11}$/;
+      
+      if (!emailPattern.test(email)) {
+        alert('❌ Email không hợp lệ!\n\nEmail phải có dạng: chữ và số @gmail.com\nVí dụ: user123@gmail.com');
+        document.getElementById('email').focus();
+        return;
+      }
+      
+      if (!phonePattern.test(phone)) {
+        alert('❌ Số điện thoại không hợp lệ!\n\nSố điện thoại chỉ được nhập số, từ 10-11 chữ số\nVí dụ: 0912345678');
+        document.getElementById('phone').focus();
+        return;
+      }
 
       const candidateId = document.getElementById('candidateId').value;
       
       const candidateData = {
         first_name: document.getElementById('firstName').value,
         last_name: document.getElementById('lastName').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
+        email: email,
+        phone: phone,
         current_position: document.getElementById('currentPosition').value,
         years_of_experience: document.getElementById('yearsOfExperience').value,
         education: document.getElementById('education').value,
@@ -946,14 +1034,14 @@
         let response;
         if (candidateId) {
           // Update existing candidate
-          response = await fetch(`${API_BASE_URL}/candidates/${candidateId}`, {
+          response = await fetch(`${API_BASE_URL}/apply/candidates/${candidateId}`, {
             method: 'PUT',
             headers: headers,
             body: JSON.stringify(candidateData)
           });
         } else {
           // Create new candidate
-          response = await fetch(`${API_BASE_URL}/candidates`, {
+          response = await fetch(`${API_BASE_URL}/apply/candidates`, {
             method: 'POST',
             headers: headers,
             body: JSON.stringify(candidateData)
@@ -1010,6 +1098,11 @@
     // Initialize
     if (checkAuth()) {
       loadCandidates();
+    }
+
+    // Setup theme toggle
+    if (window.ThemeManager) {
+      ThemeManager.setupToggle('themeToggle');
     }
   </script>
 

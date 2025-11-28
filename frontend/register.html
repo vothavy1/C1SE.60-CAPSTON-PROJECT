@@ -31,7 +31,11 @@
 </div>
 
 <input id="fullName" class="input" placeholder="Họ và tên" />
-<input id="email" class="input" placeholder="Email" />
+<input id="email" class="input" type="email" 
+  pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
+  title="Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)"
+  placeholder="example123@gmail.com" />
+<small style="color: #9aa6bf; font-size: 12px; margin-top: -8px; display: block;">Email phải có dạng: chữ và số @gmail.com</small>
 <input id="pwd" type="password" class="input" placeholder="Mật khẩu" />
 
 <!-- Vai trò cố định là Recruiter -->
@@ -143,6 +147,20 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCompanies();
 });
 
+// Real-time validation for email
+document.getElementById('email').addEventListener('input', function(e) {
+  const email = e.target.value;
+  const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+  
+  if (email && !emailPattern.test(email)) {
+    e.target.setCustomValidity('Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)');
+    e.target.style.borderColor = '#ef4444';
+  } else {
+    e.target.setCustomValidity('');
+    e.target.style.borderColor = 'rgba(255,255,255,0.06)';
+  }
+});
+
 // Nút hoàn tất đăng ký - Kết nối backend API
 document.getElementById('registerSubmit').addEventListener('click', async () => {
   const full_name = document.getElementById('fullName').value.trim();
@@ -151,6 +169,15 @@ document.getElementById('registerSubmit').addEventListener('click', async () => 
 
   if (!full_name || !email || !password) {
     alert('Vui lòng nhập đầy đủ thông tin!');
+    return;
+  }
+
+  // Final validation before submit
+  const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+  
+  if (!emailPattern.test(email)) {
+    alert('❌ Email không hợp lệ!\n\nEmail phải có dạng: chữ và số @gmail.com\nVí dụ: user123@gmail.com');
+    document.getElementById('email').focus();
     return;
   }
 

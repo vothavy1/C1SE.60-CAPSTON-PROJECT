@@ -32,8 +32,8 @@
         }
 
         .sidebar-link.active {
-            background-color: rgba(99, 102, 241, 0.2);
-            border-left: 4px solid #6366f1;
+            background-color: rgba(25, 118, 210, 0.2);
+            border-left: 4px solid #1976d2;
         }
     </style>
 </head>
@@ -46,7 +46,7 @@
             <div class="p-6">
                 <!-- Logo -->
                 <div class="flex items-center gap-3 mb-8">
-                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                         <span class="text-white font-bold text-xl">CS</span>
                     </div>
                     <div>
@@ -159,7 +159,7 @@
                             <p class="text-sm font-medium text-gray-900" id="adminName">Admin User</p>
                             <p class="text-xs text-gray-500">Administrator</p>
                         </div>
-                        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
                             <span class="text-white font-bold text-sm" id="adminAvatar">A</span>
                         </div>
                     </div>
@@ -168,7 +168,7 @@
 
             <!-- Notification Panel (Dropdown) -->
             <div id="notificationPanel" class="hidden fixed top-20 right-8 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[600px] overflow-hidden">
-                <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-purple-50">
+                <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-blue-50">
                     <h3 class="text-lg font-bold text-gray-900">🔔 Thông báo</h3>
                     <div class="flex gap-2">
                         <button onclick="markAllNotificationsRead()" class="text-xs px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition" title="Đánh dấu tất cả đã đọc">
@@ -230,11 +230,11 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Tổng ứng viên</p>
-                                <p class="text-4xl font-bold text-green-600 mt-3" id="candidatesCount">0</p>
+                                <p class="text-4xl font-bold text-blue-600 mt-3" id="candidatesCount">0</p>
                                 <p class="text-xs text-gray-500 mt-2">Registered candidates</p>
                             </div>
-                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                                 </svg>
                             </div>
@@ -246,11 +246,11 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Tổng bài test</p>
-                                <p class="text-4xl font-bold text-purple-600 mt-3" id="testsCount">0</p>
+                                <p class="text-4xl font-bold text-blue-600 mt-3" id="testsCount">0</p>
                                 <p class="text-xs text-gray-500 mt-2">Available assessments</p>
                             </div>
-                            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                 </svg>
                             </div>
@@ -262,11 +262,11 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Tổng CV nộp</p>
-                                <p class="text-4xl font-bold text-orange-600 mt-3" id="cvsCount">0</p>
+                                <p class="text-4xl font-bold text-blue-600 mt-3" id="cvsCount">0</p>
                                 <p class="text-xs text-gray-500 mt-2">Submitted CVs</p>
                             </div>
-                            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
-                                <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                 </svg>
                             </div>
@@ -292,7 +292,7 @@
                                 <button onclick="refreshCandidates()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium text-sm">
                                     Làm mới
                                 </button>
-                                <button onclick="openCreateCandidateModal()" class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg transition shadow-md font-medium text-sm">
+                                <button onclick="openCreateCandidateModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-md font-medium text-sm">
                                     Tạo Candidate
                                 </button>
                             </div>
@@ -326,7 +326,7 @@
                                 <tr>
                                     <td colspan="7" class="px-6 py-12 text-center text-gray-500 font-medium">
                                         <div class="flex flex-col items-center justify-center">
-                                            <svg class="animate-spin h-8 w-8 text-green-600 mb-3" fill="none" viewBox="0 0 24 24">
+                                            <svg class="animate-spin h-8 w-8 text-blue-600 mb-3" fill="none" viewBox="0 0 24 24">
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
@@ -367,7 +367,7 @@
                                 <button onclick="refreshCompanies()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium text-sm">
                                     Làm mới
                                 </button>
-                                <button onclick="openCreateCompanyModal()" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition shadow-md font-medium text-sm">
+                                <button onclick="openCreateCompanyModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-md font-medium text-sm">
                                     + Tạo Company
                                 </button>
                             </div>
@@ -401,7 +401,7 @@
                                 <tr>
                                     <td colspan="7" class="px-6 py-12 text-center text-gray-500 font-medium">
                                         <div class="flex flex-col items-center justify-center">
-                                            <svg class="animate-spin h-8 w-8 text-purple-600 mb-3" fill="none" viewBox="0 0 24 24">
+                                            <svg class="animate-spin h-8 w-8 text-blue-600 mb-3" fill="none" viewBox="0 0 24 24">
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
@@ -442,7 +442,7 @@
                                 <button onclick="refreshTests()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium text-sm">
                                     Làm mới
                                 </button>
-                                <button onclick="openCreateTestModal()" class="px-4 py-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white rounded-lg transition shadow-md font-medium text-sm">
+                                <button onclick="openCreateTestModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-md font-medium text-sm">
                                     + Tạo Test
                                 </button>
                             </div>
@@ -512,7 +512,7 @@
                                 <button onclick="refreshQuestions()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium text-sm">
                                     Làm mới
                                 </button>
-                                <button onclick="openCreateQuestionModal()" class="px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-lg transition shadow-md font-medium text-sm">
+                                <button onclick="openCreateQuestionModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-md font-medium text-sm">
                                     + Tạo Question
                                 </button>
                             </div>
@@ -662,7 +662,7 @@
                                 <button onclick="refreshRecruiters()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium text-sm">
                                     Làm mới
                                 </button>
-                                <button onclick="openCreateRecruiterModal()" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition shadow-md font-medium text-sm">
+                                <button onclick="openCreateRecruiterModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-md font-medium text-sm">
                                     Tạo Recruiter
                                 </button>
                             </div>
@@ -751,7 +751,11 @@
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
                     <input type="email" id="recruiterEmail" required 
+                        pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
+                        title="Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)"
+                        placeholder="example123@gmail.com"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <small class="text-gray-500 text-xs mt-1 block">Email phải có dạng: chữ và số @gmail.com</small>
                 </div>
                 
                 <div id="passwordField">
@@ -784,7 +788,7 @@
                         Hủy
                     </button>
                     <button type="submit" 
-                        class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-medium shadow-md">
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-md">
                         <span id="recruiterSubmitText">Tạo</span>
                     </button>
                 </div>
@@ -876,7 +880,11 @@
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
                     <input type="email" id="candidateEmail" required 
+                        pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
+                        title="Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)"
+                        placeholder="example123@gmail.com"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    <small class="text-gray-500 text-xs mt-1 block">Email phải có dạng: chữ và số @gmail.com</small>
                 </div>
                 
                 <div id="candidatePasswordField">
@@ -909,7 +917,7 @@
                         Hủy
                     </button>
                     <button type="submit" 
-                        class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg font-medium shadow-md">
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-md">
                         <span id="candidateSubmitText">Tạo</span>
                     </button>
                 </div>
@@ -1028,7 +1036,7 @@
                     <button onclick="closeCompanyModal()" class="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium">
                         Hủy
                     </button>
-                    <button onclick="saveCompany()" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition shadow-md font-medium">
+                    <button onclick="saveCompany()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-md font-medium">
                         Lưu
                     </button>
                 </div>
@@ -1100,12 +1108,12 @@
                 
                 <div class="space-y-3 border-t pt-4">
                     <div class="flex items-center">
-                        <input type="checkbox" id="testIsRandomized" class="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500">
+                        <input type="checkbox" id="testIsRandomized" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                         <label for="testIsRandomized" class="ml-2 text-sm font-medium text-gray-700">Trộn thứ tự câu hỏi</label>
                     </div>
                     
                     <div class="flex items-center">
-                        <input type="checkbox" id="testShowResults" checked class="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500">
+                        <input type="checkbox" id="testShowResults" checked class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                         <label for="testShowResults" class="ml-2 text-sm font-medium text-gray-700">Hiển thị kết quả sau khi làm xong</label>
                     </div>
                 </div>
@@ -1114,7 +1122,7 @@
                     <button onclick="closeTestModal()" class="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium">
                         Hủy
                     </button>
-                    <button onclick="saveTest()" class="px-6 py-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white rounded-lg transition shadow-md font-medium">
+                    <button onclick="saveTest()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-md font-medium">
                         Lưu
                     </button>
                 </div>
@@ -1192,7 +1200,7 @@
                     <button onclick="closeQuestionModal()" class="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium">
                         Hủy
                     </button>
-                    <button onclick="saveQuestion()" class="px-6 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-lg transition shadow-md font-medium">
+                    <button onclick="saveQuestion()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-md font-medium">
                         Lưu
                     </button>
                 </div>
@@ -1619,6 +1627,15 @@
         async function submitRecruiter(e) {
             e.preventDefault();
             
+            // Validate email format
+            const emailInput = document.getElementById('recruiterEmail');
+            const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+            if (!emailPattern.test(emailInput.value)) {
+                alert('Email không hợp lệ! Phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)');
+                emailInput.focus();
+                return;
+            }
+            
             const action = document.getElementById('recruiterAction').value;
             const userId = document.getElementById('recruiterId').value;
             const headers = getAuthHeaders();
@@ -1904,6 +1921,15 @@
         async function submitCandidate(e) {
             e.preventDefault();
             
+            // Validate email format
+            const emailInput = document.getElementById('candidateEmail');
+            const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+            if (!emailPattern.test(emailInput.value)) {
+                alert('Email không hợp lệ! Phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)');
+                emailInput.focus();
+                return;
+            }
+            
             const action = document.getElementById('candidateAction').value;
             const userId = document.getElementById('candidateId').value;
             const headers = getAuthHeaders();
@@ -2044,8 +2070,8 @@
                     <td class="px-6 py-4 text-sm text-gray-900 font-medium">${company.company_id}</td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg flex items-center justify-center">
-                                <span class="text-purple-600 font-bold text-sm">${company.companyName.charAt(0).toUpperCase()}</span>
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <span class="text-blue-600 font-bold text-sm">${company.companyName.charAt(0).toUpperCase()}</span>
                             </div>
                             <span class="text-sm font-semibold text-gray-900">${company.companyName}</span>
                         </div>
@@ -3037,9 +3063,16 @@
 
         async function viewCandidateApplication(candidateId) {
             try {
+                console.log('👁️ Viewing candidate application:', candidateId);
                 const headers = getAuthHeaders();
                 const response = await fetch(`${API_BASE_URL}/apply/candidates/${candidateId}`, { headers });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('📄 Candidate data:', data);
                 
                 if (data.success) {
                     const candidate = data.data;
@@ -3080,15 +3113,30 @@
                                 </div>
                                 <div>
                                     <label class="text-sm font-semibold text-gray-600">Ngày nộp</label>
-                                    <p class="text-gray-900">${new Date(app.applied_at).toLocaleString('vi-VN')}</p>
+                                    <p class="text-gray-900">${candidate.created_at ? new Date(candidate.created_at).toLocaleString('vi-VN') : 'N/A'}</p>
                                 </div>
                             </div>
-                            ${app.cover_letter ? `
+                            ${candidate.cover_letter ? `
                                 <div>
                                     <label class="text-sm font-semibold text-gray-600">Thư giới thiệu</label>
-                                    <p class="text-gray-700 mt-2 whitespace-pre-wrap">${app.cover_letter}</p>
+                                    <p class="text-gray-700 mt-2 whitespace-pre-wrap">${candidate.cover_letter}</p>
                                 </div>
                             ` : ''}
+                            ${hasCV ? `
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <label class="text-sm font-semibold text-blue-800 block mb-2">📄 CV đã tải lên</label>
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-gray-900 font-medium">${cvInfo.file_name || cvInfo.file_path.split('/').pop()}</p>
+                                            <p class="text-sm text-gray-600">Tải lên: ${new Date(cvInfo.uploaded_at).toLocaleString('vi-VN')}</p>
+                                        </div>
+                                        <a href="http://localhost:5000${cvInfo.file_path}" target="_blank" 
+                                           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium text-sm">
+                                            Xem CV
+                                        </a>
+                                    </div>
+                                </div>
+                            ` : '<div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center text-gray-500">Chưa có CV</div>'}
                             <div class="flex justify-end gap-3 pt-4 border-t">
                                 <button onclick="closeApplicationModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium">
                                     Đóng
@@ -3097,14 +3145,17 @@
                         </div>
                     `;
                     
-                    document.getElementById('applicationModal').classList.remove('hidden');
-                    document.getElementById('applicationModal').classList.add('flex');
+                    const modal = document.getElementById('applicationModal');
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                    console.log('✅ Modal opened successfully');
                 } else {
-                    alert('Không thể tải thông tin đơn ứng tuyển');
+                    console.error('❌ API returned success: false');
+                    alert('Không thể tải thông tin đơn ứng tuyển: ' + (data.message || 'Unknown error'));
                 }
             } catch (error) {
-                console.error('Error loading application:', error);
-                alert('Lỗi khi tải đơn ứng tuyển');
+                console.error('❌ Error loading application:', error);
+                alert('Lỗi khi tải đơn ứng tuyển: ' + error.message);
             }
         }
 
@@ -3416,6 +3467,44 @@
 
         // Poll for new notifications every 30 seconds
         setInterval(fetchUnreadCount, 30000);
+
+        // Real-time validation for recruiter email
+        const recruiterEmailInput = document.getElementById('recruiterEmail');
+        if (recruiterEmailInput) {
+            recruiterEmailInput.addEventListener('input', function(e) {
+                const email = e.target.value;
+                const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+                
+                if (email && !emailPattern.test(email)) {
+                    e.target.setCustomValidity('Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)');
+                    e.target.classList.add('border-red-500');
+                    e.target.classList.remove('border-gray-300');
+                } else {
+                    e.target.setCustomValidity('');
+                    e.target.classList.remove('border-red-500');
+                    e.target.classList.add('border-gray-300');
+                }
+            });
+        }
+
+        // Real-time validation for candidate email
+        const candidateEmailInput = document.getElementById('candidateEmail');
+        if (candidateEmailInput) {
+            candidateEmailInput.addEventListener('input', function(e) {
+                const email = e.target.value;
+                const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+                
+                if (email && !emailPattern.test(email)) {
+                    e.target.setCustomValidity('Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)');
+                    e.target.classList.add('border-red-500');
+                    e.target.classList.remove('border-gray-300');
+                } else {
+                    e.target.setCustomValidity('');
+                    e.target.classList.remove('border-red-500');
+                    e.target.classList.add('border-gray-300');
+                }
+            });
+        }
 
         // Initialize page
         async function init() {

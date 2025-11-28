@@ -98,8 +98,11 @@
                             Email <span class="text-red-500">*</span>
                         </label>
                         <input type="email" id="email" name="email" required
+                            pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
+                            title="Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            placeholder="nguyenvanan@example.com">
+                            placeholder="example123@gmail.com">
+                        <small class="text-gray-500 text-xs mt-1 block">Email phải có dạng: chữ và số @gmail.com</small>
                     </div>
 
                     <!-- Phone -->
@@ -108,8 +111,11 @@
                             Số điện thoại <span class="text-red-500">*</span>
                         </label>
                         <input type="tel" id="phone" name="phone" required
+                            pattern="[0-9]{10,11}"
+                            title="Số điện thoại chỉ được phép nhập số (10-11 chữ số)"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             placeholder="0912345678">
+                        <small class="text-gray-500 text-xs mt-1 block">Chỉ được nhập số, từ 10-11 chữ số</small>
                     </div>
 
                     <!-- Company to Apply -->
@@ -241,6 +247,49 @@
         // Load companies when page loads
         loadCompanies();
 
+        // Real-time validation for email
+        document.getElementById('email').addEventListener('input', function(e) {
+            const email = e.target.value;
+            const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+            
+            if (email && !emailPattern.test(email)) {
+                e.target.setCustomValidity('Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)');
+                e.target.classList.add('border-red-500');
+                e.target.classList.remove('border-gray-300');
+            } else {
+                e.target.setCustomValidity('');
+                e.target.classList.remove('border-red-500');
+                e.target.classList.add('border-gray-300');
+            }
+        });
+
+        // Real-time validation for phone - only allow numbers
+        document.getElementById('phone').addEventListener('input', function(e) {
+            // Remove any non-digit characters
+            let phone = e.target.value.replace(/\D/g, '');
+            e.target.value = phone;
+            
+            const phonePattern = /^[0-9]{10,11}$/;
+            
+            if (phone && !phonePattern.test(phone)) {
+                e.target.setCustomValidity('Số điện thoại phải từ 10-11 chữ số');
+                e.target.classList.add('border-red-500');
+                e.target.classList.remove('border-gray-300');
+            } else {
+                e.target.setCustomValidity('');
+                e.target.classList.remove('border-red-500');
+                e.target.classList.add('border-gray-300');
+            }
+        });
+
+        // Prevent non-numeric input on phone field
+        document.getElementById('phone').addEventListener('keypress', function(e) {
+            // Allow only numbers (0-9)
+            if (e.key < '0' || e.key > '9') {
+                e.preventDefault();
+            }
+        });
+
         // Click to upload
         fileUploadBox.addEventListener('click', () => fileInput.click());
 
@@ -279,6 +328,25 @@
         // Form submission
         applyForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // Final validation before submit
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            
+            const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+            const phonePattern = /^[0-9]{10,11}$/;
+            
+            if (!emailPattern.test(email)) {
+                alert('❌ Email không hợp lệ!\n\nEmail phải có dạng: chữ và số @gmail.com\nVí dụ: user123@gmail.com');
+                document.getElementById('email').focus();
+                return;
+            }
+            
+            if (!phonePattern.test(phone)) {
+                alert('❌ Số điện thoại không hợp lệ!\n\nSố điện thoại chỉ được nhập số, từ 10-11 chữ số\nVí dụ: 0912345678');
+                document.getElementById('phone').focus();
+                return;
+            }
 
             // Validate file
             if (!fileInput.files || fileInput.files.length === 0) {

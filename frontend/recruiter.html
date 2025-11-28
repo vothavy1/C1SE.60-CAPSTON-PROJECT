@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Recruiter Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
 </head>
-<body class="bg-gradient-to-br from-slate-800 via-indigo-900 to-slate-900 min-h-screen text-white">
+<body class="light-mode min-h-screen transition-colors duration-300">
   <script>
     // Guard: yêu cầu đăng nhập và phải là RECRUITER
     (function guardRole() {
@@ -29,11 +31,12 @@
   </script>
 
   <!-- Header -->
-  <header class="bg-white/10 backdrop-blur-md shadow-lg sticky top-0 z-10 border-b border-indigo-400/30">
+  <header class="header-bg backdrop-blur-md shadow-lg sticky top-0 z-10 border-b transition-colors duration-300">
     <div class="max-w-6xl mx-auto flex justify-between items-center py-4 px-6">
       <h1 class="text-2xl md:text-3xl font-bold tracking-wide">Recruiter Dashboard</h1>
       <div class="flex items-center gap-4">
-        <span id="userName" class="font-medium text-indigo-200">Xin chào, Recruiter!</span>
+        <div class="theme-toggle" id="themeToggle" title="Chuyển đổi sáng/tối"></div>
+        <span id="userName" class="font-medium">Xin chào, Recruiter!</span>
         <button id="logoutBtn" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
           Đăng xuất
         </button>
@@ -44,52 +47,78 @@
   <!-- Main -->
   <main class="max-w-6xl mx-auto mt-10 p-6 grid gap-6 md:grid-cols-2">
     <!-- Card: Tests -->
-    <section class="rounded-2xl p-6 bg-white/10 border border-white/20 hover:bg-white/15 transition">
+    <section class="card-bg rounded-2xl p-6 border transition-all duration-300">
       <h2 class="text-xl font-semibold mb-2">Quản lý đề thi</h2>
-      <p class="text-indigo-200 mb-4">Tạo, chỉnh sửa, và phân bổ bài thi cho ứng viên.</p>
+      <p class="text-subtitle mb-4">Tạo, chỉnh sửa, và phân bổ bài thi cho ứng viên.</p>
       <div class="flex gap-3 flex-wrap">
-        <a class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition" href="create-test.html">Tạo đề thi</a>
-        <a class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition" href="test-list.html">Danh sách đề thi</a>
-        <a class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 transition" href="test-add-questions.html">Thêm câu hỏi vào đề thi</a>
+        <a class="px-4 py-2 rounded-lg btn-primary transition" href="create-test.html">Tạo đề thi</a>
+        <a class="px-4 py-2 rounded-lg btn-secondary transition" href="test-list.html">Danh sách đề thi</a>
+        <a class="px-4 py-2 rounded-lg btn-accent transition" href="test-add-questions.html">Thêm câu hỏi vào đề thi</a>
       </div>
     </section>
 
     <!-- Card: Questions -->
-    <section class="rounded-2xl p-6 bg-white/10 border border-white/20 hover:bg-white/15 transition">
+    <section class="card-bg rounded-2xl p-6 border transition-all duration-300">
       <h2 class="text-xl font-semibold mb-2">Quản lý câu hỏi</h2>
-      <p class="text-indigo-200 mb-4">Thêm câu hỏi trắc nghiệm, tự luận, hoặc coding.</p>
+      <p class="text-subtitle mb-4">Thêm câu hỏi trắc nghiệm, tự luận, hoặc coding.</p>
       <div class="flex gap-3 flex-wrap">
-  <a class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition" href="create-question.html">Thêm câu hỏi</a>
-  <a class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition" href="question-list.html">Danh sách câu hỏi</a>
+  <a class="px-4 py-2 rounded-lg btn-primary transition" href="create-question.html">Thêm câu hỏi</a>
+  <a class="px-4 py-2 rounded-lg btn-secondary transition" href="question-list.html">Danh sách câu hỏi</a>
       </div>
     </section>
 
     <!-- Card: Candidates -->
-    <section class="rounded-2xl p-6 bg-white/10 border border-white/20 hover:bg-white/15 transition">
+    <section class="card-bg rounded-2xl p-6 border transition-all duration-300">
       <h2 class="text-xl font-semibold mb-2">Quản lý ứng viên</h2>
-      <p class="text-indigo-200 mb-4">Xem hồ sơ, gán bài test, theo dõi trạng thái.</p>
+      <p class="text-subtitle mb-4">Xem hồ sơ, gán bài test, theo dõi trạng thái.</p>
       <div class="flex gap-3 flex-wrap">
-        <a class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition" href="candidate-list.html">Thêm ứng viên</a>
-        <a class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition" href="candidate-list.html">Danh sách ứng viên</a>
+        <a class="px-4 py-2 rounded-lg btn-primary transition" href="candidate-list.html">Thêm ứng viên</a>
+        <a class="px-4 py-2 rounded-lg btn-secondary transition" href="candidate-list.html">Danh sách ứng viên</a>
       </div>
     </section>
 
     <!-- Card: Reports -->
-    <section class="rounded-2xl p-6 bg-white/10 border border-white/20 hover:bg-white/15 transition">
+    <section class="card-bg rounded-2xl p-6 border transition-all duration-300">
       <h2 class="text-xl font-semibold mb-2">📊 Báo cáo</h2>
-      <p class="text-indigo-200 mb-4">Hiệu quả tuyển dụng, tỷ lệ pass bài thi, tiến độ pipeline.</p>
+      <p class="text-subtitle mb-4">Hiệu quả tuyển dụng, tỷ lệ pass bài thi, tiến độ pipeline.</p>
       <div class="flex gap-3 flex-wrap">
-        <a class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition" href="report.html">Xem báo cáo</a>
+        <a class="px-4 py-2 rounded-lg btn-secondary transition" href="report.html">Xem báo cáo</a>
       </div>
     </section>
   </main>
 
   <!-- Footer -->
-  <footer class="text-center py-6 text-indigo-200 mt-10 border-t border-indigo-400/30">
+  <footer class="footer-border text-center py-6 mt-10 border-t transition-colors duration-300">
     © 2025 CS60 Recruitment
   </footer>
 
   <script>
+    // Theme toggle functionality
+    (function initTheme() {
+      const body = document.body;
+      const themeToggle = document.getElementById('themeToggle');
+      
+      // Load saved theme or default to light
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      body.classList.remove('light-mode', 'dark-mode');
+      body.classList.add(savedTheme + '-mode');
+      
+      // Toggle theme
+      if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+          const currentTheme = body.classList.contains('light-mode') ? 'light' : 'dark';
+          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+          
+          body.classList.remove('light-mode', 'dark-mode');
+          body.classList.add(newTheme + '-mode');
+          
+          localStorage.setItem('theme', newTheme);
+          
+          console.log(`🎨 Theme changed to: ${newTheme}`);
+        });
+      }
+    })();
+
     // Hiển thị tên người dùng và setup logout
     (function initUser() {
       try {

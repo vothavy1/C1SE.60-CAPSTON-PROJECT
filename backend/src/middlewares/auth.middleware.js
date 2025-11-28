@@ -49,17 +49,6 @@ const authenticate = async (req, res, next) => {
     
     // CRITICAL: Enforce company_id requirement for recruiters
     if (userRole === 'RECRUITER') {
-      // Check if token is missing company_id (old token)
-      if (!decoded.company_id && user.company_id) {
-        logger.warn(`⚠️ Token cũ thiếu company_id cho user ${user.username}. Token cần được làm mới!`);
-        // Return error to force re-login
-        return res.status(401).json({ 
-          success: false, 
-          message: 'Token cũ không hợp lệ. Vui lòng đăng xuất và đăng nhập lại để cập nhật quyền truy cập.',
-          error_code: 'OLD_TOKEN'
-        });
-      }
-      
       // Check if user has no company_id in database
       if (!user.company_id) {
         logger.error(`❌ Recruiter ${user.username} (ID: ${user.user_id}) không có company_id!`);
@@ -69,6 +58,21 @@ const authenticate = async (req, res, next) => {
           error_code: 'NO_COMPANY'
         });
       }
+      
+      // CRITICAL: Check if token company_id doesn't match database company_id
+      // This prevents user from accessing wrong company data after being reassigned
+      if (decoded.company_id && decoded.company_id !== user.company_id) {
+        logger.warn(`🚨 SECURITY: User ${user.username} token có company_id=${decoded.company_id} nhưng database có company_id=${user.company_id}. Buộc đăng nhập lại!`);
+        return res.status(401).json({ 
+          success: false, 
+          message: '⚠️ Phát hiện thay đổi công ty trong hệ thống. Vui lòng đăng xuất và đăng nhập lại để cập nhật quyền truy cập.',
+          error_code: 'COMPANY_MISMATCH',
+          force_logout: true
+        });
+      }
+      
+      // Log for security audit
+      logger.info(`✅ Auth OK: ${user.username} (Company: ${user.company_id})`);
     }
 
     // Add user info to request with standardized userId

@@ -1220,6 +1220,72 @@ exports.getAllReports = async (req, res) => {
   }
 };
 
+// ===== 5B. GET SINGLE REPORT BY ID (ADMIN ONLY) =====
+exports.getReportById = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+
+    console.log(`📊 Fetching report #${reportId}...`);
+
+    // Validate reportId
+    if (!reportId || isNaN(reportId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid report ID'
+      });
+    }
+
+    // Fetch report with creator info
+    const report = await RecruitmentReport.findByPk(reportId, {
+      include: [
+        {
+          model: User,
+          as: 'Creator',
+          attributes: ['user_id', 'username', 'full_name', 'company_id']
+        }
+      ]
+    });
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
+      });
+    }
+
+    // Format response
+    const reportData = {
+      report_id: report.report_id,
+      report_name: report.report_name,
+      report_type: report.report_type,
+      description: report.description || null,
+      parameters: report.parameters, // Already parsed by getter
+      severity: report.severity || 'INFO',
+      status: report.status || 'COMPLETED',
+      created_by: report.created_by,
+      creator_name: report.Creator?.full_name || report.Creator?.username || 'System',
+      created_at: report.created_at,
+      updated_at: report.updated_at
+    };
+
+    console.log(`✅ Found report #${reportId}: ${report.report_name}`);
+
+    return res.status(200).json({
+      success: true,
+      data: reportData
+    });
+
+  } catch (error) {
+    console.error(`❌ Error fetching report #${req.params.reportId}:`, error);
+    logger.error(`Error fetching report: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch report',
+      error: error.message
+    });
+  }
+};
+
 // ===== 6. UPDATE REPORT (ADMIN ONLY) =====
 exports.updateReport = async (req, res) => {
   try {

@@ -298,20 +298,13 @@ exports.getCandidateById = async (req, res) => {
       include: [
         {
           model: CandidateResume,
-          attributes: ['resume_id', 'file_name', 'file_path', 'file_type', 'uploaded_at', 'is_primary']
+          attributes: ['resume_id', 'file_name', 'file_path', 'file_type', 'uploaded_at', 'is_primary'],
+          required: false
         },
         {
           model: User,
-          attributes: ['user_id', 'username', 'email']
-        },
-        {
-          model: CandidateJobApplication,
-          include: [
-            {
-              model: JobPosition,
-              attributes: ['position_id', 'title', 'department']
-            }
-          ]
+          attributes: ['user_id', 'username', 'email'],
+          required: false
         }
       ]
     });
@@ -354,6 +347,7 @@ exports.getCandidateById = async (req, res) => {
     
   } catch (error) {
     logger.error(`Error retrieving candidate: ${error.message}`);
+    console.error('❌ getCandidateById Error Stack:', error.stack);
     return res.status(500).json({
       success: false,
       message: 'Failed to retrieve candidate',

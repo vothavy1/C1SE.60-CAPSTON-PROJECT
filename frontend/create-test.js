@@ -34,7 +34,7 @@ document.getElementById('createTestForm').addEventListener('submit', async funct
 async function createTest(testData) {
     try {
         // Lấy token từ localStorage
-        const token = localStorage.getItem('authToken') || localStorage.getItem('auth_token');
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('auth_token');
         
         if (!token) {
             throw new Error('Vui lòng đăng nhập để tiếp tục!');

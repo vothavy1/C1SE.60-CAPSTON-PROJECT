@@ -41,4 +41,10 @@ router.get('/candidates/:id/cv',
   applyController.getCandidateCV
 );
 
+router.get('/candidates/:id/cv/download', 
+  authenticate, 
+  authorize(['ADMIN', 'RECRUITER']), 
+  applyController.getCandidateCV
+);
+
 module.exports = router;

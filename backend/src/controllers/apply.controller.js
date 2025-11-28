@@ -150,8 +150,26 @@ const getCandidates = async (req, res) => {
   try {
     const { status, search, page = 1, limit = 20 } = req.query;
 
+    // 🔒 SECURITY CHECK: Filter by company for recruiters ONLY (Admin sees all)
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    
     // Build where clause for filtering
     const whereClause = {};
+    
+    // 🔒 COMPANY FILTER - Only RECRUITER is restricted to their company
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
+      whereClause.company_id = req.user.company_id;
+      console.log(`🔒 RECRUITER FILTER: Only showing candidates for company ${req.user.company_id}`);
+    } else if (userRole === 'ADMIN') {
+      console.log('👑 ADMIN ACCESS: Showing all candidates from all companies');
+    }
     
     if (status) {
       whereClause.status = status;
@@ -175,6 +193,7 @@ const getCandidates = async (req, res) => {
       include: [
         {
           model: CandidateResume,
+          as: 'CandidateResumes', // Add alias to match model association
           attributes: ['resume_id', 'file_type', 'file_path', 'file_name', 'file_size', 'uploaded_at', 'is_primary'],
           required: false
         }
@@ -306,6 +325,30 @@ const updateCandidateStatus = async (req, res) => {
       });
     }
 
+    // 🔒 SECURITY CHECK: Verify recruiter can only update their company's candidates
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
+      if (candidate.company_id !== req.user.company_id) {
+        logger.warn(`🚫 BLOCKED: Recruiter company ${req.user.company_id} tried to update candidate ${id} from company ${candidate.company_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền cập nhật trạng thái ứng viên của công ty khác'
+        });
+      }
+    } else if (userRole !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền cập nhật trạng thái ứng viên'
+      });
+    }
+
     // Store old status
     const oldStatus = candidate.status;
     
@@ -429,7 +472,8 @@ const getCandidateById = async (req, res) => {
       include: [
         {
           model: CandidateResume,
-          attributes: ['resume_id', 'resume_type', 'file_path', 'file_name', 'uploaded_at'],
+          as: 'CandidateResumes',
+          attributes: ['resume_id', 'file_type', 'file_path', 'file_name', 'uploaded_at'],
           required: false
         }
       ]
@@ -440,6 +484,26 @@ const getCandidateById = async (req, res) => {
         success: false,
         message: 'Không tìm thấy ứng viên'
       });
+    }
+
+    // 🔒 SECURITY CHECK: Verify recruiter can only view their company's candidates (Admin sees all)
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
+      if (candidate.company_id !== req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xem ứng viên của công ty khác'
+        });
+      }
+    } else if (userRole === 'ADMIN') {
+      console.log('👑 ADMIN access: Can view all candidates');
     }
 
     return res.status(200).json({
@@ -463,6 +527,27 @@ const getCandidateById = async (req, res) => {
 const getCandidateCV = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // 🔒 SECURITY CHECK: Verify recruiter can only download their company's candidate CV (Admin downloads all)
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    if (userRole === 'RECRUITER') {
+      // First check if candidate belongs to recruiter's company
+      const candidate = await Candidate.findByPk(id);
+      if (!candidate) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy ứng viên'
+        });
+      }
+      if (candidate.company_id !== req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền tải CV của ứng viên công ty khác'
+        });
+      }
+    } else if (userRole === 'ADMIN') {
+      console.log('👑 ADMIN access: Can download all CVs');
+    }
 
     // Find candidate's CV
     const resume = await CandidateResume.findOne({

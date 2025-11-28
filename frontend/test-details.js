@@ -3,7 +3,7 @@ const API_BASE_URL = 'http://localhost:5000/api';
 let currentTestId = null;
 
 function getAuthHeaders() {
-    const token = localStorage.getItem('authToken') || localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('auth_token');
     return {
         'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` })
