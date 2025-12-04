@@ -55,6 +55,7 @@ const User = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
+
     last_login: {
       type: DataTypes.DATE,
       allowNull: true,

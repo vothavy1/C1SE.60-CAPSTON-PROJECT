@@ -293,21 +293,26 @@ exports.getAllCandidates = async (req, res) => {
 exports.getCandidateById = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log('🔍 getCandidateById called with id:', id);
     
-    const candidate = await Candidate.findByPk(id, {
-      include: [
-        {
-          model: CandidateResume,
-          attributes: ['resume_id', 'file_name', 'file_path', 'file_type', 'uploaded_at', 'is_primary'],
-          required: false
-        },
-        {
-          model: User,
-          attributes: ['user_id', 'username', 'email'],
-          required: false
-        }
-      ]
+    // Use raw SQL query to avoid association issues
+    const sequelize = require('../config/database');
+    const [candidates] = await sequelize.query(`
+      SELECT 
+        c.*,
+        u.username,
+        u.email as user_email,
+        comp.companyName
+      FROM candidates c
+      LEFT JOIN users u ON c.user_id = u.user_id
+      LEFT JOIN companies comp ON c.company_id = comp.company_id
+      WHERE c.candidate_id = ?
+    `, {
+      replacements: [id]
     });
+
+    const candidate = candidates[0];
+    console.log('📦 Found candidate:', candidate);
     
     if (!candidate) {
       return res.status(404).json({

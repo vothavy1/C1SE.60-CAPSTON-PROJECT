@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang Test Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        p {
+            text-align: center;
+            font-size: 1.1em;
+        }
+
+        /* Tùy chỉnh chat box */
+        df-messenger {
+            --df-messenger-bot-message: #0d6efd; /* màu tin nhắn bot */
+            --df-messenger-button-titlebar-color: #0d6efd; /* màu thanh trên cùng */
+            --df-messenger-chat-background-color: #f5f5f5; /* nền chat */
+            --df-messenger-font-color: #000000;
+            --df-messenger-send-icon: #0d6efd;
+            --df-messenger-user-message: #198754; /* màu tin nhắn người dùng */
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Chào mừng bạn đến trang web thử nghiệm</h1>
+    <p>Chatbot sẽ xuất hiện ở góc dưới bên phải màn hình.</p>
+
+    <!-- Nhúng Dialogflow Messenger -->
+    <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
+    <df-messenger
+      intent="WELCOME"
+      chat-title="ChatBoxAI"
+      agent-id="87930764-fac8-4bc7-b8e5-6314f552c10b"
+      language-code="vi"
+    ></df-messenger>
+
+</body>
+</html>

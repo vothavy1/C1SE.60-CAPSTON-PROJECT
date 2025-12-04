@@ -5,6 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - CS60</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js từ CDN khác -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        // Verify Chart.js is loaded
+        window.chartJsLoaded = false;
+        window.addEventListener('load', function() {
+            if (typeof Chart !== 'undefined') {
+                window.chartJsLoaded = true;
+                console.log('✅ Chart.js loaded successfully:', Chart.version);
+            } else {
+                console.error('❌ Chart.js failed to load, trying backup CDN...');
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js';
+                script.onload = () => {
+                    window.chartJsLoaded = true;
+                    console.log('✅ Chart.js backup loaded');
+                };
+                document.head.appendChild(script);
+            }
+        });
+    </script>
     <style>
         /* Professional Light Mode Theme */
         body {
@@ -137,37 +158,22 @@
         <main class="flex-1 overflow-y-auto">
             
             <!-- Header -->
-            <header class="bg-white border-b border-gray-200 sticky top-0 z-10 card-shadow">
-                <div class="px-8 py-4 flex justify-between items-center">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">📊 Tổng quan hệ thống</h1>
-                        <p class="text-sm text-gray-600 mt-1">Quản lý và giám sát toàn bộ hệ thống</p>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <!-- Notification Bell -->
-                        <div class="relative">
-                            <button onclick="toggleNotifications()" class="relative p-2 hover:bg-gray-100 rounded-lg transition" title="Thông báo">
-                                <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                                </svg>
-                                <!-- Badge for unread count -->
-                                <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
-                            </button>
-                        </div>
-                        
-                        <div class="text-right">
-                            <p class="text-sm font-medium text-gray-900" id="adminName">Admin User</p>
-                            <p class="text-xs text-gray-500">Administrator</p>
-                        </div>
-                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                            <span class="text-white font-bold text-sm" id="adminAvatar">A</span>
-                        </div>
-                    </div>
+            <!-- Compact header with notification only -->
+            <div class="fixed top-4 right-4 z-50">
+                <!-- Notification Bell -->
+                <div class="relative">
+                    <button onclick="toggleNotifications()" class="relative p-3 bg-white hover:bg-gray-50 rounded-full shadow-lg border border-gray-200 transition" title="Thông báo">
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        <!-- Badge for unread count -->
+                        <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                    </button>
                 </div>
-            </header>
+            </div>
 
             <!-- Notification Panel (Dropdown) -->
-            <div id="notificationPanel" class="hidden fixed top-20 right-8 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[600px] overflow-hidden">
+            <div id="notificationPanel" class="hidden fixed top-16 right-4 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[600px] overflow-hidden">
                 <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-blue-50">
                     <h3 class="text-lg font-bold text-gray-900">🔔 Thông báo</h3>
                     <div class="flex gap-2">
@@ -204,7 +210,7 @@
             </div>
 
             <!-- Dashboard Content -->
-            <div id="dashboardContent" class="p-8 space-y-8">
+            <div id="dashboardContent" class="p-6 pt-4 space-y-6">
                 
                 <!-- Statistics Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -274,6 +280,47 @@
                     </div>
                 </div>
 
+            </div>
+
+            <!-- Daily Registration Chart - Only show in Dashboard -->
+            <div id="dailyChartContainer" class="bg-white rounded-xl border border-gray-200 card-shadow mb-8">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">📊 Biểu đồ Đăng ký Hàng ngày</h3>
+                            <p class="text-sm text-gray-600 mt-1">Số lượng ứng viên và nhà tuyển dụng đăng ký theo từng ngày</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <select id="chartMonth" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="12" selected>Tháng 12</option>
+                                <option value="11">Tháng 11</option>
+                                <option value="10">Tháng 10</option>
+                                <option value="9">Tháng 9</option>
+                                <option value="8">Tháng 8</option>
+                                <option value="7">Tháng 7</option>
+                                <option value="6">Tháng 6</option>
+                                <option value="5">Tháng 5</option>
+                                <option value="4">Tháng 4</option>
+                                <option value="3">Tháng 3</option>
+                                <option value="2">Tháng 2</option>
+                                <option value="1">Tháng 1</option>
+                            </select>
+                            <select id="chartYear" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="2025" selected>2025</option>
+                                <option value="2024">2024</option>
+                                <option value="2023">2023</option>
+                            </select>
+                            <button onclick="updateDailyChart()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
+                                Cập nhật
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div style="height: 400px;">
+                        <canvas id="dailyRegistrationChart"></canvas>
+                    </div>
+                </div>
             </div>
 
             <!-- Candidates Management Content -->
@@ -1231,37 +1278,82 @@
         // Check authentication
         function checkAuth() {
             const token = localStorage.getItem('token');
+            const sessionUser = localStorage.getItem('session_user');
             
             console.log('🔐 Auth Check:', {
                 hasToken: !!token,
-                tokenLength: token ? token.length : 0
+                tokenLength: token ? token.length : 0,
+                hasSessionUser: !!sessionUser,
+                currentPage: window.location.pathname
             });
+            
+            // Check if we have session user data as backup
+            if (!token && sessionUser) {
+                try {
+                    const user = JSON.parse(sessionUser);
+                    if (user.role && user.role.toUpperCase() === 'ADMIN') {
+                        console.log('✨ No token but found valid admin session user - allowing access');
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error parsing session user:', e);
+                }
+            }
             
             if (!token) {
                 console.error('❌ No token found');
-                alert('Vui lòng đăng nhập với tài khoản ADMIN để truy cập trang này');
+                console.log('🔄 Redirecting to admin login page...');
+                
+                // Silent redirect without alert for better UX
                 window.location.href = 'admin-login.html';
                 return false;
             }
 
             // Parse token to check role
             try {
+                console.log('📝 Raw token:', token.substring(0, 50) + '...');
                 const tokenPayload = parseJwt(token);
                 console.log('🔍 Token Payload:', tokenPayload);
                 
                 if (!tokenPayload) {
-                    console.error('❌ Cannot parse token');
-                    alert('Token không hợp lệ. Vui lòng đăng nhập lại với tài khoản ADMIN.');
-                    localStorage.clear();
-                    window.location.href = 'admin-login.html';
+                    console.error('❌ Cannot parse token - might be invalid format');
+                    console.log('🧪 Trying to use token directly for admin access...');
+                    
+                    // Try to get user info from localStorage as backup
+                    const sessionUser = localStorage.getItem('session_user');
+                    if (sessionUser) {
+                        try {
+                            const user = JSON.parse(sessionUser);
+                            console.log('👤 Found session user:', user);
+                            if (user.role && user.role.toUpperCase() === 'ADMIN') {
+                                console.log('✅ Using session user data - ADMIN access granted');
+                                if (user.username) {
+                                    const adminNameEl = document.getElementById('adminName');
+                                    const adminAvatarEl = document.getElementById('adminAvatar');
+                                    if (adminNameEl) adminNameEl.textContent = user.username;
+                                    if (adminAvatarEl) adminAvatarEl.textContent = user.username.charAt(0).toUpperCase();
+                                }
+                                return true;
+                            }
+                        } catch (e) {
+                            console.error('Error parsing session user:', e);
+                        }
+                    }
+                    
+                    handleAuthError('Token không hợp lệ. Vui lòng đăng nhập lại với tài khoản ADMIN.');
+                    return false;
+                }
+                
+                // Check if token is expired
+                if (tokenPayload.exp && Date.now() >= tokenPayload.exp * 1000) {
+                    console.error('❌ Token expired at:', new Date(tokenPayload.exp * 1000));
+                    handleAuthError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
                     return false;
                 }
 
                 if (!tokenPayload.role) {
                     console.error('❌ Token missing role');
-                    alert('Token không chứa thông tin quyền. Vui lòng đăng nhập lại với tài khoản ADMIN.');
-                    localStorage.clear();
-                    window.location.href = 'admin-login.html';
+                    handleAuthError('Token không chứa thông tin quyền. Vui lòng đăng nhập lại với tài khoản ADMIN.');
                     return false;
                 }
                 
@@ -1284,13 +1376,52 @@
 
                 // Display admin name
                 if (tokenPayload.username) {
-                    document.getElementById('adminName').textContent = tokenPayload.username;
-                    document.getElementById('adminAvatar').textContent = tokenPayload.username.charAt(0).toUpperCase();
+                    const adminNameEl = document.getElementById('adminName');
+                    const adminAvatarEl = document.getElementById('adminAvatar');
+                    if (adminNameEl) {
+                        adminNameEl.textContent = tokenPayload.username;
+                    } else {
+                        console.warn('⚠️ adminName element not found');
+                    }
+                    if (adminAvatarEl) {
+                        adminAvatarEl.textContent = tokenPayload.username.charAt(0).toUpperCase();
+                    } else {
+                        console.warn('⚠️ adminAvatar element not found');
+                    }
                 }
                 
                 console.log('✅ Auth check passed, user is ADMIN');
             } catch (e) {
                 console.error('❌ Error parsing token:', e);
+                
+                // Check if we have valid session user as fallback
+                const sessionUser = localStorage.getItem('session_user');
+                if (sessionUser) {
+                    try {
+                        const user = JSON.parse(sessionUser);
+                        if (user.role && user.role.toUpperCase() === 'ADMIN') {
+                            console.log('🚨 Token validation failed but admin session exists - granting access');
+                            if (user.username) {
+                                const adminNameEl = document.getElementById('adminName');
+                                const adminAvatarEl = document.getElementById('adminAvatar');
+                                if (adminNameEl) {
+                                    adminNameEl.textContent = user.username;
+                                } else {
+                                    console.warn('⚠️ adminName element not found in fallback');
+                                }
+                                if (adminAvatarEl) {
+                                    adminAvatarEl.textContent = user.username.charAt(0).toUpperCase();
+                                } else {
+                                    console.warn('⚠️ adminAvatar element not found in fallback');
+                                }
+                            }
+                            return true;
+                        }
+                    } catch (sessionError) {
+                        console.error('Session user parse error:', sessionError);
+                    }
+                }
+                
                 alert('Lỗi khi xác thực token. Vui lòng đăng nhập lại với tài khoản ADMIN.');
                 localStorage.clear();
                 window.location.href = 'admin-login.html';
@@ -1303,15 +1434,50 @@
         // Parse JWT token
         function parseJwt(token) {
             try {
-                const base64Url = token.split('.')[1];
+                if (!token || typeof token !== 'string') {
+                    console.error('Invalid token type:', typeof token);
+                    return null;
+                }
+                
+                const parts = token.split('.');
+                if (parts.length !== 3) {
+                    console.error('Token does not have 3 parts:', parts.length);
+                    return null;
+                }
+                
+                const base64Url = parts[1];
                 const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                
+                // Add padding if needed
+                const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
+                
+                const jsonPayload = decodeURIComponent(atob(padded).split('').map(function(c) {
                     return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
                 }).join(''));
-                return JSON.parse(jsonPayload);
+                
+                const parsed = JSON.parse(jsonPayload);
+                console.log('✅ Token parsed successfully:', parsed);
+                return parsed;
             } catch (e) {
+                console.error('❌ JWT parse error:', e);
+                console.log('Token parts:', token ? token.split('.').length : 'No token');
                 return null;
             }
+        }
+        
+        // Handle authentication errors
+        function handleAuthError(message) {
+            console.error('❌ Auth Error:', message);
+            
+            // Clear all storage
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Show user-friendly message
+            alert(message);
+            
+            // Redirect to login
+            window.location.href = 'admin-login.html';
         }
 
         // Get auth headers
@@ -1363,8 +1529,8 @@
                 });
 
                 if (response.status === 401 || response.status === 403) {
-                    alert('Phiên đăng nhập đã hết hạn hoặc bạn không có quyền truy cập');
-                    window.location.href = 'admin-login.html';
+                    console.error('❌ Unauthorized access to stats');
+                    handleAuthError('Lỗi khi xác thực token. Vui lòng đăng nhập lại với tài khoản ADMIN.');
                     return;
                 }
 
@@ -1376,19 +1542,98 @@
                 console.log('✅ Stats data:', data);
 
                 if (data.success && data.data) {
-                    document.getElementById('companiesCount').textContent = data.data.companies || 0;
-                    document.getElementById('candidatesCount').textContent = data.data.candidates || 0;
-                    document.getElementById('testsCount').textContent = data.data.tests || 0;
-                    document.getElementById('cvsCount').textContent = data.data.cvs || 0;
+                    // Animate counter updates
+                    animateCounter('companiesCount', data.data.companies || 0);
+                    animateCounter('candidatesCount', data.data.candidates || 0);
+                    animateCounter('testsCount', data.data.tests || 0);
+                    animateCounter('cvsCount', data.data.cvs || 0);
                 }
 
             } catch (error) {
                 console.error('❌ Error fetching stats:', error);
-                document.getElementById('companiesCount').textContent = '--';
-                document.getElementById('candidatesCount').textContent = '--';
-                document.getElementById('testsCount').textContent = '--';
-                document.getElementById('cvsCount').textContent = '--';
+                
+                // Check if it's an auth error
+                if (error.message && error.message.includes('401')) {
+                    console.log('🔄 Auth error, redirecting to login...');
+                    window.location.href = 'admin-login.html';
+                    return;
+                }
+                
+                // Show loading state instead of error
+                document.getElementById('companiesCount').textContent = '...';
+                document.getElementById('candidatesCount').textContent = '...';
+                document.getElementById('testsCount').textContent = '...';
+                document.getElementById('cvsCount').textContent = '...';
             }
+        }
+        
+        // Animate counter changes
+        function animateCounter(elementId, newValue) {
+            const element = document.getElementById(elementId);
+            const currentValue = parseInt(element.textContent) || 0;
+            
+            if (currentValue !== newValue) {
+                // Add visual feedback for changes
+                const card = element.closest('.bg-white');
+                card.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-50');
+                
+                // Animate the number change
+                const increment = newValue > currentValue ? 1 : -1;
+                const steps = Math.abs(newValue - currentValue);
+                let current = currentValue;
+                
+                if (steps <= 10) {
+                    const interval = setInterval(() => {
+                        current += increment;
+                        element.textContent = current;
+                        
+                        if (current === newValue) {
+                            clearInterval(interval);
+                            setTimeout(() => {
+                                card.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50');
+                            }, 1000);
+                        }
+                    }, 100);
+                } else {
+                    // Direct update for large changes
+                    element.textContent = newValue;
+                    setTimeout(() => {
+                        card.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50');
+                    }, 1000);
+                }
+                
+                // Color flash for changes
+                element.classList.add('text-green-600', 'font-bold');
+                setTimeout(() => {
+                    element.classList.remove('text-green-600');
+                    setTimeout(() => element.classList.remove('font-bold'), 500);
+                }, 1500);
+                
+                console.log(`🔄 ${elementId}: ${currentValue} → ${newValue}`);
+            }
+        }
+        
+        // Auto-refresh stats every 30 seconds with auth check
+        function startRealTimeUpdates() {
+            // Initial load
+            if (checkAuth()) {
+                fetchStats();
+            }
+            
+            // Set up interval for updates
+            setInterval(() => {
+                console.log('🔄 Auto-refreshing stats...');
+                
+                // Check auth before each update
+                if (checkAuth()) {
+                    fetchStats();
+                } else {
+                    console.log('⚠️ Stopping real-time updates due to auth failure');
+                    return; // Stop if auth fails
+                }
+            }, 30000); // 30 seconds
+            
+            console.log('✨ Real-time stats updates started (30s interval)');
         }
 
         // Navigation functions
@@ -1404,13 +1649,18 @@
             document.getElementById('questionsContent').classList.add('hidden');
             document.getElementById('applicationsContent').classList.add('hidden');
             
+            // Show chart only in Dashboard
+            const chartContainer = document.getElementById('dailyChartContainer');
+            if (chartContainer) {
+                chartContainer.classList.remove('hidden');
+            }
+            
             // Update navigation
             document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
             document.getElementById('navDashboard').classList.add('active');
             
-            // Update header
-            document.querySelector('h1').textContent = '📊 Tổng quan hệ thống';
-            document.querySelector('h1 + p').textContent = 'Quản lý và giám sát toàn bộ hệ thống';
+            // Dashboard is now active - headers are managed by layout
+            console.log('🏠 Dashboard view activated');
             
             fetchStats();
         }
@@ -1427,13 +1677,29 @@
             document.getElementById('applicationsContent').classList.add('hidden');
             document.getElementById('questionsContent').classList.add('hidden');
             
+            // Hide chart in other sections
+            const chartContainer = document.getElementById('dailyChartContainer');
+            if (chartContainer) {
+                chartContainer.classList.add('hidden');
+            }
+            
             // Update navigation
             document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
             document.getElementById('navRecruiters').classList.add('active');
             
-            // Update header
-            document.querySelector('h1').textContent = '💼 Quản lý Recruiters';
-            document.querySelector('h1 + p').textContent = 'Quản lý nhà tuyển dụng trong hệ thống';
+            // Update header (safely)
+            const headerTitle = document.querySelector('h1');
+            const headerSubtitle = document.querySelector('h1 + p');
+            if (headerTitle) {
+                headerTitle.textContent = '💼 Quản lý Recruiters';
+            } else {
+                console.warn('⚠️ Header title element not found in showRecruiters');
+            }
+            if (headerSubtitle) {
+                headerSubtitle.textContent = 'Quản lý nhà tuyển dụng trong hệ thống';
+            } else {
+                console.warn('⚠️ Header subtitle element not found in showRecruiters');
+            }
             
             fetchRecruiters();
         }
@@ -1724,13 +1990,29 @@
             document.getElementById('questionsContent').classList.add('hidden');
             document.getElementById('applicationsContent').classList.add('hidden');
             
+            // Hide chart in other sections
+            const chartContainer = document.getElementById('dailyChartContainer');
+            if (chartContainer) {
+                chartContainer.classList.add('hidden');
+            }
+            
             // Update navigation
             document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
             document.getElementById('navCandidates').classList.add('active');
             
-            // Update header
-            document.querySelector('h1').textContent = '👥 Quản lý Candidates';
-            document.querySelector('h1 + p').textContent = 'Quản lý ứng viên trong hệ thống';
+            // Update header (safely)
+            const headerTitle = document.querySelector('h1');
+            const headerSubtitle = document.querySelector('h1 + p');
+            if (headerTitle) {
+                headerTitle.textContent = '👥 Quản lý Candidates';
+            } else {
+                console.warn('⚠️ Header title element not found in showCandidates');
+            }
+            if (headerSubtitle) {
+                headerSubtitle.textContent = 'Quản lý ứng viên trong hệ thống';
+            } else {
+                console.warn('⚠️ Header subtitle element not found in showCandidates');
+            }
             
             // Fetch candidates data
             fetchCandidates();
@@ -1738,16 +2020,21 @@
 
         async function fetchCandidates() {
             try {
+                console.log('📊 Fetching candidates data...');
                 const headers = getAuthHeaders();
-                const response = await fetch(`${API_BASE_URL}/admin/users`, { headers });
+                const response = await fetch(`${API_BASE_URL}/admin/candidates`, { headers });
                 const data = await response.json();
                 
+                console.log('🔍 Candidates API response:', data);
+                
                 if (data.success) {
-                    // Filter only candidates (role_name = 'CANDIDATE')
-                    allCandidates = data.data.filter(user => user.role_name === 'CANDIDATE');
+                    allCandidates = data.data;
+                    console.log('✅ Candidates loaded:', allCandidates.length);
                     renderCandidatesTable();
                     document.getElementById('totalCandidates').textContent = allCandidates.length;
                     document.getElementById('lastUpdateCandidates').textContent = new Date().toLocaleTimeString();
+                } else {
+                    console.error('❌ Candidates API failed:', data.message);
                 }
             } catch (error) {
                 console.error('Error fetching candidates:', error);
@@ -1780,20 +2067,22 @@
 
             tbody.innerHTML = candidates.map(c => `
                 <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900">${c.user_id}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">${c.username}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">${c.candidate_id}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${c.first_name} ${c.last_name}</td>
                     <td class="px-6 py-4 text-sm text-blue-600">${c.email}</td>
                     <td class="px-6 py-4 text-sm text-gray-700">${c.company_name || '-'}</td>
                     <td class="px-6 py-4 text-sm">
-                        ${c.is_active ? 
-                            '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Active</span>' :
-                            '<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Inactive</span>'
+                        ${c.status === 'HIRED' ? 
+                            '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">HIRED</span>' :
+                            c.status === 'NEW' ?
+                            '<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">NEW</span>' :
+                            '<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">' + c.status + '</span>'
                         }
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-500">${new Date(c.created_at).toLocaleDateString()}</td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex justify-center gap-2">
-                            <button onclick="viewCandidate(${c.user_id})" 
+                            <button onclick="viewCandidate(${c.candidate_id})" 
                                 class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium">
                                 View
                             </button>
@@ -2015,6 +2304,12 @@
             document.getElementById('candidatesContent').classList.add('hidden');
             document.getElementById('companiesContent').classList.remove('hidden');
             document.getElementById('applicationsContent').classList.add('hidden');
+            
+            // Hide chart in other sections
+            const chartContainer = document.getElementById('dailyChartContainer');
+            if (chartContainer) {
+                chartContainer.classList.add('hidden');
+            }
             
             // Update navigation
             document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
@@ -2241,19 +2536,36 @@
             document.getElementById('questionsContent').classList.add('hidden');
             document.getElementById('applicationsContent').classList.add('hidden');
             
+            // Hide chart in other sections
+            const chartContainer = document.getElementById('dailyChartContainer');
+            if (chartContainer) {
+                chartContainer.classList.add('hidden');
+            }
+            
             // Update navigation
             document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
             document.getElementById('navTests').classList.add('active');
             
-            // Update header
-            document.querySelector('h1').textContent = '📝 Quản lý Tests';
-            document.querySelector('h1 + p').textContent = 'Quản lý bài kiểm tra trong hệ thống';
+            // Update header (safely)
+            const headerTitle = document.querySelector('h1');
+            const headerSubtitle = document.querySelector('h1 + p');
+            if (headerTitle) {
+                headerTitle.textContent = '📝 Quản lý Tests';
+            } else {
+                console.warn('⚠️ Header title element not found in showTests');
+            }
+            if (headerSubtitle) {
+                headerSubtitle.textContent = 'Quản lý bài kiểm tra trong hệ thống';
+            } else {
+                console.warn('⚠️ Header subtitle element not found in showTests');
+            }
             
             await fetchTestsData();
         }
 
         async function fetchTestsData() {
             try {
+                console.log('📊 Fetching tests data...');
                 const headers = getAuthHeaders();
                 const timestamp = new Date().getTime();
                 const response = await fetch(`${API_BASE_URL}/tests?limit=1000&_t=${timestamp}`, {
@@ -2263,12 +2575,14 @@
                 });
                 
                 const data = await response.json();
+                console.log('🔍 Tests API response:', data);
                 
                 if (data.success) {
                     allTests = data.data.tests || [];
+                    console.log('✅ Tests loaded:', allTests.length);
                     renderTestsTable(allTests);
                 } else {
-                    console.error('Failed to fetch tests:', data.message);
+                    console.error('❌ Tests API failed:', data.message);
                     document.getElementById('testsTableBody').innerHTML = `
                         <tr><td colspan="8" class="px-6 py-8 text-center text-red-500">
                             Không thể tải dữ liệu: ${data.message}
@@ -2515,13 +2829,29 @@
             document.getElementById('questionsContent').classList.remove('hidden');
             document.getElementById('applicationsContent').classList.add('hidden');
             
+            // Hide chart in other sections
+            const chartContainer = document.getElementById('dailyChartContainer');
+            if (chartContainer) {
+                chartContainer.classList.add('hidden');
+            }
+            
             // Update navigation
             document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
             document.getElementById('navQuestions').classList.add('active');
             
-            // Update header
-            document.querySelector('h1').textContent = '❓ Quản lý Questions';
-            document.querySelector('h1 + p').textContent = 'Quản lý ngân hàng câu hỏi';
+            // Update header (safely)
+            const headerTitle = document.querySelector('h1');
+            const headerSubtitle = document.querySelector('h1 + p');
+            if (headerTitle) {
+                headerTitle.textContent = '❓ Quản lý Questions';
+            } else {
+                console.warn('⚠️ Header title element not found in showQuestions');
+            }
+            if (headerSubtitle) {
+                headerSubtitle.textContent = 'Quản lý ngân hàng câu hỏi';
+            } else {
+                console.warn('⚠️ Header subtitle element not found in showQuestions');
+            }
             
             await fetchCategories();
             await fetchQuestionsData();
@@ -2929,14 +3259,30 @@
             document.getElementById('questionsContent').classList.add('hidden');
             document.getElementById('applicationsContent').classList.remove('hidden');
             
+            // Hide chart in other sections
+            const chartContainer = document.getElementById('dailyChartContainer');
+            if (chartContainer) {
+                chartContainer.classList.add('hidden');
+            }
+            
             // Update navigation
             document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
             const navElement = document.getElementById('navApplications');
             if (navElement) navElement.classList.add('active');
             
-            // Update header
-            document.querySelector('h1').textContent = '📋 Quản lý Apply';
-            document.querySelector('h1 + p').textContent = 'Theo dõi và quản lý các đơn ứng tuyển';
+            // Update header (safely)
+            const headerTitle = document.querySelector('h1');
+            const headerSubtitle = document.querySelector('h1 + p');
+            if (headerTitle) {
+                headerTitle.textContent = '📋 Quản lý Apply';
+            } else {
+                console.warn('⚠️ Header title element not found in showApplications');
+            }
+            if (headerSubtitle) {
+                headerSubtitle.textContent = 'Theo dõi và quản lý các đơn ứng tuyển';
+            } else {
+                console.warn('⚠️ Header subtitle element not found in showApplications');
+            }
             
             await fetchApplicationsData();
         }
@@ -3506,23 +3852,220 @@
             });
         }
 
+        // Daily Registration Chart
+        let dailyChart = null;
+        
+        async function loadDailyChart() {
+            const month = document.getElementById('chartMonth')?.value || new Date().getMonth() + 1;
+            const year = document.getElementById('chartYear')?.value || new Date().getFullYear();
+            
+            console.log(`📊 Loading daily chart for ${month}/${year}...`);
+            
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch(`${API_BASE_URL}/admin/daily-registrations?month=${month}&year=${year}`, { headers });
+                const data = await response.json();
+                
+                console.log('🔍 Daily chart API response:', data);
+                
+                if (data.success) {
+                    console.log(`✅ Chart data loaded: ${data.data.length} days`);
+                    renderDailyChart(data.data, 0); // Reset retry count
+                } else {
+                    console.error('❌ Failed to load daily chart data:', data.message);
+                }
+            } catch (error) {
+                console.error('💥 Error loading daily chart:', error);
+            }
+        }
+        
+        let retryCount = 0;
+        const maxRetries = 5;
+        
+        function renderDailyChart(data, retry = 0) {
+            const ctx = document.getElementById('dailyRegistrationChart');
+            if (!ctx) {
+                console.warn('⚠️ Canvas element not found');
+                return;
+            }
+            
+            // Check if Chart.js is loaded
+            if (typeof Chart === 'undefined' || !window.chartJsLoaded) {
+                if (retry < maxRetries) {
+                    console.log(`🔄 Chart.js not ready, retry ${retry + 1}/${maxRetries}`);
+                    setTimeout(() => renderDailyChart(data, retry + 1), 1000);
+                    return;
+                } else {
+                    console.error('❌ Chart.js failed to load after max retries');
+                    // Show fallback message
+                    const chartContainer = document.getElementById('dailyChartContainer');
+                    if (chartContainer) {
+                        chartContainer.innerHTML = `
+                            <div class="p-6 text-center">
+                                <p class="text-gray-500">⚠️ Không thể tải biểu đồ. Vui lòng refresh trang.</p>
+                                <button onclick="window.location.reload()" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg">Refresh</button>
+                            </div>
+                        `;
+                    }
+                    return;
+                }
+            }
+            
+            // Destroy existing chart
+            if (dailyChart) {
+                dailyChart.destroy();
+            }
+            
+            const days = data.map(item => `Ngày ${item.day}`);
+            const candidates = data.map(item => item.candidates || 0);
+            const recruiters = data.map(item => item.recruiters || 0);
+            
+            dailyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: days,
+                    datasets: [
+                        {
+                            label: 'Ứng viên',
+                            data: candidates,
+                            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            borderSkipped: false,
+                        },
+                        {
+                            label: 'Nhà tuyển dụng', 
+                            data: recruiters,
+                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            borderSkipped: false,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Đăng ký hàng ngày - Tháng ${document.getElementById('chartMonth')?.value}/${document.getElementById('chartYear')?.value}`,
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Ngày trong tháng',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Số lượng đăng ký',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+        }
+        
+        function updateDailyChart() {
+            loadDailyChart();
+        }
+
         // Initialize page
         async function init() {
             console.log('🚀 Initializing Admin Dashboard...');
+            console.log('🔍 Current localStorage contents:', {
+                token: localStorage.getItem('token') ? 'exists' : 'missing',
+                session_user: localStorage.getItem('session_user') ? 'exists' : 'missing',
+                login_timestamp: localStorage.getItem('login_timestamp')
+            });
             
             // Check authentication first
             if (!checkAuth()) {
+                console.error('❌ Authentication failed in init()');
                 return;
             }
 
+            console.log('✅ Authentication passed - loading dashboard components');
+
+            // Ensure chart is visible on initial load
+            const chartContainer = document.getElementById('dailyChartContainer');
+            if (chartContainer) {
+                chartContainer.classList.remove('hidden');
+            }
+
+            // Start real-time dashboard updates
+            startRealTimeUpdates();
+            
             // Fetch initial data
-            await fetchStats();
             await fetchCompanies();
+            
+            // Load daily chart (with delay to ensure Chart.js is loaded)
+            setTimeout(async () => {
+                await loadDailyChart();
+            }, 2000); // Increased delay for Chart.js to load
             
             // Fetch notification count
             await fetchUnreadCount();
             
-            console.log('✅ Admin Dashboard initialized');
+            console.log('✅ Admin Dashboard initialized successfully');
         }
 
         // Cache busting: Reload on fresh login

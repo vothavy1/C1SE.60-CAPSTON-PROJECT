@@ -85,6 +85,8 @@ const testController = {
       // 🔒 COMPANY FILTER - Filter tests theo company_id
       const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
       console.log(`👤 User: ${req.user?.username}, Role: ${userRole}, Company ID: ${req.user?.company_id}`);
+      console.log(`🔍 Request Query Params:`, req.query);
+      console.log(`🛡️ Request Headers Context:`, req.headers['x-company-context'] || 'none');
       
       if (userRole === 'RECRUITER') {
         // Recruiter chỉ xem được đề thi của công ty mình
@@ -162,6 +164,29 @@ const testController = {
       });
 
       const totalPages = Math.ceil(count / limit);
+
+      // 🛡️ SECURITY VALIDATION: Verify all returned tests belong to correct company
+      if (tests.length > 0) {
+        const companyIds = [...new Set(tests.map(test => test.company_id))];
+        const expectedCompanyId = req.user?.company_id || 'NO_COMPANY';
+        
+        console.log(`🔍 RESPONSE VALIDATION:`, {
+          userRole,
+          expectedCompanyId,
+          returnedCompanyIds: companyIds,
+          testCount: tests.length,
+          queryParams: req.query
+        });
+        
+        if (userRole === 'RECRUITER' && companyIds.some(id => id !== expectedCompanyId)) {
+          console.error(`🚨 SECURITY BREACH: Recruiter ${req.user?.username} (Company: ${expectedCompanyId}) attempted to access tests from companies: ${companyIds.join(', ')}`);
+          return res.status(403).json({
+            success: false,
+            message: 'Phát hiện lỗi bảo mật: Truy cập dữ liệu công ty không được phép',
+            error_code: 'UNAUTHORIZED_COMPANY_ACCESS'
+          });
+        }
+      }
 
       return res.status(200).json({
         success: true,

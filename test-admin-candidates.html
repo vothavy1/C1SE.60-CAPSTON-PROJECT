@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Candidates API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold mb-6">🧪 Test Admin Candidates API</h1>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">Admin Token:</label>
+                <input type="text" id="token" class="w-full p-2 border rounded" 
+                       placeholder="Nhập admin token...">
+                <button onclick="loginAsAdmin()" class="mt-2 px-4 py-2 bg-green-500 text-white rounded">
+                    Login as Admin
+                </button>
+            </div>
+            
+            <div>
+                <button onclick="testGetCandidates()" class="px-6 py-2 bg-blue-500 text-white rounded mr-2">
+                    Test GET /admin/candidates
+                </button>
+                <button onclick="testGetUsers()" class="px-6 py-2 bg-purple-500 text-white rounded">
+                    Test GET /admin/users (old)
+                </button>
+            </div>
+        </div>
+        
+        <div id="results" class="mt-6 p-4 bg-gray-50 rounded min-h-32">
+            <p class="text-gray-500">Kết quả sẽ hiển thị ở đây...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const color = type === 'error' ? 'text-red-600' : type === 'success' ? 'text-green-600' : 'text-gray-800';
+            results.innerHTML += `<div class="${color}"><strong>[${new Date().toLocaleTimeString()}]</strong> ${message}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function loginAsAdmin() {
+            clearLog();
+            log('🔐 Đang đăng nhập admin...');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'admin@cs60.com',
+                        password: 'admin123456'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.token) {
+                    document.getElementById('token').value = data.token;
+                    log(`✅ Đăng nhập thành công! Role: ${data.user.role}`, 'success');
+                    log(`👤 User: ${data.user.username} (ID: ${data.user.user_id})`);
+                } else {
+                    log(`❌ Đăng nhập thất bại: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Lỗi kết nối: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testGetCandidates() {
+            const token = document.getElementById('token').value;
+            if (!token) {
+                log('❌ Vui lòng nhập token!', 'error');
+                return;
+            }
+            
+            log('🚀 Testing GET /admin/candidates...');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/candidates`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`✅ API thành công! Tìm thấy ${data.data.length} candidates`, 'success');
+                    
+                    // Group by company
+                    const byCompany = {};
+                    data.data.forEach(c => {
+                        const company = c.company_name || 'No Company';
+                        byCompany[company] = (byCompany[company] || 0) + 1;
+                    });
+                    
+                    log(`📊 Phân bố theo công ty:`);
+                    Object.entries(byCompany).forEach(([company, count]) => {
+                        log(`   - ${company}: ${count} candidates`);
+                    });
+                    
+                    log(`📋 Sample candidates:`);
+                    data.data.slice(0, 3).forEach(c => {
+                        log(`   - ID${c.candidate_id}: ${c.first_name} ${c.last_name} (${c.email}) - ${c.company_name || 'No Company'}`);
+                    });
+                    
+                } else {
+                    log(`❌ API failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testGetUsers() {
+            const token = document.getElementById('token').value;
+            if (!token) {
+                log('❌ Vui lòng nhập token!', 'error');
+                return;
+            }
+            
+            log('🚀 Testing GET /admin/users (old method)...');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const candidates = data.data.filter(u => u.role_name === 'CANDIDATE');
+                    log(`✅ API thành công! Tìm thấy ${candidates.length} candidate users`, 'success');
+                    
+                    log(`📋 Sample candidate users:`);
+                    candidates.slice(0, 3).forEach(u => {
+                        log(`   - ID${u.user_id}: ${u.username} (${u.email}) - ${u.company_name || 'No Company'}`);
+                    });
+                    
+                } else {
+                    log(`❌ API failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

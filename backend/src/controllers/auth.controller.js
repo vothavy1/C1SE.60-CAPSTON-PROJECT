@@ -53,15 +53,65 @@ async function register(req, res) {
       });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({
+
+    // ===== KIỂM TRA NGƯỜI DÙNG HIỆN CÓ VÀ ÁP DỤNG QUY TẮC TRẠNG THÁI =====
+    let userStatus = 'ACTIVE'; // Mặc định
+    let isActive = true;
+    
+    if (finalRoleId === 2) { // Áp dụng cho tất cả recruiters
+      if (company_id) {
+        // Recruiter với công ty có sẵn - kiểm tra số lượng hiện có
+        const existingUserCount = await User.count({
+          where: {
+            company_id: company_id,
+            role_id: 2 // Chỉ đếm recruiters
+          }
+        });
+
+        console.log(`Company ID ${company_id} has ${existingUserCount} existing recruiters`);
+
+        if (existingUserCount === 0) {
+          // Đây là người đầu tiên
+          userStatus = 'ACTIVE';
+          isActive = true;
+          console.log('✅ First recruiter for this company - Status: ACTIVE');
+        } else {
+          // Công ty đã có người dùng
+          userStatus = 'PENDING';
+          isActive = false;
+          console.log('⏳ Additional recruiter for existing company - Status: PENDING');
+        }
+      } else if (other_company_name) {
+        // Recruiter yêu cầu công ty mới - LUÔN chờ admin phê duyệt
+        userStatus = 'PENDING';
+        isActive = false;
+        console.log('⏳ New company request - Status: PENDING (waiting for admin approval)');
+      }
+    }
+
+    // Tạo user với các field cơ bản (không bao gồm status nếu chưa có cột)
+    const userCreateData = {
       username,
       email,
       password_hash: hashedPassword,
       full_name,
       role_id: finalRoleId,
       company_id: finalRoleId === 2 ? company_id : null, // Only set company for recruiters
-      is_active: true
-    });
+      is_active: isActive
+    };
+
+    // Chỉ thêm status nếu model hỗ trợ
+    try {
+      // Kiểm tra xem cột status có tồn tại không
+      const userAttributes = User.rawAttributes;
+      if (userAttributes.status) {
+        userCreateData.status = userStatus;
+      }
+    } catch (e) {
+      console.log('Status column not available, using is_active only');
+    }
+
+    const newUser = await User.create(userCreateData);
     await SystemLog.create({
       user_id: newUser.user_id,
       action: 'REGISTER',
@@ -71,6 +121,33 @@ async function register(req, res) {
     });
 
     // ===== TẠO THÔNG BÁO CHO ADMIN =====
+    
+    // Thông báo cho trường hợp PENDING (recruiter thứ 2+ cho công ty)
+    if (userStatus === 'PENDING') {
+      // Lấy thông tin công ty
+      const company = await Company.findByPk(company_id);
+      const companyName = company ? company.company_name : `Company ID ${company_id}`;
+      
+      await createNotification(
+        'RECRUITER_PENDING_APPROVAL',
+        '⏳ Yêu cầu phê duyệt Recruiter bổ sung',
+        `Recruiter "${username}" (${email}) đã đăng ký cho công ty "${companyName}" nhưng công ty này đã có recruiter. Tài khoản đang ở trạng thái chờ phê duyệt. Vui lòng xem xét và phê duyệt để cho phép recruiter này hoạt động.`,
+        newUser.user_id,
+        {
+          username: newUser.username,
+          email: newUser.email,
+          full_name: newUser.full_name,
+          company_id: company_id,
+          company_name: companyName,
+          status: userStatus,
+          ip_address: req.ip,
+          user_agent: req.get('user-agent'),
+          registered_at: new Date()
+        },
+        'HIGH'
+      );
+    }
+
     // Nếu là RECRUITER không có company
     if (finalRoleId === 2 && !company_id) {
       if (other_company_name) {
@@ -109,14 +186,50 @@ async function register(req, res) {
       }
     }
 
+    // ===== TRẢ VỀ PHẢN HỒI DỰA TRÊN TRẠNG THÁI =====
+    if (userStatus === 'PENDING') {
+      let message, warning;
+      
+      if (other_company_name) {
+        // Trường hợp công ty mới
+        message = `Tài khoản đã được tạo thành công! Tuy nhiên, công ty "${other_company_name}" chưa có trong hệ thống.`;
+        warning = 'Admin sẽ thêm công ty này vào hệ thống và kích hoạt tài khoản của bạn. Bạn sẽ nhận được email thông báo khi có thể đăng nhập.';
+      } else {
+        // Trường hợp công ty đã có recruiter
+        message = 'Tài khoản của bạn đang chờ phê duyệt vì công ty này đã có tài khoản đã đăng ký.';
+        warning = 'Bạn sẽ không thể đăng nhập cho đến khi Admin phê duyệt tài khoản của bạn.';
+      }
+      
+      return res.status(201).json({
+        success: true,
+        status: 'PENDING',
+        message: message,
+        warning: warning,
+        user: {
+          userId: newUser.user_id,
+          username: newUser.username,
+          email: newUser.email,
+          role_id: newUser.role_id,
+          status: userStatus,
+          company_id: newUser.company_id,
+          is_active: isActive,
+          other_company_name: other_company_name
+        }
+      });
+    }
+
     return res.status(201).json({
       success: true,
+      status: 'ACTIVE',
       message: `Đăng ký tài khoản thành công với vai trò ${finalRoleId === 2 ? 'Recruiter' : 'Candidate'}`,
       user: {
         userId: newUser.user_id,  // Chuẩn hóa key thành userId
         username: newUser.username,
         email: newUser.email,
-        role_id: newUser.role_id
+        role_id: newUser.role_id,
+        status: userStatus,
+        company_id: newUser.company_id,
+        is_active: isActive
       }
     });
   } catch (error) {
@@ -143,7 +256,39 @@ async function login(req, res) {
       return res.status(401).json({ success: false, message: 'Tài khoản không tồn tại.' });
     }
     if (!user.is_active) {
-      return res.status(403).json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
+      // Kiểm tra lý do tại sao tài khoản không active
+      if (user.role_id === 2 && !user.company_id) {
+        // Recruiter chưa có công ty hoặc đang chờ admin thêm công ty mới
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Tài khoản đang chờ Admin phê duyệt và thêm công ty vào hệ thống. Vui lòng chờ email thông báo.' 
+        });
+      } else {
+        // Trường hợp khác
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Tài khoản đang chờ phê duyệt từ Admin. Vui lòng chờ thông báo qua email.' 
+        });
+      }
+    }
+
+    // Kiểm tra trạng thái tài khoản (nếu có cột status)
+    if (user.status) {
+      if (user.status === 'PENDING') {
+        return res.status(403).json({ 
+          success: false, 
+          status: 'PENDING',
+          message: 'Tài khoản của bạn đang chờ phê duyệt từ Admin. Vui lòng chờ thông báo qua email.' 
+        });
+      }
+
+      if (user.status === 'INACTIVE') {
+        return res.status(403).json({ 
+          success: false, 
+          status: 'INACTIVE',
+          message: 'Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ Admin.' 
+        });
+      }
     }
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {

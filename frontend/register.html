@@ -6,13 +6,36 @@
 <title>Đăng ký - Hệ thống thi</title>
 <link rel="stylesheet" href="style.css">
 <script src="config.js"></script>
+<style>
+/* Fix select dropdown visibility */
+#companySelect {
+    color: #333 !important;
+    background-color: #fff !important;
+}
+
+#companySelect option {
+    color: #333 !important;
+    background-color: #fff !important;
+    padding: 8px !important;
+    font-size: 14px !important;
+}
+
+#companySelect option[value="OTHER"] {
+    color: #059669 !important;
+    background-color: #f0fdf4 !important;
+    font-weight: 600 !important;
+}
+
+#companySelect option[value=""] {
+    color: #666 !important;
+}
+</style>
 </head>
 <body class="fade-enter">
 <main class="auth-page">
 <section class="auth-card">
 <div class="left">
 <h1>Đăng ký</h1>
-<p class="muted">Đăng ký tài khoản Recruiter để quản lý đề thi và ứng viên</p>
 
 <!-- Thông báo cho ứng viên -->
 <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #34d399;">
@@ -30,28 +53,41 @@
   </div>
 </div>
 
-<input id="fullName" class="input" placeholder="Họ và tên" />
-<input id="email" class="input" type="email" 
-  pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
-  title="Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)"
-  placeholder="example123@gmail.com" />
-<small style="color: #9aa6bf; font-size: 12px; margin-top: -8px; display: block;">Email phải có dạng: chữ và số @gmail.com</small>
-<input id="pwd" type="password" class="input" placeholder="Mật khẩu" />
+<div style="margin-bottom: 16px;">
+  <input id="fullName" class="input" placeholder="Họ và tên" />
+</div>
+<div style="margin-bottom: 16px;">
+  <input id="email" class="input" type="email" 
+    pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
+    title="Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)"
+    placeholder="example123@gmail.com" 
+    style="margin-bottom: 4px;" />
+  <small style="color: #9aa6bf; font-size: 12px; display: block; margin: 0; padding-left: 2px;">
+    Email phải có dạng: chữ và số @gmail.com
+  </small>
+</div>
+<div style="margin-bottom: 16px;">
+  <input id="pwd" type="password" class="input" placeholder="Mật khẩu" />
+</div>
 
 <!-- Vai trò cố định là Recruiter -->
 <input type="hidden" name="role" id="roleRecruiter" value="recruiter" />
 
 <!-- Chọn công ty -->
-<div id="companySection" style="display:none; margin-bottom:12px;">
-  <div style="margin: 10px 0 4px; color: var(--muted); font-size: 14px;">Công ty <span style="color:red;">*</span></div>
-  <select id="companySelect" class="input" style="padding: 12px; color: #fff; background-color: rgba(255,255,255,0.1);">
-    <option value="" style="color: #333; background-color: #fff;">-- Chọn công ty --</option>
+<div id="companySection" style="display:block; margin-bottom: 16px;">
+  <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 14px; font-weight: 500;">
+    Công ty <span style="color: #ef4444;">*</span>
+  </label>
+  <select id="companySelect" class="input" style="padding: 12px; color: #333 !important; background-color: #fff !important; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+    <option value="" style="color: #666 !important;">-- Chọn công ty --</option>
   </select>
 </div>
 
 <!-- Input tên công ty mới (hiện khi chọn "Công ty khác") -->
-<div id="otherCompanySection" style="display:none; margin-bottom:12px;">
-  <div style="margin: 10px 0 4px; color: var(--muted); font-size: 14px;">Tên công ty mới <span style="color:red;">*</span></div>
+<div id="otherCompanySection" style="display:none; margin-bottom: 16px;">
+  <label style="display: block; margin-bottom: 6px; color: var(--muted); font-size: 14px; font-weight: 500;">
+    Tên công ty mới <span style="color: #ef4444;">*</span>
+  </label>
   <input id="otherCompanyInput" class="input" placeholder="Nhập tên công ty của bạn" />
   <div style="font-size: 12px; color: #fbbf24; margin-top: 6px; display: flex; gap: 6px; align-items: start;">
     <span>⚠️</span>
@@ -59,12 +95,19 @@
   </div>
 </div>
 
-<div class="actions">
-<button id="registerSubmit" class="btn primary">Hoàn tất đăng ký</button>
-<p class="note">Đã có tài khoản? <a href="index.html">Đăng nhập</a></p>
-<p class="note" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
-  Chỉ muốn ứng tuyển? <a href="apply.html" style="color: #10b981;">Nộp CV →</a>
-</p>
+<div class="actions" style="margin-top: 24px;">
+  <button id="registerSubmit" class="btn primary" style="width: 100%; margin-bottom: 16px;">
+    Hoàn tất đăng ký
+  </button>
+  
+  <div style="text-align: center;">
+    <p class="note" style="margin-bottom: 8px;">
+      Đã có tài khoản? <a href="index.html" style="color: #3b82f6; text-decoration: none;">Đăng nhập</a>
+    </p>
+    <p class="note" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+      Chỉ muốn ứng tuyển? <a href="apply.html" style="color: #10b981; text-decoration: none;">Nộp CV →</a>
+    </p>
+  </div>
 </div>
 </div>
 
@@ -98,15 +141,17 @@ async function loadCompanies() {
       return;
     }
     
-    companySelect.innerHTML = '<option value="">-- Chọn công ty --</option>';
+    companySelect.innerHTML = '<option value="" style="color: #666 !important; background-color: #fff !important;">-- Chọn công ty --</option>';
     
     if (response.data && Array.isArray(response.data)) {
       response.data.forEach(company => {
         const option = document.createElement('option');
         option.value = company.company_id;
         option.textContent = company.company_name || company.companyName;
-        option.style.color = '#333';
-        option.style.backgroundColor = '#fff';
+        option.style.color = '#333 !important';
+        option.style.backgroundColor = '#fff !important';
+        option.style.fontSize = '14px';
+        option.style.padding = '8px';
         companySelect.appendChild(option);
       });
     }
@@ -115,9 +160,11 @@ async function loadCompanies() {
     const otherOption = document.createElement('option');
     otherOption.value = 'OTHER';
     otherOption.textContent = '🏢 Công ty khác (Yêu cầu admin thêm)';
-    otherOption.style.color = '#059669';
-    otherOption.style.backgroundColor = '#f0fdf4';
+    otherOption.style.color = '#059669 !important';
+    otherOption.style.backgroundColor = '#f0fdf4 !important';
     otherOption.style.fontWeight = '600';
+    otherOption.style.fontSize = '14px';
+    otherOption.style.padding = '8px';
     companySelect.appendChild(otherOption);
     
     console.log('Companies dropdown populated');
@@ -237,10 +284,34 @@ document.getElementById('registerSubmit').addEventListener('click', async () => 
       body: JSON.stringify(requestBody)
     });
 
-    if (other_company_name) {
-      alert('✅ Đăng ký thành công!\n\n⚠️ Tài khoản của bạn đang chờ admin thêm công ty "' + other_company_name + '" vào hệ thống.\n\nBạn có thể đăng nhập sau khi admin phê duyệt.');
+    console.log('Register response:', response);
+
+    // Xử lý response dựa trên status
+    if (response.status === 'PENDING') {
+      if (response.user.other_company_name) {
+        // Trường hợp công ty mới
+        alert('✅ ĐĂNG KÝ THÀNH CÔNG - CHỜ ADMIN THÊM CÔNG TY\n\n' + 
+              '📧 Tài khoản: ' + email + '\n' +
+              '🏢 Công ty mới: ' + response.user.other_company_name + '\n\n' +
+              '⚠️ ' + response.message + '\n\n' +
+              '⏰ ' + response.warning + '\n\n' +
+              '🚫 KHÔNG THỂ ĐĂNG NHẬP cho đến khi admin phê duyệt!');
+      } else {
+        // Trường hợp công ty đã có recruiter
+        alert('⏳ ĐĂNG KÝ THÀNH CÔNG - CHỜ PHÊ DUYỆT\n\n' + 
+              '📧 Tài khoản: ' + email + '\n' +
+              '🏢 Công ty đã có recruiter khác\n\n' +
+              '⚠️ ' + response.message + '\n\n' +
+              '🚫 KHÔNG THỂ ĐĂNG NHẬP cho đến khi admin phê duyệt!');
+      }
+    } else if (other_company_name) {
+      // Fallback cho trường hợp cũ
+      alert('✅ Đăng ký thành công!\n\n⚠️ Tài khoản của bạn đang chờ admin thêm công ty "' + other_company_name + '" vào hệ thống.\n\n🚫 KHÔNG THỂ ĐĂNG NHẬP cho đến khi admin phê duyệt!');
     } else {
-      alert('Đăng ký thành công! Về trang đăng nhập để tiếp tục.');
+      alert('✅ ĐĂNG KÝ THÀNH CÔNG!\n\n' +
+            '👤 Bạn là recruiter đầu tiên của công ty này\n' +
+            '🎉 Có thể đăng nhập ngay bây giờ!\n\n' +
+            '➡️ Chuyển đến trang đăng nhập...');
     }
     
     document.body.classList.remove('fade-enter');

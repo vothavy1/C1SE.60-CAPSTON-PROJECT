@@ -13,6 +13,12 @@ const verifyAdmin = authorize(['ADMIN']);
 // GET /api/admin/stats - Get dashboard statistics (recruiters, candidates, tests count)
 router.get('/stats', verifyAdmin, adminController.getDashboardStats);
 
+// GET /api/admin/registration-stats - Get registration statistics by time period
+router.get('/registration-stats', verifyAdmin, adminController.getRegistrationStats);
+
+// GET /api/admin/daily-registrations - Get daily registration statistics
+router.get('/daily-registrations', verifyAdmin, adminController.getDailyRegistrations);
+
 // GET /api/admin/users - Get all users with role and company information
 router.get('/users', verifyAdmin, adminController.getAllUsers);
 
@@ -33,6 +39,9 @@ router.get('/roles', verifyAdmin, adminController.getRoles);
 
 // GET /api/admin/companies - Get all companies
 router.get('/companies', verifyAdmin, adminController.getCompanies);
+
+// GET /api/admin/candidates - Get all candidates from all companies
+router.get('/candidates', verifyAdmin, adminController.getAllCandidates);
 
 // ===== NOTIFICATION ROUTES =====
 // IMPORTANT: Specific routes MUST come before parameterized routes to avoid conflicts

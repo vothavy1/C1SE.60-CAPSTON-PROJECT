@@ -1,11 +1,24 @@
-// 🔥 FORCE CLEAR CACHE ON NEW LOGIN
+// 🔥 FORCE CLEAR CACHE AND VALIDATE COMPANY CONTEXT
 (function checkCacheBust() {
+    // Clear ALL potential cache sources
     const lastPageLoad = sessionStorage.getItem('test_page_loaded');
     const loginTime = localStorage.getItem('login_timestamp');
     
     if (loginTime && (!lastPageLoad || parseInt(lastPageLoad) < parseInt(loginTime))) {
         console.log('🔄 New login detected, clearing test page cache...');
+        
+        // 🧹 COMPREHENSIVE CACHE CLEARING
+        sessionStorage.clear(); // Clear all session storage
         sessionStorage.setItem('test_page_loaded', Date.now().toString());
+        sessionStorage.setItem('login_timestamp', loginTime); // Preserve login timestamp
+        
+        // Clear browser cache for this page
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => caches.delete(name));
+            });
+        }
+        
         // Force reload without cache
         if (!window.location.search.includes('nocache')) {
             window.location.href = window.location.pathname + '?nocache=' + Date.now();
@@ -16,12 +29,40 @@
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
+// 🛡️ COMPANY CONTEXT VALIDATOR
+function validateCompanyContext() {
+    const token = localStorage.getItem('token') || localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+    if (!token) return false;
+    
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        console.log('🏢 Current user company context:', {
+            userId: payload.id,
+            companyId: payload.company_id,
+            role: payload.role
+        });
+        return true;
+    } catch (error) {
+        console.error('❌ Invalid token format:', error);
+        return false;
+    }
+}
+
 function getAuthHeaders() {
     const token = localStorage.getItem('token') || localStorage.getItem('auth_token') || localStorage.getItem('authToken');
     
     if (!token) {
         console.warn('⚠️ No token found! Redirecting to login...');
         setTimeout(() => window.location.href = 'login.html', 1000);
+        return {};
+    }
+
+    // 🛡️ VALIDATE COMPANY CONTEXT
+    if (!validateCompanyContext()) {
+        console.error('❌ Invalid company context! Forcing logout...');
+        localStorage.clear();
+        window.location.href = 'login.html';
+        return {};
     }
     
     return {
@@ -29,14 +70,28 @@ function getAuthHeaders() {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-Company-Context': 'recruiter-tests', // Context identifier
         ...(token && { 'Authorization': `Bearer ${token}` })
     };
 }
 
 async function fetchTests() {
     try {
+        console.log('🔄 Fetching tests with company filtering...');
+        
+        // 🛡️ CRITICAL: Use simple /tests endpoint (no limit parameter to avoid cache issues)
         const response = await fetch(`${API_BASE_URL}/tests`, {
-            headers: getAuthHeaders()
+            method: 'GET',
+            headers: getAuthHeaders(),
+            cache: 'no-cache' // Force fresh request
+        });
+        
+        // 🔍 DEBUG: Log response details
+        console.log('📊 Response details:', {
+            status: response.status,
+            size: response.headers.get('content-length'),
+            url: response.url
         });
         
         if (response.status === 401) {
@@ -49,7 +104,16 @@ async function fetchTests() {
         
         if (response.status === 403) {
             console.error('❌ 403 Forbidden - Không có quyền truy cập');
-            alert('⚠️ Bạn không có quyền xem danh sách đề thi!');
+            const errorData = await response.json().catch(() => ({}));
+            if (errorData.error_code === 'NO_COMPANY') {
+                alert('⚠️ Tài khoản chưa được gán vào công ty. Vui lòng liên hệ admin!');
+            } else if (errorData.error_code === 'COMPANY_MISMATCH') {
+                alert('⚠️ Phát hiện thay đổi công ty. Đang đăng xuất để cập nhật quyền...');
+                localStorage.clear();
+                window.location.href = 'login.html';
+            } else {
+                alert('⚠️ Bạn không có quyền xem danh sách đề thi!');
+            }
             return;
         }
         
@@ -59,10 +123,32 @@ async function fetchTests() {
         }
         
         const result = await response.json();
-        console.log('✅ Tests loaded:', result);
+        
+        // 🔍 SECURITY: Verify response contains company-filtered data
+        console.log('✅ Tests loaded:', {
+            success: result.success,
+            testCount: result.data?.tests?.length || 0,
+            dataSize: JSON.stringify(result).length,
+            firstTest: result.data?.tests?.[0]
+        });
         
         // Backend trả về { success: true, data: { tests: [...] } }
         const tests = result.data && result.data.tests ? result.data.tests : [];
+        
+        // 🛡️ COMPANY SEGREGATION VALIDATION
+        if (tests.length > 0) {
+            const companyIds = [...new Set(tests.map(test => test.company_id))];
+            console.log('🏢 Company IDs in response:', companyIds);
+            
+            if (companyIds.length > 1) {
+                console.error('🚨 SECURITY ALERT: Multiple company data detected!', companyIds);
+                alert('⚠️ Phát hiện lỗi bảo mật dữ liệu. Vui lòng đăng xuất và đăng nhập lại!');
+                localStorage.clear();
+                window.location.href = 'login.html';
+                return;
+            }
+        }
+        
         renderTests(tests);
     } catch (error) {
         console.error('❌ Error fetching tests:', error);

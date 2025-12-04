@@ -466,18 +466,18 @@ const updateCandidateStatus = async (req, res) => {
 const getCandidateById = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log('🔍 getCandidateById called with id:', id);
 
-    // Find candidate with resumes
-    const candidate = await Candidate.findByPk(id, {
-      include: [
-        {
-          model: CandidateResume,
-          as: 'CandidateResumes',
-          attributes: ['resume_id', 'file_type', 'file_path', 'file_name', 'uploaded_at'],
-          required: false
-        }
-      ]
+    // Try simple SQL query first to debug
+    const sequelize = require('../config/database');
+    const [candidates] = await sequelize.query(`
+      SELECT * FROM candidates WHERE candidate_id = ?
+    `, {
+      replacements: [id]
     });
+
+    const candidate = candidates[0];
+    console.log('📦 Found candidate:', candidate);
 
     if (!candidate) {
       return res.status(404).json({
@@ -508,7 +508,8 @@ const getCandidateById = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: candidate
+      data: candidate,
+      message: 'Candidate retrieved successfully'
     });
 
   } catch (error) {

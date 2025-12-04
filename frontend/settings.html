@@ -229,15 +229,59 @@
             window.location.href = 'admin-login.html';
         }
 
+        // Parse JWT token
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (error) {
+                console.error('Error parsing JWT:', error);
+                return null;
+            }
+        }
+
         // Check auth
         function checkAuth() {
-            const sessionUser = JSON.parse(localStorage.getItem('session_user') || '{}');
-            if (!sessionUser.role || sessionUser.role !== 'ADMIN') {
-                alert('⛔ Chỉ ADMIN mới có quyền truy cập!');
-                window.location.href = 'admin-dashboard.html';
+            const token = localStorage.getItem('token');
+            
+            console.log('🔐 Auth Check:', {
+                hasToken: !!token,
+                tokenLength: token ? token.length : 0
+            });
+            
+            if (!token) {
+                console.error('❌ No token found');
+                alert('Vui lòng đăng nhập với tài khoản ADMIN để truy cập trang này');
+                window.location.href = 'admin-login.html';
                 return false;
             }
-            return true;
+
+            // Parse token to check role
+            try {
+                const tokenPayload = parseJwt(token);
+                console.log('🔍 Token Payload:', tokenPayload);
+                
+                if (!tokenPayload || !tokenPayload.role || tokenPayload.role !== 'ADMIN') {
+                    console.error('❌ Invalid role or token payload:', tokenPayload);
+                    alert('⛔ Chỉ ADMIN mới có quyền truy cập!');
+                    window.location.href = 'admin-login.html';
+                    return false;
+                }
+                
+                console.log('✅ Auth successful - ADMIN role confirmed');
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Token validation error:', error);
+                alert('Token không hợp lệ. Vui lòng đăng nhập lại.');
+                localStorage.removeItem('token');
+                window.location.href = 'admin-login.html';
+                return false;
+            }
         }
 
         checkAuth();
