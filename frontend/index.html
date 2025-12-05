@@ -46,6 +46,10 @@
         const session = JSON.parse(localStorage.getItem('session_user') || 'null');
         if (session && session.role) {
           const role = String(session.role).toUpperCase();
+          if (role === 'ADMIN') {
+            location.replace('admin-dashboard.html');
+            return;
+          }
           if (role === 'RECRUITER') {
             location.replace('recruiter.html');
             return;
@@ -97,17 +101,20 @@
           fullName: user.fullName,
           email: user.email,
           role: user.role,
+          company_id: user.company_id,  // CRITICAL: Save company_id for recruiters
           loginAt: Date.now()
         }));
         
-        console.log('✅ User logged in:', user.userId, user.role);
+        console.log('✅ User logged in:', user.userId, user.role, 'Company:', user.company_id);
 
         // Chuyển trang theo vai trò
         document.body.classList.remove('fade-enter');
         document.body.classList.add('fade-exit');
         const role = String(user.role || '').toUpperCase();
         setTimeout(() => {
-          if (role === 'RECRUITER') {
+          if (role === 'ADMIN') {
+            location.href = 'admin-dashboard.html';
+          } else if (role === 'RECRUITER') {
             location.href = 'recruiter.html';
           } else {
             location.href = 'exam.html';

@@ -32,32 +32,53 @@
             padding: 20px;
         }
         .form-label {
-            color: #e2e8f0;
+            color: #262626;
             font-weight: 500;
             margin-bottom: 8px;
         }
         .form-control, .form-select {
-            background: #1a202c;
-            border: 1px solid #4a5568;
-            color: #ffffff;
+            background: #ffffff;
+            border: 1px solid #d9d9d9;
+            color: #000000;
             padding: 12px;
         }
         .form-control:focus, .form-select:focus {
-            background: #1a202c;
+            background: #ffffff;
             border-color: #4299e1;
-            color: #ffffff;
+            color: #000000;
             box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
         }
         .option-row {
-            background: #1a202c;
+            background: #ffffff;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 12px;
-            border: 1px solid #4a5568;
+            border: 1px solid #d9d9d9;
+        }
+        .option-label {
+            color: #000000;
+            font-size: 1.1rem;
         }
         .option-row.correct {
-            border-color: #48bb78;
-            background: #22543d;
+            border-color: #1890ff;
+            background: #1890ff;
+            color: #ffffff;
+        }
+        .option-row.correct .option-label {
+            color: #ffffff !important;
+        }
+        .option-row.correct input,
+        .option-row.correct label,
+        .option-row.correct .form-control,
+        .option-row.correct * {
+            color: #ffffff !important;
+        }
+        .option-row.correct .form-control {
+            background: #1890ff;
+            border-color: #ffffff;
+        }
+        .option-row.correct .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.7);
         }
         .btn-add-option {
             background: #48bb78;

@@ -55,7 +55,10 @@ const User = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
-
+    status: {
+      type: DataTypes.ENUM('ACTIVE', 'PENDING', 'INACTIVE', 'SUSPENDED'),
+      defaultValue: 'ACTIVE'
+    },
     last_login: {
       type: DataTypes.DATE,
       allowNull: true,

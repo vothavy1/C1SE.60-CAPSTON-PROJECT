@@ -1423,3 +1423,253 @@ exports.getCandidateTestDetails = async (req, res) => {
     });
   }
 };
+
+// Update manual score for candidate test
+exports.updateManualScore = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { manual_score } = req.body;
+    const userId = req.user.userId;
+    const userRole = req.user.Role?.role_name?.toUpperCase() || req.user.role?.toUpperCase();
+
+    // Authorization: Only ADMIN and RECRUITER can update scores
+    if (userRole !== 'ADMIN' && userRole !== 'RECRUITER') {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to update scores'
+      });
+    }
+
+    // Validate manual score
+    if (manual_score === undefined || manual_score === null) {
+      return res.status(400).json({
+        success: false,
+        message: 'Manual score is required'
+      });
+    }
+
+    if (manual_score < 0 || manual_score > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Manual score must be between 0 and 100'
+      });
+    }
+
+    // Find candidate test
+    const candidateTest = await CandidateTest.findByPk(id);
+    if (!candidateTest) {
+      return res.status(404).json({
+        success: false,
+        message: 'Candidate test not found'
+      });
+    }
+
+    // Update manual score
+    await candidateTest.update({
+      manual_score: manual_score,
+      updated_at: new Date()
+    });
+
+    logger.info(`Manual score updated for candidate test ${id} by user ${userId}: ${manual_score}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Manual score updated successfully',
+      data: {
+        candidate_test_id: candidateTest.candidate_test_id,
+        manual_score: candidateTest.manual_score,
+        auto_score: candidateTest.score,
+        total_score: (parseFloat(candidateTest.score) || 0) + (parseFloat(manual_score) || 0)
+      }
+    });
+
+  } catch (error) {
+    logger.error(`Error updating manual score: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update manual score',
+      error: error.message
+    });
+  }
+};
+
+// Get candidate test answers with details
+exports.getCandidateTestAnswers = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+    const userRole = req.user.Role?.role_name?.toUpperCase() || req.user.role?.toUpperCase();
+
+    // Find candidate test
+    const candidateTest = await CandidateTest.findByPk(id, {
+      include: [
+        {
+          model: Test,
+          attributes: ['test_id', 'test_name', 'duration_minutes']
+        },
+        {
+          model: Candidate,
+          attributes: ['candidate_id', 'first_name', 'last_name', 'email', 'user_id']
+        }
+      ]
+    });
+
+    if (!candidateTest) {
+      return res.status(404).json({
+        success: false,
+        message: 'Candidate test not found'
+      });
+    }
+
+    // Authorization check: Only allow if user is the candidate owner OR has admin/recruiter role
+    const isOwner = candidateTest.Candidate?.user_id === userId;
+    const isAuthorized = userRole === 'ADMIN' || userRole === 'RECRUITER' || isOwner;
+
+    if (!isAuthorized) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to view this test'
+      });
+    }
+
+    // Get all answers with questions and options
+    const answers = await CandidateTestAnswer.findAll({
+      where: { candidate_test_id: id },
+      include: [
+        {
+          model: Question,
+          attributes: ['question_id', 'question_text', 'question_type'],
+          include: [
+            {
+              model: QuestionOption,
+              as: 'QuestionOptions',
+              attributes: ['option_id', 'option_text', 'is_correct']
+            }
+          ]
+        }
+      ],
+      order: [['answer_id', 'ASC']]
+    });
+
+    logger.info(`Fetched ${answers.length} answers for candidate test ${id}`);
+
+    return res.status(200).json({
+      success: true,
+      data: answers
+    });
+
+  } catch (error) {
+    logger.error(`Error getting candidate test answers: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to get candidate test answers',
+      error: error.message
+    });
+  }
+};
+
+// Update essay question score
+exports.updateEssayScore = async (req, res) => {
+  try {
+    const { answer_id } = req.params;
+    const { essay_score } = req.body;
+    const userId = req.user.userId;
+    const userRole = req.user.Role?.role_name?.toUpperCase() || req.user.role?.toUpperCase();
+
+    // Authorization: Only ADMIN and RECRUITER can update scores
+    if (userRole !== 'ADMIN' && userRole !== 'RECRUITER') {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to update scores'
+      });
+    }
+
+    // Validate essay score
+    if (essay_score === undefined || essay_score === null) {
+      return res.status(400).json({
+        success: false,
+        message: 'Essay score is required'
+      });
+    }
+
+    // Find answer
+    const answer = await CandidateTestAnswer.findByPk(answer_id, {
+      include: [{
+        model: Question,
+        attributes: ['question_id', 'question_type']
+      }]
+    });
+
+    if (!answer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Answer not found'
+      });
+    }
+
+    // Validate score against max points
+    const maxPoints = answer.Question.points || 10;
+    if (essay_score < 0 || essay_score > maxPoints) {
+      return res.status(400).json({
+        success: false,
+        message: `Essay score must be between 0 and ${maxPoints}`
+      });
+    }
+
+    // Update essay score
+    await answer.update({
+      essay_score: essay_score,
+      is_correct: essay_score >= (maxPoints * 0.5) // Consider correct if >= 50% of points
+    });
+
+    // Recalculate total score for the test
+    const candidateTest = await CandidateTest.findByPk(answer.candidate_test_id);
+    if (candidateTest) {
+      const allAnswers = await CandidateTestAnswer.findAll({
+        where: { candidate_test_id: answer.candidate_test_id },
+        include: [{
+          model: Question,
+          attributes: ['points', 'question_type']
+        }]
+      });
+
+      let totalScore = 0;
+      let totalPoints = 0;
+
+      allAnswers.forEach(ans => {
+        const points = ans.Question.points || 10;
+        totalPoints += points;
+
+        if (ans.Question.question_type === 'ESSAY') {
+          totalScore += parseFloat(ans.essay_score) || 0;
+        } else if (ans.is_correct) {
+          totalScore += points;
+        }
+      });
+
+      const percentageScore = totalPoints > 0 ? (totalScore / totalPoints) * 100 : 0;
+      await candidateTest.update({ score: percentageScore.toFixed(2) });
+    }
+
+    logger.info(`Essay score updated for answer ${answer_id} by user ${userId}: ${essay_score}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Essay score updated successfully',
+      data: {
+        answer_id: answer.answer_id,
+        essay_score: answer.essay_score,
+        is_correct: answer.is_correct
+      }
+    });
+
+  } catch (error) {
+    logger.error(`Error updating essay score: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update essay score',
+      error: error.message
+    });
+  }
+};
+

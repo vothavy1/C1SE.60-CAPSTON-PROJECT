@@ -112,8 +112,11 @@ const adminController = {
       const userId = req.params.id;
       const adminUserId = req.user.user_id;
 
+      console.log('🗑️ Delete user request:', { userId, adminUserId });
+      
       // Prevent admin from deleting themselves
       if (parseInt(userId) === parseInt(adminUserId)) {
+        console.log('❌ Admin trying to delete themselves');
         return res.status(400).json({
           success: false,
           message: 'You cannot delete your own account'
@@ -121,6 +124,7 @@ const adminController = {
       }
 
       // Check if user exists
+      console.log('🔍 Checking if user exists:', userId);
       const [users] = await sequelize.query(`
         SELECT user_id, username, email 
         FROM users 
@@ -129,21 +133,28 @@ const adminController = {
         replacements: [userId]
       });
 
+      console.log('📋 Query result:', users);
+
       if (!users || users.length === 0) {
+        console.log('❌ User not found in database');
         return res.status(404).json({
           success: false,
           message: 'User not found'
         });
       }
 
-      // Delete the user
-      await sequelize.query(`
+      console.log('✅ User found, attempting to delete:', users[0]);
+
+      // Delete the user (cascade will handle related records)
+      console.log('🗑️ Deleting user...');
+      const [deleteResult] = await sequelize.query(`
         DELETE FROM users 
         WHERE user_id = ?
       `, {
         replacements: [userId]
       });
 
+      console.log('✅ Delete result:', deleteResult);
       logger.info(`Admin ${adminUserId} deleted user ${userId} (${users[0].username})`);
 
       return res.status(200).json({
@@ -152,10 +163,12 @@ const adminController = {
       });
 
     } catch (error) {
+      console.error('❌ Delete user error:', error);
       logger.error(`Delete user error: ${error.message}`);
       return res.status(500).json({
         success: false,
-        message: 'Failed to delete user'
+        message: 'Failed to delete user',
+        error: error.message
       });
     }
   },

@@ -19,6 +19,11 @@
           return;
         }
         const role = String(session.role || '').toUpperCase();
+        if (role === 'ADMIN') {
+          // Admin chuyển về admin dashboard
+          location.replace('admin-dashboard.html');
+          return;
+        }
         if (role !== 'RECRUITER') {
           // Ứng viên/các vai trò khác chuyển về trang thi
           location.replace('exam.html');
@@ -37,6 +42,9 @@
       <div class="flex items-center gap-4">
         <div class="theme-toggle" id="themeToggle" title="Chuyển đổi sáng/tối"></div>
         <span id="userName" class="font-medium">Xin chào, Recruiter!</span>
+        <button id="profileBtn" class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+          🏢 Hồ sơ
+        </button>
         <button id="logoutBtn" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
           Đăng xuất
         </button>
@@ -92,6 +100,113 @@
     © 2025 CS60 Recruitment
   </footer>
 
+  <!-- Profile Modal -->
+  <div id="profileModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-6 rounded-t-2xl">
+        <div class="flex justify-between items-center">
+          <h2 class="text-2xl font-bold">🏢 Hồ Sơ Công Ty</h2>
+          <button onclick="closeProfileModal()" class="text-white hover:text-gray-200 text-3xl leading-none">
+            &times;
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6">
+        <!-- Loading State -->
+        <div id="profileLoading" class="text-center py-8">
+          <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto mb-3" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-gray-600 dark:text-gray-400">Đang tải thông tin...</p>
+        </div>
+
+        <!-- Content -->
+        <div id="profileContent" class="hidden">
+          <!-- Company Info Section -->
+          <div class="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-6 mb-6">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+              <span class="text-2xl">🏢</span>
+              Thông Tin Công Ty
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Tên công ty</p>
+                <p id="companyName" class="text-lg font-semibold text-gray-800 dark:text-white">-</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Email</p>
+                <p id="companyEmail" class="text-lg font-semibold text-blue-600 dark:text-blue-400">-</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Số điện thoại</p>
+                <p id="companyPhone" class="text-lg font-semibold text-gray-800 dark:text-white">-</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Địa chỉ</p>
+                <p id="companyAddress" class="text-lg font-semibold text-gray-800 dark:text-white">-</p>
+              </div>
+              <div class="md:col-span-2">
+                <p class="text-sm text-gray-600 dark:text-gray-300">Website</p>
+                <a id="companyWebsite" href="#" target="_blank" class="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline">-</a>
+              </div>
+              <div class="md:col-span-2">
+                <p class="text-sm text-gray-600 dark:text-gray-300">Mô tả</p>
+                <p id="companyDescription" class="text-gray-700 dark:text-gray-300">-</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statistics Section -->
+          <div class="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-6 mb-6">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+              <span class="text-2xl">📊</span>
+              Thống Kê
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow">
+                <div class="text-3xl font-bold text-blue-600 dark:text-blue-400" id="statCandidates">0</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Ứng viên</div>
+              </div>
+              <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow">
+                <div class="text-3xl font-bold text-green-600 dark:text-green-400" id="statTests">0</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Bài test</div>
+              </div>
+              <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow">
+                <div class="text-3xl font-bold text-purple-600 dark:text-purple-400" id="statQuestions">0</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Câu hỏi</div>
+              </div>
+              <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow">
+                <div class="text-3xl font-bold text-orange-600 dark:text-orange-400" id="statCVs">0</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">CV đã nhận</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity Section -->
+          <div class="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-6">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+              <span class="text-2xl">📝</span>
+              Hoạt Động Gần Đây
+            </h3>
+            <div class="space-y-3" id="recentActivity">
+              <div class="text-gray-600 dark:text-gray-400 text-center py-4">Đang tải...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="profileError" class="hidden text-center py-8">
+          <div class="text-red-500 text-5xl mb-3">⚠️</div>
+          <p class="text-gray-600 dark:text-gray-400" id="profileErrorMessage">Không thể tải thông tin</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Theme toggle functionality
     (function initTheme() {
@@ -143,6 +258,200 @@
       // Force reload to clear cache
       location.href = 'index.html?t=' + Date.now();
     });
+
+    // Profile Modal Functions
+    document.getElementById('profileBtn').addEventListener('click', openProfileModal);
+
+    async function openProfileModal() {
+      const modal = document.getElementById('profileModal');
+      const loading = document.getElementById('profileLoading');
+      const content = document.getElementById('profileContent');
+      const error = document.getElementById('profileError');
+
+      // Show modal and loading
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      loading.classList.remove('hidden');
+      content.classList.add('hidden');
+      error.classList.add('hidden');
+
+      try {
+        const session = JSON.parse(localStorage.getItem('session_user') || 'null');
+        if (!session) {
+          throw new Error('Vui lòng đăng nhập lại');
+        }
+
+        console.log('📋 Session data:', session);
+
+        if (!session.company_id) {
+          throw new Error('Tài khoản chưa được gán vào công ty. Vui lòng liên hệ admin.');
+        }
+
+        const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
+        if (!token) {
+          throw new Error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại');
+        }
+
+        console.log('🔑 Using token:', token.substring(0, 20) + '...');
+
+        // Fetch company info
+        console.log(`🏢 Fetching company info for company_id: ${session.company_id}`);
+        const companyRes = await fetch(`http://localhost:5000/api/companies/${session.company_id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!companyRes.ok) {
+          console.error('❌ Company API error:', companyRes.status, await companyRes.text());
+          throw new Error('Không thể tải thông tin công ty');
+        }
+        const companyData = await companyRes.json();
+        console.log('✅ Company data loaded:', companyData);
+        const company = companyData.data;
+
+        // Fetch statistics
+        console.log('📊 Fetching statistics...');
+        const [candidatesRes, testsRes, questionsRes] = await Promise.all([
+          fetch(`http://localhost:5000/api/candidates`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`http://localhost:5000/api/tests`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`http://localhost:5000/api/questions`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ]);
+
+        // Check response status and parse JSON
+        let candidatesData, testsData, questionsData;
+        
+        if (!candidatesRes.ok) {
+          const errorText = await candidatesRes.text();
+          console.error('❌ Candidates API error:', candidatesRes.status, errorText);
+          candidatesData = { success: false, data: [], message: errorText };
+        } else {
+          candidatesData = await candidatesRes.json();
+        }
+
+        if (!testsRes.ok) {
+          const errorText = await testsRes.text();
+          console.error('❌ Tests API error:', testsRes.status, errorText);
+          testsData = { success: false, data: [], message: errorText };
+        } else {
+          testsData = await testsRes.json();
+        }
+
+        if (!questionsRes.ok) {
+          const errorText = await questionsRes.text();
+          console.error('❌ Questions API error:', questionsRes.status, errorText);
+          questionsData = { success: false, data: [], message: errorText };
+        } else {
+          questionsData = await questionsRes.json();
+        }
+
+        console.log('📊 Statistics loaded:', {
+          candidates: candidatesData,
+          tests: testsData,
+          questions: questionsData
+        });
+
+        // Check for API errors
+        if (!candidatesData.success) {
+          console.error('❌ Candidates API error:', candidatesData);
+        }
+        if (!testsData.success) {
+          console.error('❌ Tests API error:', testsData);
+        }
+        if (!questionsData.success) {
+          console.error('❌ Questions API error:', questionsData);
+        }
+
+        // Update company info
+        document.getElementById('companyName').textContent = company.companyName || 'N/A';
+        document.getElementById('companyEmail').textContent = company.email || 'N/A';
+        document.getElementById('companyPhone').textContent = company.phone || 'N/A';
+        document.getElementById('companyAddress').textContent = company.address || 'N/A';
+        
+        const websiteEl = document.getElementById('companyWebsite');
+        if (company.website) {
+          websiteEl.textContent = company.website;
+          websiteEl.href = company.website.startsWith('http') ? company.website : 'https://' + company.website;
+        } else {
+          websiteEl.textContent = 'N/A';
+          websiteEl.removeAttribute('href');
+        }
+
+        document.getElementById('companyDescription').textContent = company.description || 'Chưa có mô tả';
+
+        // Update statistics - handle both success and error cases
+        const candidates = (candidatesData.success && candidatesData.data) ? candidatesData.data : [];
+        // Tests and Questions return { tests/questions, pagination } structure
+        const tests = (testsData.success && testsData.data && testsData.data.tests) ? testsData.data.tests : [];
+        const questions = (questionsData.success && questionsData.data && questionsData.data.questions) ? questionsData.data.questions : [];
+        const cvCount = candidates.filter(c => c.CandidateResumes && c.CandidateResumes.length > 0).length;
+
+        console.log('📈 Parsed statistics:', {
+          candidatesCount: candidates.length,
+          testsCount: tests.length,
+          questionsCount: questions.length,
+          cvCount: cvCount
+        });
+
+        document.getElementById('statCandidates').textContent = candidates.length;
+        document.getElementById('statTests').textContent = tests.length;
+        document.getElementById('statQuestions').textContent = questions.length;
+        document.getElementById('statCVs').textContent = cvCount;
+
+        // Update recent activity
+        const recentActivity = document.getElementById('recentActivity');
+        const recentCandidates = candidates.slice(0, 5);
+        
+        if (recentCandidates.length > 0) {
+          recentActivity.innerHTML = recentCandidates.map(c => {
+            const date = new Date(c.created_at).toLocaleDateString('vi-VN');
+            return `
+              <div class="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
+                    ${(c.first_name || '?').charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p class="font-semibold text-gray-800 dark:text-white">${c.first_name} ${c.last_name}</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">${c.email}</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-xs font-medium">
+                    ${c.status || 'NEW'}
+                  </span>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">${date}</p>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          recentActivity.innerHTML = '<p class="text-gray-600 dark:text-gray-400 text-center py-4">Chưa có hoạt động nào</p>';
+        }
+
+        // Show content
+        loading.classList.add('hidden');
+        content.classList.remove('hidden');
+
+      } catch (err) {
+        console.error('Error loading profile:', err);
+        loading.classList.add('hidden');
+        error.classList.remove('hidden');
+        document.getElementById('profileErrorMessage').textContent = err.message;
+      }
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+      document.getElementById('profileModal').classList.remove('flex');
+    }
   </script>
 </body>
 </html>

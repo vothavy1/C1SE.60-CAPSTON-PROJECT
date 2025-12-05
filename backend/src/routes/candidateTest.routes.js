@@ -55,7 +55,7 @@ router.post(
 );
 
 router.post(
-  '/:id/answers',
+  '/:id/submit-answer',
   authMiddleware.verifyToken,
   candidateTestController.submitAnswer
 );
@@ -84,6 +84,27 @@ router.get(
   '/:id/details',
   authMiddleware.verifyToken,
   candidateTestController.getCandidateTestDetails
+);
+
+// Get candidate test answers (Recruiter/Candidate) - Must be before /:id
+router.get(
+  '/:id/answers',
+  authMiddleware.verifyToken,
+  candidateTestController.getCandidateTestAnswers
+);
+
+// Update manual score for a candidate test (Recruiter only)
+router.put(
+  '/:id/manual-score',
+  authMiddleware.verifyToken,
+  candidateTestController.updateManualScore
+);
+
+// Update essay question score (Recruiter only)
+router.put(
+  '/answers/:answer_id/score',
+  authMiddleware.verifyToken,
+  candidateTestController.updateEssayScore
 );
 
 router.get(

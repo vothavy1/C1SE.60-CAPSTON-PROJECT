@@ -604,6 +604,84 @@ const getCandidateCV = async (req, res) => {
   }
 };
 
+// @route   DELETE /api/apply/candidates/:id
+// @desc    Delete a candidate
+// @access  ADMIN, RECRUITER
+const deleteCandidate = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+    const userRole = req.user.role || req.user.Role?.role_name;
+
+    logger.info(`🗑️ Attempting to delete candidate ${id} by user ${userId} (${userRole})`);
+
+    // Find candidate
+    const candidate = await Candidate.findByPk(id);
+    
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy ứng viên'
+      });
+    }
+
+    // Authorization check
+    if (userRole !== 'ADMIN') {
+      // Recruiter can only delete candidates from their company
+      if (candidate.company_id !== req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xóa ứng viên này'
+        });
+      }
+    }
+
+    // Delete associated CV files
+    const resumes = await CandidateResume.findAll({
+      where: { candidate_id: id }
+    });
+
+    for (const resume of resumes) {
+      const filePath = path.join(__dirname, '../../uploads/cv', path.basename(resume.file_path));
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        logger.info(`🗑️ Deleted CV file: ${filePath}`);
+      }
+    }
+
+    // Delete resumes from database
+    await CandidateResume.destroy({
+      where: { candidate_id: id }
+    });
+
+    // Delete user account if exists
+    if (candidate.user_id) {
+      await User.destroy({
+        where: { user_id: candidate.user_id }
+      });
+      logger.info(`🗑️ Deleted user account: ${candidate.user_id}`);
+    }
+
+    // Delete candidate
+    await candidate.destroy();
+
+    logger.info(`✅ Successfully deleted candidate ${id}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Đã xóa ứng viên thành công'
+    });
+
+  } catch (error) {
+    logger.error('Delete candidate error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể xóa ứng viên',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   upload,
   applyJob,
@@ -611,5 +689,6 @@ module.exports = {
   getCandidateById,
   updateCandidate,
   updateCandidateStatus,
-  getCandidateCV
+  getCandidateCV,
+  deleteCandidate
 };

@@ -49,6 +49,12 @@ const CandidateTest = sequelize.define('CandidateTest', {
     type: DataTypes.INTEGER,
     allowNull: true
   },
+  manual_score: {
+    type: DataTypes.DECIMAL(5, 2),
+    allowNull: true,
+    defaultValue: 0,
+    comment: 'Manual score given by recruiter for essay questions'
+  },
   passing_status: {
     type: DataTypes.ENUM('PASSED', 'FAILED', 'PENDING'),
     allowNull: true,

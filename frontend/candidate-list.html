@@ -29,6 +29,62 @@
 </head>
 <body class="light-mode min-h-screen transition-colors duration-300">
   
+  <script>
+    // CRITICAL: Check token validity on page load and clear old tokens
+    (function checkTokenValidity() {
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+        const session = JSON.parse(localStorage.getItem('session_user') || 'null');
+        
+        if (!token || !session) {
+          console.warn('⚠️ No token or session found');
+          window.location.href = 'index.html';
+          return;
+        }
+
+        // Check token format and parse to verify it has company_id
+        try {
+          const tokenParts = token.split('.');
+          if (tokenParts.length === 3) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            const role = String(session.role || payload.role || '').toUpperCase();
+            
+            // For RECRUITER, company_id is MANDATORY
+            if (role === 'RECRUITER') {
+              const hasCompanyInToken = payload.company_id != null && payload.company_id !== undefined;
+              const hasCompanyInSession = session.company_id != null && session.company_id !== undefined;
+              
+              if (!hasCompanyInToken || !hasCompanyInSession) {
+                console.error('❌ OLD TOKEN DETECTED! Recruiter token missing company_id');
+                console.log('Token company_id:', payload.company_id);
+                console.log('Session company_id:', session.company_id);
+                
+                alert('🔄 HỆ THỐNG ĐÃ CẬP NHẬT!\n\nĐể đảm bảo bạn chỉ thấy dữ liệu của công ty mình, hệ thống yêu cầu bạn đăng nhập lại.\n\n✅ Dữ liệu của bạn đã được bảo vệ theo công ty.\n\n➡️ Nhấn OK để đăng nhập lại.');
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+                return;
+              }
+              
+              console.log(`✅ Valid recruiter token with company_id: ${payload.company_id}`);
+            }
+          }
+        } catch (tokenParseError) {
+          console.error('❌ Cannot parse token:', tokenParseError);
+          localStorage.clear();
+          window.location.href = 'index.html';
+          return;
+        }
+
+        console.log(`✅ Token check passed for ${session.username} (Company: ${session.company_id || 'N/A'})`);
+      } catch (error) {
+        console.error('❌ Token validation error:', error);
+        localStorage.clear();
+        window.location.href = 'index.html';
+      }
+    })();
+  </script>
+  
   <!-- Header -->
   <header class="header-bg shadow-md sticky top-0 z-50 border-b transition-colors duration-300">
     <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">

@@ -2100,11 +2100,11 @@
             `).join('');
         }
 
-        async function viewCandidate(userId) {
+        async function viewCandidate(candidateId) {
             try {
-                console.log('👁️ viewCandidate called with userId:', userId);
+                console.log('👁️ viewCandidate called with candidateId:', candidateId);
                 const headers = getAuthHeaders();
-                const url = `${API_BASE_URL}/admin/users/${userId}`;
+                const url = `${API_BASE_URL}/candidates/${candidateId}`;
                 console.log('📡 Fetching from:', url);
                 
                 const response = await fetch(url, { headers });
@@ -2117,13 +2117,15 @@
                     const c = data.data;
                     console.log('✅ Candidate data:', c);
                     
-                    document.getElementById('viewCandidateId').textContent = c.user_id;
-                    document.getElementById('viewCandidateUsername').textContent = c.username;
+                    document.getElementById('viewCandidateId').textContent = c.candidate_id || 'N/A';
+                    document.getElementById('viewCandidateUsername').textContent = c.username || (c.first_name + ' ' + c.last_name);
                     document.getElementById('viewCandidateEmail').textContent = c.email;
-                    document.getElementById('viewCandidateCompany').textContent = c.company_name || 'N/A';
-                    document.getElementById('viewCandidateStatus').innerHTML = c.is_active ?
-                        '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Active</span>' :
-                        '<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Inactive</span>';
+                    document.getElementById('viewCandidateCompany').textContent = c.companyName || 'N/A';
+                    document.getElementById('viewCandidateStatus').innerHTML = c.status === 'HIRED' ?
+                        '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">HIRED</span>' :
+                        c.status === 'NEW' ?
+                        '<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">NEW</span>' :
+                        '<span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">' + c.status + '</span>';
                     document.getElementById('viewCandidateCreated').textContent = new Date(c.created_at).toLocaleString();
                     document.getElementById('viewCandidateUpdated').textContent = new Date(c.updated_at).toLocaleString();
                     
@@ -2262,27 +2264,40 @@
         }
 
         async function deleteCandidate(userId, username) {
+            console.log('🗑️ Attempting to delete candidate:', { userId, username });
+            
             if (!confirm(`Bạn có chắc muốn xóa candidate "${username}"?\n\nHành động này không thể hoàn tác.`)) {
+                console.log('❌ User cancelled deletion');
                 return;
             }
 
             try {
                 const headers = getAuthHeaders();
+                console.log('📤 Sending DELETE request to:', `${API_BASE_URL}/admin/users/${userId}`);
+                console.log('📋 Headers:', headers);
+                
                 const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
                     method: 'DELETE',
                     headers
                 });
                 
+                console.log('📥 Response status:', response.status);
                 const data = await response.json();
+                console.log('📦 Response data:', data);
                 
-                if (data.success) {
-                    alert('Xóa candidate thành công!');
+                if (response.ok && data.success) {
+                    alert('✅ Xóa candidate thành công!');
+                    console.log('✅ Deletion successful, refreshing list...');
                     fetchCandidates();
+                    fetchStats(); // Update dashboard statistics
                 } else {
-                    alert(data.message || 'Không thể xóa candidate');
+                    const errorMsg = data.message || 'Không thể xóa candidate';
+                    console.error('❌ Deletion failed:', errorMsg);
+                    alert('❌ ' + errorMsg);
                 }
             } catch (error) {
-                alert('Có lỗi xảy ra khi xóa candidate');
+                console.error('❌ Error deleting candidate:', error);
+                alert('❌ Có lỗi xảy ra khi xóa candidate: ' + error.message);
             }
         }
 
@@ -2476,6 +2491,7 @@
                     alert(companyId ? 'Cập nhật công ty thành công!' : 'Tạo công ty thành công!');
                     closeCompanyModal();
                     fetchCompaniesData();
+                    fetchStats(); // Update dashboard statistics
                 } else {
                     alert(data.message || 'Có lỗi xảy ra');
                 }
@@ -2502,6 +2518,7 @@
                 if (data.success) {
                     alert('Xóa công ty thành công!');
                     fetchCompaniesData();
+                    fetchStats(); // Update dashboard statistics
                 } else {
                     alert(data.message || 'Không thể xóa công ty');
                 }
@@ -2767,6 +2784,7 @@
                     alert(testId ? 'Cập nhật test thành công!' : 'Tạo test mới thành công!');
                     closeTestModal();
                     fetchTestsData();
+                    fetchStats(); // Update dashboard statistics
                 } else {
                     alert(data.message || 'Không thể lưu test');
                 }
@@ -2793,6 +2811,7 @@
                 if (data.success) {
                     alert('Xóa test thành công!');
                     fetchTestsData();
+                    fetchStats(); // Update dashboard statistics
                 } else {
                     alert(data.message || 'Không thể xóa test');
                 }

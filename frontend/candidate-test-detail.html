@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chi Tiết Bài Làm - CS60</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
+  <style>
+    .question-card {
+      transition: all 0.3s ease;
+    }
+    .question-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .answer-correct {
+      background-color: #d4edda;
+      border-color: #c3e6cb;
+    }
+    .answer-incorrect {
+      background-color: #f8d7da;
+      border-color: #f5c6cb;
+    }
+    .essay-answer {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+
+<body class="light-mode min-h-screen transition-colors duration-300">
+
+  <!-- Header -->
+  <header class="header-bg backdrop-blur-md shadow-lg border-b sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
+      <h1 class="text-2xl font-bold">📝 Chi Tiết Bài Làm</h1>
+      <div class="flex items-center gap-4">
+        <div class="theme-toggle" id="themeToggle" title="Chuyển đổi sáng/tối"></div>
+        <button onclick="window.close()" class="btn-secondary px-4 py-2 rounded-lg">
+          ← Đóng
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-6">
+    
+    <!-- Candidate Info Card -->
+    <div class="content-card rounded-2xl p-6 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h3 class="text-sm text-gray-500 mb-1">Ứng Viên</h3>
+          <p id="candidateName" class="text-xl font-bold">Loading...</p>
+        </div>
+        <div>
+          <h3 class="text-sm text-gray-500 mb-1">Bài Thi</h3>
+          <p id="testName" class="text-xl font-bold">Loading...</p>
+        </div>
+        <div>
+          <h3 class="text-sm text-gray-500 mb-1">Thời Gian Bắt Đầu</h3>
+          <p id="startTime" class="text-lg">-</p>
+        </div>
+        <div>
+          <h3 class="text-sm text-gray-500 mb-1">Thời Gian Hoàn Thành</h3>
+          <p id="endTime" class="text-lg">-</p>
+        </div>
+        <div>
+          <h3 class="text-sm text-gray-500 mb-1">Điểm Tự Động</h3>
+          <p id="autoScore" class="text-2xl font-bold text-blue-600">-</p>
+        </div>
+        <div>
+          <h3 class="text-sm text-gray-500 mb-1">Điểm Tự Chấm</h3>
+          <div class="flex items-center gap-2">
+            <input 
+              type="number" 
+              id="manualScoreInput" 
+              min="0" 
+              max="100" 
+              class="w-24 px-3 py-2 border border-gray-300 rounded text-lg font-bold"
+              placeholder="0"
+            />
+            <button 
+              onclick="saveManualScore()" 
+              class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition"
+            >
+              💾 Lưu
+            </button>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-sm text-gray-500 mb-1">Trạng Thái</h3>
+          <p id="status" class="text-lg">-</p>
+        </div>
+        <div>
+          <h3 class="text-sm text-gray-500 mb-1">Tổng Điểm</h3>
+          <p id="totalScore" class="text-2xl font-bold text-green-600">-</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Questions & Answers -->
+    <div class="content-card rounded-2xl p-6">
+      <h2 class="text-2xl font-bold mb-6">📋 Câu Hỏi và Câu Trả Lời</h2>
+      
+      <div id="loadingQuestions" class="text-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p class="text-gray-500">Đang tải dữ liệu...</p>
+      </div>
+
+      <div id="questionsContainer" class="space-y-6" style="display: none;">
+        <!-- Questions will be loaded here -->
+      </div>
+
+      <div id="noQuestions" class="text-center py-12" style="display: none;">
+        <span class="text-5xl">📭</span>
+        <p class="text-lg font-semibold mt-4">Không có dữ liệu câu hỏi</p>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    let candidateTestId = null;
+    let testData = null;
+
+    // Helper function to get auth token
+    function getAuthToken() {
+      return localStorage.getItem('auth_token') || 
+             localStorage.getItem('token') || 
+             localStorage.getItem('authToken');
+    }
+
+    // Get URL parameters
+    function getUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        id: params.get('id'),
+        candidate: params.get('candidate'),
+        test: params.get('test')
+      };
+    }
+
+    // Load candidate test details
+    async function loadTestDetails() {
+      try {
+        const params = getUrlParams();
+        candidateTestId = params.id;
+
+        if (!candidateTestId) {
+          throw new Error('Không tìm thấy ID bài thi');
+        }
+
+        // Set basic info from URL params
+        if (params.candidate) {
+          document.getElementById('candidateName').textContent = decodeURIComponent(params.candidate);
+        }
+        if (params.test) {
+          document.getElementById('testName').textContent = decodeURIComponent(params.test);
+        }
+
+        // Check authentication token
+        const token = getAuthToken();
+        
+        if (!token) {
+          console.error('❌ No authentication token found in localStorage');
+          console.log('Available keys:', Object.keys(localStorage));
+          throw new Error('Vui lòng đăng nhập lại');
+        }
+        
+        console.log('✅ Token found, length:', token.length);
+
+        console.log(`📡 Fetching test details for ID: ${candidateTestId}`);
+
+        // Fetch candidate test details
+        const response = await fetch(`http://localhost:5000/api/candidate-tests/${candidateTestId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          throw new Error(errorData.message || 'Không thể tải dữ liệu');
+        }
+
+        const result = await response.json();
+        testData = result.data;
+        console.log('✅ Test data loaded:', testData);
+
+        displayTestInfo(testData);
+        await loadQuestions();
+
+      } catch (error) {
+        console.error('❌ Error loading test details:', error);
+        alert(`❌ ${error.message}`);
+        document.getElementById('loadingQuestions').innerHTML = `
+          <div class="text-center py-12">
+            <span class="text-5xl">⚠️</span>
+            <p class="text-lg font-semibold text-red-600 mt-4">${error.message}</p>
+            <button onclick="loadTestDetails()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+              🔄 Thử lại
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // Display test information
+    function displayTestInfo(data) {
+      if (data.start_time) {
+        document.getElementById('startTime').textContent = new Date(data.start_time).toLocaleString('vi-VN');
+      }
+      if (data.end_time) {
+        document.getElementById('endTime').textContent = new Date(data.end_time).toLocaleString('vi-VN');
+      }
+      if (data.score !== undefined && data.score !== null) {
+        document.getElementById('autoScore').textContent = data.score;
+      }
+      if (data.manual_score !== undefined && data.manual_score !== null) {
+        document.getElementById('manualScoreInput').value = data.manual_score;
+      }
+      
+      // Calculate total score
+      const autoScore = parseFloat(data.score) || 0;
+      const manualScore = parseFloat(data.manual_score) || 0;
+      const totalScore = autoScore + manualScore;
+      document.getElementById('totalScore').textContent = totalScore.toFixed(1);
+
+      // Status
+      const statusMap = {
+        'NOT_STARTED': '<span class="px-3 py-1 bg-gray-500/20 text-gray-600 rounded-full text-sm">Chưa bắt đầu</span>',
+        'IN_PROGRESS': '<span class="px-3 py-1 bg-blue-500/20 text-blue-600 rounded-full text-sm">Đang làm</span>',
+        'COMPLETED': '<span class="px-3 py-1 bg-green-500/20 text-green-600 rounded-full text-sm">Hoàn thành</span>',
+        'ABANDONED': '<span class="px-3 py-1 bg-red-500/20 text-red-600 rounded-full text-sm">Bỏ dở</span>'
+      };
+      document.getElementById('status').innerHTML = statusMap[data.status] || data.status;
+    }
+
+    // Load questions and answers
+    async function loadQuestions() {
+      try {
+        const token = getAuthToken();
+        
+        console.log(`📡 Fetching answers for test ${candidateTestId}`);
+
+        // Fetch candidate answers
+        const response = await fetch(`http://localhost:5000/api/candidate-tests/${candidateTestId}/answers`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Không thể tải câu trả lời');
+        }
+
+        const result = await response.json();
+        const answers = result.data || [];
+        console.log(`✅ Loaded ${answers.length} answers`);
+
+        if (answers.length === 0) {
+          document.getElementById('loadingQuestions').style.display = 'none';
+          document.getElementById('noQuestions').style.display = 'block';
+          return;
+        }
+
+        displayQuestions(answers);
+
+      } catch (error) {
+        console.error('❌ Error loading questions:', error);
+        document.getElementById('loadingQuestions').innerHTML = `
+          <div class="text-center py-12">
+            <span class="text-5xl">⚠️</span>
+            <p class="text-lg font-semibold text-red-600 mt-4">${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Display questions and answers
+    function displayQuestions(answers) {
+      const container = document.getElementById('questionsContainer');
+      
+      container.innerHTML = answers.map((answer, index) => {
+        const question = answer.Question || {};
+        const isCorrect = answer.is_correct;
+        const questionType = question.question_type || 'MULTIPLE_CHOICE';
+
+        let answerHtml = '';
+        
+        if (questionType === 'ESSAY') {
+          // Essay question
+          answerHtml = `
+            <div class="essay-answer mt-4">
+              <h4 class="font-semibold mb-2">📝 Câu trả lời của ứng viên:</h4>
+              <p>${answer.answer_text || '<em class="text-gray-400">Chưa trả lời</em>'}</p>
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-semibold mb-2">💯 Điểm chấm cho câu này:</label>
+              <input 
+                type="number" 
+                min="0" 
+                max="${question.points || 10}" 
+                value="${answer.essay_score || ''}"
+                class="w-32 px-3 py-2 border border-gray-300 rounded"
+                placeholder="0"
+                onchange="updateQuestionScore(${answer.answer_id}, this.value, ${question.points || 10})"
+              />
+              <span class="ml-2 text-sm text-gray-500">/ ${question.points || 10} điểm</span>
+            </div>
+          `;
+        } else {
+          // Multiple choice question
+          const options = question.QuestionOptions || [];
+          answerHtml = `
+            <div class="mt-4 space-y-2">
+              ${options.map(option => {
+                const isSelected = answer.selected_option_id === option.option_id;
+                const isCorrectOption = option.is_correct;
+                
+                let optionClass = 'border border-gray-300 p-3 rounded';
+                if (isSelected && isCorrectOption) {
+                  optionClass = 'answer-correct p-3 rounded font-semibold';
+                } else if (isSelected && !isCorrectOption) {
+                  optionClass = 'answer-incorrect p-3 rounded font-semibold';
+                } else if (isCorrectOption) {
+                  optionClass = 'border-2 border-green-500 p-3 rounded';
+                }
+
+                return `
+                  <div class="${optionClass}">
+                    ${isSelected ? '👉 ' : ''}
+                    ${option.option_text}
+                    ${isCorrectOption ? ' ✅' : ''}
+                    ${isSelected && !isCorrectOption ? ' ❌' : ''}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        }
+
+        return `
+          <div class="question-card border rounded-lg p-6 ${isCorrect === true ? 'border-green-500' : isCorrect === false ? 'border-red-500' : 'border-gray-300'}">
+            <div class="flex justify-between items-start mb-4">
+              <h3 class="text-lg font-bold">Câu ${index + 1}</h3>
+              <div class="flex items-center gap-2">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold ${
+                  questionType === 'ESSAY' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                }">
+                  ${questionType === 'ESSAY' ? '📝 Tự luận' : '☑️ Trắc nghiệm'}
+                </span>
+                ${isCorrect === true ? '<span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">✅ Đúng</span>' : ''}
+                ${isCorrect === false ? '<span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-semibold">❌ Sai</span>' : ''}
+                ${isCorrect === null && questionType === 'ESSAY' ? '<span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">⏳ Chưa chấm</span>' : ''}
+              </div>
+            </div>
+            
+            <div class="mb-4">
+              <p class="text-gray-700 font-medium">${question.question_text || 'Không có nội dung câu hỏi'}</p>
+            </div>
+
+            ${answerHtml}
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('loadingQuestions').style.display = 'none';
+      container.style.display = 'block';
+    }
+
+    // Update question score for essay questions
+    async function updateQuestionScore(answerId, score, maxPoints) {
+      try {
+        const scoreValue = parseFloat(score);
+        if (isNaN(scoreValue) || scoreValue < 0 || scoreValue > maxPoints) {
+          alert(`❌ Điểm phải từ 0 đến ${maxPoints}`);
+          return;
+        }
+
+        const token = getAuthToken();
+        const response = await fetch(`http://localhost:5000/api/candidate-tests/answers/${answerId}/score`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ essay_score: scoreValue })
+        });
+
+        if (!response.ok) {
+          throw new Error('Không thể cập nhật điểm');
+        }
+
+        console.log('✅ Question score updated');
+        showNotification('✅ Đã cập nhật điểm câu hỏi!', 'success');
+
+        // Reload to refresh total score
+        setTimeout(() => loadTestDetails(), 500);
+
+      } catch (error) {
+        console.error('❌ Error updating question score:', error);
+        alert(`❌ ${error.message}`);
+      }
+    }
+
+    // Save manual score
+    async function saveManualScore() {
+      try {
+        const score = document.getElementById('manualScoreInput').value;
+        
+        if (score === '' || score === null) {
+          alert('❌ Vui lòng nhập điểm');
+          return;
+        }
+
+        const scoreValue = parseFloat(score);
+        if (isNaN(scoreValue) || scoreValue < 0 || scoreValue > 100) {
+          alert('❌ Điểm phải từ 0 đến 100');
+          return;
+        }
+
+        const token = getAuthToken();
+        const response = await fetch(`http://localhost:5000/api/candidate-tests/${candidateTestId}/manual-score`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ manual_score: scoreValue })
+        });
+
+        if (!response.ok) {
+          throw new Error('Không thể cập nhật điểm');
+        }
+
+        console.log('✅ Manual score saved');
+        showNotification('✅ Đã lưu điểm tự chấm!', 'success');
+
+        // Reload to refresh total score
+        setTimeout(() => loadTestDetails(), 500);
+
+      } catch (error) {
+        console.error('❌ Error saving manual score:', error);
+        alert(`❌ ${error.message}`);
+      }
+    }
+
+    // Notification helper
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-20 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-500 text-white' :
+        type === 'error' ? 'bg-red-500 text-white' :
+        'bg-blue-500 text-white'
+      }`;
+      notification.textContent = message;
+      notification.style.animation = 'slideInRight 0.3s ease';
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTestDetails();
+      
+      if (window.ThemeManager) {
+        ThemeManager.setupToggle('themeToggle');
+      }
+    });
+
+    // Make functions global
+    window.updateQuestionScore = updateQuestionScore;
+    window.saveManualScore = saveManualScore;
+  </script>
+
+  <style>
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+  </style>
+
+</body>
+</html>

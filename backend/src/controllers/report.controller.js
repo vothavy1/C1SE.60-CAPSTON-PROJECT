@@ -2,6 +2,7 @@ const {
   CandidateTest, 
   Test, 
   Candidate, 
+  Company,
   CandidateTestResult,
   CandidateTestAnswer,
   Question,
@@ -194,7 +195,14 @@ exports.getViolations = async (req, res) => {
           model: Candidate,
           attributes: ['candidate_id', 'first_name', 'last_name', 'email', 'company_id'],
           where: candidateWhereClause,
-          required: true // INNER JOIN - only include tests with matching company
+          required: true, // INNER JOIN - only include tests with matching company
+          include: [
+            {
+              model: Company,
+              attributes: ['company_id', 'companyName'],
+              required: false
+            }
+          ]
         },
         {
           model: CandidateTestResult,
@@ -206,7 +214,8 @@ exports.getViolations = async (req, res) => {
           required: false // LEFT JOIN - include tests even without violations
         }
       ],
-      order: [['end_time', 'DESC']]
+      order: [['end_time', 'DESC']],
+      subQuery: false
     });
 
     console.log(`📋 Found ${candidateTests.length} completed tests`);
@@ -221,13 +230,18 @@ exports.getViolations = async (req, res) => {
       // Get primary violation (most recent or most severe)
       const primaryViolation = fraudLogs.length > 0 ? fraudLogs[0] : null;
       
+      // Get company name - use companyName field from database
+      const companyName = candidate?.Company?.companyName || 'N/A';
+      
       return {
-        id: primaryViolation?.log_id || null,
-        log_id: primaryViolation?.log_id || null,
+        id: primaryViolation?.log_id || ct.candidate_test_id, // Use candidate_test_id if no violation log
+        log_id: primaryViolation?.log_id || ct.candidate_test_id,
         candidateId: candidate?.candidate_id || 'N/A',
         candidate_id: candidate?.candidate_id || 'N/A',
         candidate_name: candidate ? `${candidate.first_name} ${candidate.last_name}` : 'Unknown',
         candidate_email: candidate?.email || '',
+        company_id: candidate?.company_id || null,
+        company_name: companyName,
         candidate_test_id: ct.candidate_test_id,
         test_id: test?.test_id || 'N/A',
         test_name: test?.test_name || 'Unknown Test',
@@ -237,6 +251,7 @@ exports.getViolations = async (req, res) => {
         description: primaryViolation?.details || 'No violations detected',
         details: primaryViolation?.details || 'No violations detected',
         score: result?.total_score || ct.score || 0,
+        manual_score: ct.manual_score || null,
         percentage: result?.percentage || 0,
         result: result?.passed ? 'passed' : 'failed',
         status: result?.passed ? 'pass' : 'fail',
@@ -251,6 +266,12 @@ exports.getViolations = async (req, res) => {
           : '✓ Clean test - no violations'
       };
     });
+
+    // For RECRUITER: Only show tests with ACTUAL violations (exclude NONE)
+    if (userRole === 'RECRUITER') {
+      violations = violations.filter(v => v.violation_type !== 'NONE' && v.has_violations);
+      console.log(`🔒 RECRUITER FILTER: Only showing tests with actual violations: ${violations.length} results`);
+    }
 
     // Apply violation type filter if specified
     if (violationType) {

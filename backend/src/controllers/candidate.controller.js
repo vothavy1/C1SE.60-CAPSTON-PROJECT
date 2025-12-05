@@ -230,6 +230,7 @@ exports.getAllCandidates = async (req, res) => {
       include: [
         {
           model: CandidateResume,
+          as: 'CandidateResumes',
           attributes: ['resume_id', 'file_name', 'is_primary'],
           where: { is_primary: true },
           required: false
@@ -667,6 +668,7 @@ exports.viewCandidateCV = async (req, res) => {
     const candidate = await Candidate.findByPk(id, {
       include: [{
         model: CandidateResume,
+        as: 'CandidateResumes',
         where: { is_primary: true },
         required: false
       }]
@@ -779,6 +781,7 @@ exports.downloadCandidateCV = async (req, res) => {
     const candidate = await Candidate.findByPk(id, {
       include: [{
         model: CandidateResume,
+        as: 'CandidateResumes',
         where: { is_primary: true },
         required: false
       }]

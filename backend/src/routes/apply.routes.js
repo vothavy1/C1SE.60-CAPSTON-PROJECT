@@ -47,4 +47,10 @@ router.get('/candidates/:id/cv/download',
   applyController.getCandidateCV
 );
 
+router.delete('/candidates/:id',
+  authenticate,
+  authorize(['ADMIN', 'RECRUITER']),
+  applyController.deleteCandidate
+);
+
 module.exports = router;

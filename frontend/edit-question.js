@@ -182,7 +182,7 @@ function addOption(text = '', isCorrect = false, optionId = null) {
     optionDiv.innerHTML = `
         <div class="row align-items-center">
             <div class="col-1 text-center">
-                <strong class="text-white">${String.fromCharCode(65 + optionsList.children.length)}.</strong>
+                <strong class="option-label">${String.fromCharCode(65 + optionsList.children.length)}.</strong>
             </div>
             <div class="col-8">
                 <input type="text" class="form-control option-text" 
@@ -196,7 +196,7 @@ function addOption(text = '', isCorrect = false, optionId = null) {
                            id="correct-${optionCounter}"
                            ${isCorrect ? 'checked' : ''}
                            onchange="updateCorrectAnswer(this)">
-                    <label class="form-check-label text-white" for="correct-${optionCounter}">
+                    <label class="form-check-label" for="correct-${optionCounter}">
                         Đúng
                     </label>
                 </div>
