@@ -51,13 +51,21 @@ const upload = multer({
 // @access  Public (no authentication required)
 const applyJob = async (req, res) => {
   try {
-    const { first_name, last_name, email, phone, position, company_name, experience_years } = req.body;
+    const { first_name, last_name, email, phone, position, company_name, experience_years, company_id } = req.body;
 
     // Validation
     if (!first_name || !last_name || !email || !phone || !position || !experience_years) {
       return res.status(400).json({
         success: false,
         message: 'Vui lòng điền đầy đủ thông tin: Họ, Tên, Email, Số điện thoại, Vị trí, Số năm kinh nghiệm'
+      });
+    }
+
+    // Validate company_id
+    if (!company_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng chọn công ty bạn muốn ứng tuyển'
       });
     }
 
@@ -91,7 +99,8 @@ const applyJob = async (req, res) => {
       experience_years: experience_years,
       years_of_experience: parseInt(experience_years) || 0,
       status: 'NEW', // Default status
-      source: 'WEBSITE_APPLY' // Track where the candidate came from
+      source: 'WEBSITE_APPLY', // Track where the candidate came from
+      company_id: parseInt(company_id) // Link candidate to the company they applied to
     });
 
     // Save CV path to candidate_resumes table
@@ -141,8 +150,26 @@ const getCandidates = async (req, res) => {
   try {
     const { status, search, page = 1, limit = 20 } = req.query;
 
+    // 🔒 SECURITY CHECK: Filter by company for recruiters ONLY (Admin sees all)
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    
     // Build where clause for filtering
     const whereClause = {};
+    
+    // 🔒 COMPANY FILTER - Only RECRUITER is restricted to their company
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
+      whereClause.company_id = req.user.company_id;
+      console.log(`🔒 RECRUITER FILTER: Only showing candidates for company ${req.user.company_id}`);
+    } else if (userRole === 'ADMIN') {
+      console.log('👑 ADMIN ACCESS: Showing all candidates from all companies');
+    }
     
     if (status) {
       whereClause.status = status;
@@ -166,7 +193,8 @@ const getCandidates = async (req, res) => {
       include: [
         {
           model: CandidateResume,
-          attributes: ['resume_id', 'resume_type', 'file_path', 'file_name', 'uploaded_at'],
+          as: 'CandidateResumes', // Add alias to match model association
+          attributes: ['resume_id', 'file_type', 'file_path', 'file_name', 'file_size', 'uploaded_at', 'is_primary'],
           required: false
         }
       ],
@@ -297,6 +325,30 @@ const updateCandidateStatus = async (req, res) => {
       });
     }
 
+    // 🔒 SECURITY CHECK: Verify recruiter can only update their company's candidates
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
+      if (candidate.company_id !== req.user.company_id) {
+        logger.warn(`🚫 BLOCKED: Recruiter company ${req.user.company_id} tried to update candidate ${id} from company ${candidate.company_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền cập nhật trạng thái ứng viên của công ty khác'
+        });
+      }
+    } else if (userRole !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền cập nhật trạng thái ứng viên'
+      });
+    }
+
     // Store old status
     const oldStatus = candidate.status;
     
@@ -323,15 +375,19 @@ const updateCandidateStatus = async (req, res) => {
       if (status === 'HIRED' || status === 'OFFERED') {
         logger.info(`🎉 Candidate PASSED: ${candidateName} (${candidateEmail}) - Status: ${status}`);
         
-        // Check if account exists, create if needed
+        // Always create/reset account and get credentials
         accountInfo = await accountService.createCandidateAccount(candidate);
         
         if (accountInfo) {
-          // New account created
-          accountCreated = true;
-          logger.info(`✅ Account created: ${accountInfo.username}`);
+          accountCreated = !accountInfo.isReset;
           
-          // Send approval email with new credentials
+          if (accountInfo.isReset) {
+            logger.info(`🔄 Password reset for: ${accountInfo.username}`);
+          } else {
+            logger.info(`✅ Account created: ${accountInfo.username}`);
+          }
+          
+          // Send approval email with credentials (new or reset)
           await emailService.sendApprovalEmail(
             candidateEmail,
             candidateName,
@@ -339,20 +395,7 @@ const updateCandidateStatus = async (req, res) => {
             accountInfo.password
           );
           emailSent = true;
-          logger.info(`✅ Approval email sent to ${candidateEmail} with new credentials`);
-        } else {
-          // Account already exists
-          logger.info(`ℹ️ Account already exists for candidate ${candidate.candidate_id}`);
-          
-          // Send approval email notification (without showing credentials)
-          await emailService.sendApprovalEmail(
-            candidateEmail,
-            candidateName,
-            'Đã có sẵn',
-            'Vui lòng dùng mật khẩu hiện tại'
-          );
-          emailSent = true;
-          logger.info(`✅ Approval notification email sent to ${candidateEmail}`);
+          logger.info(`✅ Approval email sent to ${candidateEmail} with credentials`);
         }
       }
       
@@ -423,17 +466,18 @@ const updateCandidateStatus = async (req, res) => {
 const getCandidateById = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log('🔍 getCandidateById called with id:', id);
 
-    // Find candidate with resumes
-    const candidate = await Candidate.findByPk(id, {
-      include: [
-        {
-          model: CandidateResume,
-          attributes: ['resume_id', 'resume_type', 'file_path', 'file_name', 'uploaded_at'],
-          required: false
-        }
-      ]
+    // Try simple SQL query first to debug
+    const sequelize = require('../config/database');
+    const [candidates] = await sequelize.query(`
+      SELECT * FROM candidates WHERE candidate_id = ?
+    `, {
+      replacements: [id]
     });
+
+    const candidate = candidates[0];
+    console.log('📦 Found candidate:', candidate);
 
     if (!candidate) {
       return res.status(404).json({
@@ -442,9 +486,30 @@ const getCandidateById = async (req, res) => {
       });
     }
 
+    // 🔒 SECURITY CHECK: Verify recruiter can only view their company's candidates (Admin sees all)
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
+      if (candidate.company_id !== req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xem ứng viên của công ty khác'
+        });
+      }
+    } else if (userRole === 'ADMIN') {
+      console.log('👑 ADMIN access: Can view all candidates');
+    }
+
     return res.status(200).json({
       success: true,
-      data: candidate
+      data: candidate,
+      message: 'Candidate retrieved successfully'
     });
 
   } catch (error) {
@@ -463,6 +528,27 @@ const getCandidateById = async (req, res) => {
 const getCandidateCV = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // 🔒 SECURITY CHECK: Verify recruiter can only download their company's candidate CV (Admin downloads all)
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    if (userRole === 'RECRUITER') {
+      // First check if candidate belongs to recruiter's company
+      const candidate = await Candidate.findByPk(id);
+      if (!candidate) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy ứng viên'
+        });
+      }
+      if (candidate.company_id !== req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền tải CV của ứng viên công ty khác'
+        });
+      }
+    } else if (userRole === 'ADMIN') {
+      console.log('👑 ADMIN access: Can download all CVs');
+    }
 
     // Find candidate's CV
     const resume = await CandidateResume.findOne({
@@ -518,6 +604,84 @@ const getCandidateCV = async (req, res) => {
   }
 };
 
+// @route   DELETE /api/apply/candidates/:id
+// @desc    Delete a candidate
+// @access  ADMIN, RECRUITER
+const deleteCandidate = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+    const userRole = req.user.role || req.user.Role?.role_name;
+
+    logger.info(`🗑️ Attempting to delete candidate ${id} by user ${userId} (${userRole})`);
+
+    // Find candidate
+    const candidate = await Candidate.findByPk(id);
+    
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy ứng viên'
+      });
+    }
+
+    // Authorization check
+    if (userRole !== 'ADMIN') {
+      // Recruiter can only delete candidates from their company
+      if (candidate.company_id !== req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xóa ứng viên này'
+        });
+      }
+    }
+
+    // Delete associated CV files
+    const resumes = await CandidateResume.findAll({
+      where: { candidate_id: id }
+    });
+
+    for (const resume of resumes) {
+      const filePath = path.join(__dirname, '../../uploads/cv', path.basename(resume.file_path));
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        logger.info(`🗑️ Deleted CV file: ${filePath}`);
+      }
+    }
+
+    // Delete resumes from database
+    await CandidateResume.destroy({
+      where: { candidate_id: id }
+    });
+
+    // Delete user account if exists
+    if (candidate.user_id) {
+      await User.destroy({
+        where: { user_id: candidate.user_id }
+      });
+      logger.info(`🗑️ Deleted user account: ${candidate.user_id}`);
+    }
+
+    // Delete candidate
+    await candidate.destroy();
+
+    logger.info(`✅ Successfully deleted candidate ${id}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Đã xóa ứng viên thành công'
+    });
+
+  } catch (error) {
+    logger.error('Delete candidate error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể xóa ứng viên',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   upload,
   applyJob,
@@ -525,5 +689,6 @@ module.exports = {
   getCandidateById,
   updateCandidate,
   updateCandidateStatus,
-  getCandidateCV
+  getCandidateCV,
+  deleteCandidate
 };

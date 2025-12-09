@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Company Data Segregation Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 3px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ Company Data Segregation Fix Test</h1>
+    
+    <div class="test-section">
+        <h2>🔍 Current Authentication Status</h2>
+        <div id="authStatus">Checking...</div>
+        <button onclick="checkAuth()">Refresh Auth Status</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Test API Call</h2>
+        <div id="testResults">Ready for testing...</div>
+        <button onclick="testTestsAPI()">Test /api/tests Endpoint</button>
+        <button onclick="clearCache()">Clear All Cache</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Test Logs</h2>
+        <pre id="logOutput"></pre>
+        <button onclick="clearLogs()">Clear Logs</button>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        let logs = [];
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            logs.push(logEntry);
+            console.log(logEntry);
+            document.getElementById('logOutput').textContent = logs.join('\n');
+        }
+
+        function clearLogs() {
+            logs = [];
+            document.getElementById('logOutput').textContent = '';
+        }
+
+        function getAuthHeaders() {
+            const token = localStorage.getItem('token') || localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            return {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+                'X-Company-Context': 'test-validation',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+            };
+        }
+
+        function parseTokenPayload(token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function checkAuth() {
+            const token = localStorage.getItem('token') || localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            const statusDiv = document.getElementById('authStatus');
+            
+            if (!token) {
+                statusDiv.innerHTML = '<div class="error">❌ No authentication token found</div>';
+                addLog('No authentication token found', 'error');
+                return;
+            }
+
+            const payload = parseTokenPayload(token);
+            if (!payload) {
+                statusDiv.innerHTML = '<div class="error">❌ Invalid token format</div>';
+                addLog('Invalid token format', 'error');
+                return;
+            }
+
+            const expiry = new Date(payload.exp * 1000);
+            const now = new Date();
+            const isExpired = now > expiry;
+
+            statusDiv.innerHTML = `
+                <div class="${isExpired ? 'error' : 'success'}">
+                    <strong>Token Status:</strong> ${isExpired ? '❌ Expired' : '✅ Valid'}<br>
+                    <strong>User ID:</strong> ${payload.id}<br>
+                    <strong>Role:</strong> ${payload.role}<br>
+                    <strong>Company ID:</strong> ${payload.company_id || 'Not set'}<br>
+                    <strong>Expires:</strong> ${expiry.toLocaleString()}<br>
+                </div>
+            `;
+
+            addLog(`Token validation: User ID ${payload.id}, Role ${payload.role}, Company ${payload.company_id}`, 'info');
+        }
+
+        async function testTestsAPI() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = '<div class="warning">🔄 Testing API call...</div>';
+            
+            addLog('Starting /api/tests endpoint test', 'info');
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_BASE_URL}/tests`, {
+                    method: 'GET',
+                    headers: getAuthHeaders(),
+                    cache: 'no-cache'
+                });
+
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+
+                const contentLength = response.headers.get('content-length');
+                const result = await response.json();
+
+                addLog(`API Response: Status ${response.status}, Size ${contentLength} bytes, Time ${responseTime}ms`, 'info');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${result.message || 'Unknown error'}`);
+                }
+
+                const tests = result.data?.tests || [];
+                const companyIds = tests.length > 0 ? [...new Set(tests.map(test => test.company_id))] : [];
+
+                let resultClass = 'success';
+                let resultIcon = '✅';
+                let securityStatus = 'SECURE';
+
+                if (companyIds.length > 1) {
+                    resultClass = 'error';
+                    resultIcon = '🚨';
+                    securityStatus = 'SECURITY BREACH - Multiple companies detected!';
+                    addLog(`SECURITY ALERT: Multiple company IDs in response: ${companyIds.join(', ')}`, 'error');
+                } else if (companyIds.length === 1) {
+                    addLog(`Company filtering working correctly: Company ID ${companyIds[0]}`, 'success');
+                }
+
+                resultsDiv.innerHTML = `
+                    <div class="${resultClass}">
+                        <strong>${resultIcon} Security Status:</strong> ${securityStatus}<br>
+                        <strong>Response Status:</strong> ${response.status}<br>
+                        <strong>Response Size:</strong> ${contentLength} bytes<br>
+                        <strong>Response Time:</strong> ${responseTime}ms<br>
+                        <strong>Tests Count:</strong> ${tests.length}<br>
+                        <strong>Company IDs:</strong> ${companyIds.length > 0 ? companyIds.join(', ') : 'No data'}<br>
+                        <strong>First Test:</strong> ${tests[0] ? tests[0].test_name : 'None'}<br>
+                    </div>
+                `;
+
+            } catch (error) {
+                addLog(`API Error: ${error.message}`, 'error');
+                resultsDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function clearCache() {
+            // Clear all storage
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Clear browser cache if available
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => caches.delete(name));
+                });
+            }
+            
+            addLog('All cache and storage cleared', 'info');
+            alert('✅ All cache cleared! Please login again to test.');
+        }
+
+        // Auto-check auth on load
+        window.onload = checkAuth;
+    </script>
+</body>
+</html>

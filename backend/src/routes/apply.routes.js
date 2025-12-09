@@ -4,7 +4,8 @@ const applyController = require('../controllers/apply.controller');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
 
 // Public route - anyone can apply
-router.post('/apply', 
+// Mounted at /api/apply, so this becomes /api/apply/
+router.post('/', 
   applyController.upload.single('cv'), 
   applyController.applyJob
 );
@@ -38,6 +39,18 @@ router.get('/candidates/:id/cv',
   authenticate, 
   authorize(['ADMIN', 'RECRUITER']), 
   applyController.getCandidateCV
+);
+
+router.get('/candidates/:id/cv/download', 
+  authenticate, 
+  authorize(['ADMIN', 'RECRUITER']), 
+  applyController.getCandidateCV
+);
+
+router.delete('/candidates/:id',
+  authenticate,
+  authorize(['ADMIN', 'RECRUITER']),
+  applyController.deleteCandidate
 );
 
 module.exports = router;

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cài Đặt Admin - CS60</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f3f4f6;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .tab-button {
+            transition: all 0.2s ease;
+        }
+        .tab-button.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Navigation Header -->
+    <header class="bg-white border-b border-gray-200 card-shadow">
+        <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
+            <div class="flex items-center gap-4">
+                <h1 class="text-2xl font-bold text-gray-900">⚙️ Cài Đặt Admin</h1>
+                <span class="text-sm text-gray-500">Quản lý thông tin cá nhân và hoạt động</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="admin-dashboard.html" class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+                    ← Quay Lại Dashboard
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto p-6">
+
+        <!-- Tabs -->
+        <div class="flex gap-2 mb-6">
+            <button class="tab-button active px-6 py-3 rounded-lg font-medium bg-white" onclick="showTab('profile')">
+                👤 Thông Tin Cá Nhân
+            </button>
+            <button class="tab-button px-6 py-3 rounded-lg font-medium bg-white" onclick="showTab('password')">
+                🔒 Đổi Mật Khẩu
+            </button>
+            <button class="tab-button px-6 py-3 rounded-lg font-medium bg-white" onclick="showTab('activity')">
+                📋 Lịch Sử Hoạt Động
+            </button>
+            <button class="tab-button px-6 py-3 rounded-lg font-medium bg-white" onclick="showTab('all-activity')">
+                👥 Hoạt Động Toàn Hệ Thống
+            </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="tabContent">
+            
+            <!-- Profile Tab -->
+            <div id="profileTab" class="tab-content">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow">
+                    <h2 class="text-xl font-bold text-gray-900 mb-6">👤 Thông Tin Cá Nhân</h2>
+                    
+                    <form id="profileForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                            <input type="text" id="username" readonly 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Họ và Tên</label>
+                            <input type="text" id="full_name" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                            <input type="email" id="email" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Đăng Nhập Lần Cuối</label>
+                            <input type="text" id="last_login" readonly 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed">
+                        </div>
+                        
+                        <div class="pt-4">
+                            <button type="submit" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 rounded-lg hover:opacity-90 transition shadow-md font-medium">
+                                💾 Lưu Thay Đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Password Tab -->
+            <div id="passwordTab" class="tab-content hidden">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow max-w-2xl">
+                    <h2 class="text-xl font-bold text-gray-900 mb-6">🔒 Đổi Mật Khẩu</h2>
+                    
+                    <form id="passwordForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Mật Khẩu Hiện Tại</label>
+                            <input type="password" id="current_password" required
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Mật Khẩu Mới</label>
+                            <input type="password" id="new_password" required minlength="6"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <p class="text-xs text-gray-500 mt-1">Tối thiểu 6 ký tự</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Xác Nhận Mật Khẩu Mới</label>
+                            <input type="password" id="confirm_password" required minlength="6"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        
+                        <div class="pt-4">
+                            <button type="submit" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-lg hover:opacity-90 transition shadow-md font-medium">
+                                🔑 Đổi Mật Khẩu
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Activity Tab -->
+            <div id="activityTab" class="tab-content hidden">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-900">📋 Lịch Sử Hoạt Động Của Tôi</h2>
+                        <button onclick="loadActivityLogs()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition">
+                            🔄 Làm Mới
+                        </button>
+                    </div>
+                    
+                    <div id="activityList" class="space-y-3">
+                        <div class="flex items-center justify-center py-12">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                            <span class="ml-3 text-gray-600">Đang tải...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Users Activity Tab -->
+            <div id="allActivityTab" class="tab-content hidden">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 card-shadow">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-900">👥 Hoạt Động Toàn Hệ Thống</h2>
+                        <div class="flex gap-2">
+                            <button onclick="loadLoginStats()" class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition">
+                                📊 Thống Kê
+                            </button>
+                            <button onclick="loadAllUsersActivity()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition">
+                                🔄 Làm Mới
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Statistics -->
+                    <div id="statsContainer" class="mb-6 hidden">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">📊 Thống Kê Đăng Nhập (7 ngày gần đây)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600">Tổng Lượt Đăng Nhập</p>
+                                <p id="totalLogins" class="text-3xl font-bold text-blue-600">0</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600">Người Dùng Hoạt Động</p>
+                                <p id="uniqueUsers" class="text-3xl font-bold text-green-600">0</p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600">Trung Bình/Ngày</p>
+                                <p id="avgPerDay" class="text-3xl font-bold text-purple-600">0</p>
+                            </div>
+                        </div>
+                        <div id="mostActiveUsers" class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-gray-800 mb-2">🏆 Top Người Dùng Hoạt Động</h4>
+                            <div id="topUsersList"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="allActivityList" class="space-y-3">
+                        <div class="flex items-center justify-center py-12">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                            <span class="ml-3 text-gray-600">Đang tải...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 bg-white rounded-lg shadow-lg p-4 border-l-4 z-50 max-w-md">
+        <div class="flex items-center gap-3">
+            <div class="flex-shrink-0">
+                <svg id="toastIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+            </div>
+            <div class="flex-1">
+                <p id="toastMessage" class="text-sm font-medium text-gray-900"></p>
+            </div>
+            <button onclick="hideToast()" class="flex-shrink-0 text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            alert('Vui lòng đăng nhập để truy cập trang này');
+            window.location.href = 'admin-login.html';
+        }
+
+        // Parse JWT token
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (error) {
+                console.error('Error parsing JWT:', error);
+                return null;
+            }
+        }
+
+        // Check auth
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            
+            console.log('🔐 Auth Check:', {
+                hasToken: !!token,
+                tokenLength: token ? token.length : 0
+            });
+            
+            if (!token) {
+                console.error('❌ No token found');
+                alert('Vui lòng đăng nhập với tài khoản ADMIN để truy cập trang này');
+                window.location.href = 'admin-login.html';
+                return false;
+            }
+
+            // Parse token to check role
+            try {
+                const tokenPayload = parseJwt(token);
+                console.log('🔍 Token Payload:', tokenPayload);
+                
+                if (!tokenPayload || !tokenPayload.role || tokenPayload.role !== 'ADMIN') {
+                    console.error('❌ Invalid role or token payload:', tokenPayload);
+                    alert('⛔ Chỉ ADMIN mới có quyền truy cập!');
+                    window.location.href = 'admin-login.html';
+                    return false;
+                }
+                
+                console.log('✅ Auth successful - ADMIN role confirmed');
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Token validation error:', error);
+                alert('Token không hợp lệ. Vui lòng đăng nhập lại.');
+                localStorage.removeItem('token');
+                window.location.href = 'admin-login.html';
+                return false;
+            }
+        }
+
+        checkAuth();
+
+        function getAuthHeaders() {
+            return {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        // Tab Management
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            const tabs = {
+                'profile': 'profileTab',
+                'password': 'passwordTab',
+                'activity': 'activityTab',
+                'all-activity': 'allActivityTab'
+            };
+            
+            document.getElementById(tabs[tabName]).classList.remove('hidden');
+            event.target.classList.add('active');
+            
+            // Load data for specific tabs
+            if (tabName === 'activity') {
+                loadActivityLogs();
+            } else if (tabName === 'all-activity') {
+                loadAllUsersActivity();
+            }
+        }
+
+        // Load Profile
+        async function loadProfile() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/settings/profile`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) throw new Error('Failed to load profile');
+
+                const data = await response.json();
+                const user = data.data;
+                
+                document.getElementById('username').value = user.username;
+                document.getElementById('full_name').value = user.full_name || '';
+                document.getElementById('email').value = user.email;
+                document.getElementById('last_login').value = user.last_login ? new Date(user.last_login).toLocaleString('vi-VN') : 'Chưa đăng nhập';
+                
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                showToast('❌ Không thể tải thông tin cá nhân', 'error');
+            }
+        }
+
+        // Update Profile
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/settings/profile`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        full_name: document.getElementById('full_name').value,
+                        email: document.getElementById('email').value
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to update profile');
+                }
+                
+                showToast('✅ Cập nhật thông tin thành công!', 'success');
+                loadProfile();
+                
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showToast('❌ ' + error.message, 'error');
+            }
+        });
+
+        // Change Password
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            if (newPassword !== confirmPassword) {
+                showToast('❌ Mật khẩu xác nhận không khớp', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/settings/change-password`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        current_password: document.getElementById('current_password').value,
+                        new_password: newPassword
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to change password');
+                }
+                
+                showToast('✅ Đổi mật khẩu thành công!', 'success');
+                document.getElementById('passwordForm').reset();
+                
+            } catch (error) {
+                console.error('Error changing password:', error);
+                showToast('❌ ' + error.message, 'error');
+            }
+        });
+
+        // Load Activity Logs
+        async function loadActivityLogs() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/settings/activity-logs?limit=50`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) throw new Error('Failed to load activity logs');
+
+                const data = await response.json();
+                const logs = data.data;
+                
+                const container = document.getElementById('activityList');
+                
+                if (logs.length === 0) {
+                    container.innerHTML = '<p class="text-center text-gray-500 py-8">Chưa có hoạt động nào</p>';
+                    return;
+                }
+                
+                container.innerHTML = logs.map(log => `
+                    <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="flex-shrink-0">
+                            ${getActionIcon(log.action)}
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-medium text-gray-900">${getActionName(log.action)}</p>
+                                    <p class="text-sm text-gray-600">${log.description || ''}</p>
+                                </div>
+                                <span class="text-xs text-gray-500">${new Date(log.created_at).toLocaleString('vi-VN')}</span>
+                            </div>
+                            <div class="mt-2 text-xs text-gray-500">
+                                <span>IP: ${log.ip_address || 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading activity logs:', error);
+                document.getElementById('activityList').innerHTML = '<p class="text-center text-red-500 py-8">❌ Không thể tải lịch sử hoạt động</p>';
+            }
+        }
+
+        // Load All Users Activity
+        async function loadAllUsersActivity() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/settings/all-users-activity?limit=100`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) throw new Error('Failed to load activity');
+
+                const data = await response.json();
+                const logs = data.data;
+                
+                const container = document.getElementById('allActivityList');
+                
+                if (logs.length === 0) {
+                    container.innerHTML = '<p class="text-center text-gray-500 py-8">Chưa có hoạt động nào</p>';
+                    return;
+                }
+                
+                container.innerHTML = logs.map(log => `
+                    <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="flex-shrink-0">
+                            ${getActionIcon(log.action)}
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-medium text-gray-900">${log.User ? log.User.full_name || log.User.username : 'Unknown User'}</p>
+                                    <p class="text-sm text-gray-600">${getActionName(log.action)} - ${log.description || ''}</p>
+                                </div>
+                                <span class="text-xs text-gray-500">${new Date(log.created_at).toLocaleString('vi-VN')}</span>
+                            </div>
+                            <div class="mt-2 text-xs text-gray-500">
+                                <span>IP: ${log.ip_address || 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading all activity:', error);
+                document.getElementById('allActivityList').innerHTML = '<p class="text-center text-red-500 py-8">❌ Không thể tải dữ liệu</p>';
+            }
+        }
+
+        // Load Login Statistics
+        async function loadLoginStats() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/settings/login-stats?days=7`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) throw new Error('Failed to load stats');
+
+                const result = await response.json();
+                const data = result.data;
+                
+                // Show stats container
+                document.getElementById('statsContainer').classList.remove('hidden');
+                
+                // Calculate totals
+                const totalLogins = data.logins_by_date.reduce((sum, item) => sum + parseInt(item.count), 0);
+                const avgPerDay = Math.round(totalLogins / 7);
+                
+                document.getElementById('totalLogins').textContent = totalLogins;
+                document.getElementById('uniqueUsers').textContent = data.unique_users;
+                document.getElementById('avgPerDay').textContent = avgPerDay;
+                
+                // Top users
+                const topUsersHtml = data.most_active_users.slice(0, 5).map((user, index) => `
+                    <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-gray-500">#${index + 1}</span>
+                            <span class="font-medium">${user.User ? user.User.full_name || user.User.username : 'Unknown'}</span>
+                        </div>
+                        <span class="text-sm text-gray-600">${user.activity_count} hoạt động</span>
+                    </div>
+                `).join('');
+                
+                document.getElementById('topUsersList').innerHTML = topUsersHtml;
+                
+                showToast('✅ Đã tải thống kê', 'success');
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                showToast('❌ Không thể tải thống kê', 'error');
+            }
+        }
+
+        // Helper Functions
+        function getActionIcon(action) {
+            const icons = {
+                'LOGIN': '🔓',
+                'LOGOUT': '🔒',
+                'UPDATE_PROFILE': '✏️',
+                'CHANGE_PASSWORD': '🔑',
+                'CREATE': '➕',
+                'UPDATE': '✏️',
+                'DELETE': '🗑️'
+            };
+            return `<span class="text-2xl">${icons[action] || '📝'}</span>`;
+        }
+
+        function getActionName(action) {
+            const names = {
+                'LOGIN': 'Đăng Nhập',
+                'LOGOUT': 'Đăng Xuất',
+                'UPDATE_PROFILE': 'Cập Nhật Profile',
+                'CHANGE_PASSWORD': 'Đổi Mật Khẩu',
+                'CREATE': 'Tạo Mới',
+                'UPDATE': 'Cập Nhật',
+                'DELETE': 'Xóa'
+            };
+            return names[action] || action;
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            
+            toastMessage.textContent = message;
+            
+            if (type === 'error') {
+                toast.className = 'fixed bottom-6 right-6 bg-white rounded-lg shadow-lg p-4 border-l-4 border-red-500 z-50 max-w-md';
+                toastIcon.className = 'w-6 h-6 text-red-500';
+                toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
+            } else {
+                toast.className = 'fixed bottom-6 right-6 bg-white rounded-lg shadow-lg p-4 border-l-4 border-green-500 z-50 max-w-md';
+                toastIcon.className = 'w-6 h-6 text-green-500';
+                toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
+            }
+            
+            toast.classList.remove('hidden');
+            setTimeout(() => hideToast(), 3000);
+        }
+
+        function hideToast() {
+            document.getElementById('toast').classList.add('hidden');
+        }
+
+        // Initialize
+        loadProfile();
+    </script>
+
+</body>
+</html>

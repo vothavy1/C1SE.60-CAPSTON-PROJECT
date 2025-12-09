@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi Tiết Báo Cáo - CS60</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #ffffff 0%, #e3f2fd 100%);
+            min-height: 100vh;
+        }
+        
+        .card-shadow {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .json-viewer {
+            background: #1e293b;
+            color: #e2e8f0;
+            font-family: 'Courier New', monospace;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            max-height: 500px;
+        }
+        
+        .json-key {
+            color: #60a5fa;
+        }
+        
+        .json-string {
+            color: #86efac;
+        }
+        
+        .json-number {
+            color: #fbbf24;
+        }
+        
+        .json-boolean {
+            color: #f472b6;
+        }
+        
+        .json-null {
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body class="p-6">
+    <!-- Header -->
+    <div class="max-w-6xl mx-auto mb-6">
+        <div class="flex items-center gap-4 mb-4">
+            <button onclick="goBack()" class="p-2 bg-white hover:bg-gray-100 rounded-lg transition shadow">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+            </button>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">📊 Chi Tiết Báo Cáo</h1>
+                <p class="text-gray-600 mt-1">Xem thông tin chi tiết và dữ liệu báo cáo</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto">
+        <div class="bg-white rounded-xl card-shadow overflow-hidden">
+            
+            <!-- Report Info Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-2" id="reportTitle">Đang tải...</h2>
+                        <p class="text-blue-100" id="reportSubtitle"></p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-bold" id="reportId">#--</div>
+                        <div class="text-blue-100 text-sm mt-1" id="reportDate"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Details -->
+            <div class="p-6 space-y-6">
+                
+                <!-- Main Information Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="mainInfo">
+                    <!-- Will be populated with key info -->
+                </div>
+
+                <!-- Violation Details (if applicable) -->
+                <div id="violationSection" class="bg-red-50 border border-red-200 rounded-lg p-6" style="display: none;">
+                    <h3 class="text-lg font-bold text-red-900 mb-4">⚠️ Thông Tin Vi Phạm</h3>
+                    <div class="space-y-3" id="violationDetails">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex justify-center gap-3 pt-6 border-t">
+                    <button onclick="goBack()" 
+                            class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium flex items-center gap-2 shadow-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        Quay Lại
+                    </button>
+                    <button onclick="printReport()" 
+                            class="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                        </svg>
+                        In Báo Cáo
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        let reportData = null;
+
+        // Get token from localStorage
+        function getAuthHeaders() {
+            const token = localStorage.getItem('token');
+            return {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        // Get report ID from URL
+        function getReportIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        // Load report details
+        async function loadReportDetails() {
+            const reportId = getReportIdFromUrl();
+            
+            if (!reportId) {
+                alert('Không tìm thấy ID báo cáo');
+                goBack();
+                return;
+            }
+
+            try {
+                console.log(`📊 Loading report #${reportId}...`);
+                
+                const response = await fetch(`${API_BASE_URL}/reports/${reportId}`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    reportData = data.data;
+                    displayReportDetails(reportData);
+                } else {
+                    throw new Error('Không thể tải dữ liệu báo cáo');
+                }
+
+            } catch (error) {
+                console.error('❌ Error loading report:', error);
+                alert(`Lỗi khi tải báo cáo: ${error.message}`);
+                goBack();
+            }
+        }
+
+        // Display report details
+        function displayReportDetails(report) {
+            // Header
+            document.getElementById('reportId').textContent = `#${report.report_id}`;
+            document.getElementById('reportTitle').textContent = report.report_name || 'Báo Cáo Hệ Thống';
+            document.getElementById('reportSubtitle').textContent = formatReportType(report.report_type);
+            document.getElementById('reportDate').textContent = new Date(report.created_at).toLocaleString('vi-VN');
+
+            const parameters = report.parameters || {};
+            
+            // Display main information
+            displayMainInfo(report, parameters);
+            
+            // Display violation details if it's a violation report
+            if (report.report_type === 'VIOLATION' || parameters.violation_type) {
+                displayViolationInfo(parameters);
+            }
+        }
+
+        // Format report type
+        function formatReportType(type) {
+            const types = {
+                'STATISTICS': '📊 Thống Kê',
+                'NOTIFICATION': '🔔 Thông Báo',
+                'ACTIVITY_LOG': '📋 Nhật Ký',
+                'VIOLATION': '⚠️ Vi Phạm',
+                'TEST': '✅ Kiểm Tra'
+            };
+            return types[type] || type;
+        }
+
+        // Display main information cards
+        function displayMainInfo(report, parameters) {
+            const container = document.getElementById('mainInfo');
+            const cards = [];
+
+            // Card 1: Tên Ứng Viên
+            if (parameters.candidate_name) {
+                cards.push({
+                    icon: '👤',
+                    label: 'Ứng Viên',
+                    value: parameters.candidate_name,
+                    color: 'blue'
+                });
+            }
+
+            // Card 2: Tên Bài Test
+            if (parameters.test_name) {
+                cards.push({
+                    icon: '📝',
+                    label: 'Bài Test',
+                    value: parameters.test_name,
+                    color: 'green'
+                });
+            }
+
+            // Card 3: Vi Phạm
+            if (parameters.violation_type) {
+                cards.push({
+                    icon: '⚠️',
+                    label: 'Loại Vi Phạm',
+                    value: formatViolationType(parameters.violation_type),
+                    color: 'red'
+                });
+            }
+
+            // Card 4: Ngày Giờ
+            cards.push({
+                icon: '🕐',
+                label: 'Thời Gian',
+                value: new Date(report.created_at).toLocaleString('vi-VN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }),
+                color: 'purple'
+            });
+
+            if (cards.length === 0) {
+                container.innerHTML = '<div class="col-span-2 text-center text-gray-500 py-8">Không có thông tin chi tiết</div>';
+                return;
+            }
+
+            container.innerHTML = cards.map(card => `
+                <div class="bg-${card.color}-50 border border-${card.color}-200 rounded-lg p-6">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="text-2xl">${card.icon}</span>
+                        <span class="text-sm text-${card.color}-600 font-semibold">${card.label}</span>
+                    </div>
+                    <div class="text-xl font-bold text-gray-900 pl-11">${card.value}</div>
+                </div>
+            `).join('');
+        }
+
+        // Display violation detailed information
+        function displayViolationInfo(parameters) {
+            const section = document.getElementById('violationSection');
+            const container = document.getElementById('violationDetails');
+            
+            section.style.display = 'block';
+            
+            const details = [];
+            
+            if (parameters.event_count !== undefined) {
+                details.push(`<div class="flex justify-between items-center">
+                    <span class="text-gray-700 font-medium">Số lần vi phạm:</span>
+                    <span class="text-2xl font-bold text-red-600">${parameters.event_count}</span>
+                </div>`);
+            }
+            
+            if (parameters.description) {
+                details.push(`<div>
+                    <span class="text-gray-700 font-medium block mb-2">Mô tả vi phạm:</span>
+                    <p class="text-gray-600 bg-white rounded p-3 border border-red-200">${parameters.description}</p>
+                </div>`);
+            }
+            
+            if (parameters.candidate_test_id) {
+                details.push(`<div class="flex justify-between items-center">
+                    <span class="text-gray-700 font-medium">Mã bài thi:</span>
+                    <span class="font-mono text-gray-900 bg-white px-3 py-1 rounded border border-red-200">#${parameters.candidate_test_id}</span>
+                </div>`);
+            }
+            
+            container.innerHTML = details.join('');
+        }
+
+        // Format violation type
+        function formatViolationType(type) {
+            const types = {
+                'TAB_SWITCH': '🔄 Chuyển Tab',
+                'COPY_PASTE': '📋 Copy/Paste',
+                'MULTIPLE_WINDOWS': '🪟 Nhiều Cửa Sổ',
+                'SCREENSHOT': '📸 Chụp Màn Hình',
+                'OTHER': '❓ Khác'
+            };
+            return types[type] || type;
+        }
+
+        // Format duration
+        function formatDuration(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Print report
+        function printReport() {
+            window.print();
+        }
+
+        // Go back
+        function goBack() {
+            window.history.back();
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', loadReportDetails);
+    </script>
+</body>
+</html>

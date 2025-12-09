@@ -41,9 +41,23 @@ const User = sequelize.define(
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',
     },
+    company_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'companies',
+        key: 'company_id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+    },
     is_active: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
+    },
+    status: {
+      type: DataTypes.ENUM('ACTIVE', 'PENDING', 'INACTIVE', 'SUSPENDED'),
+      defaultValue: 'ACTIVE'
     },
     last_login: {
       type: DataTypes.DATE,

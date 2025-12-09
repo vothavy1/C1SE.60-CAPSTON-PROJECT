@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Báo Cáo & Thống Kê - ExamPro</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
   <style>
     .stat-card {
       transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -19,7 +20,7 @@
       transition: all 0.3s ease;
     }
     .tab-button.active {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      background: #1976d2;
       color: white;
     }
     .tab-button.active::after {
@@ -29,22 +30,73 @@
       left: 0;
       right: 0;
       height: 3px;
-      background: #fbbf24;
+      background: #1976d2;
+    }
+    
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      animation: fadeIn 0.2s ease;
+    }
+    .modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 1rem;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      animation: slideIn 0.3s ease;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #ef4444;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
 
-<body class="bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-800 min-h-screen text-white font-sans">
+<body class="light-mode min-h-screen transition-colors duration-300">
 
   <!-- Navigation Header -->
-  <header class="bg-white/10 backdrop-blur-md shadow-lg border-b border-purple-400/30">
+  <header class="header-bg backdrop-blur-md shadow-lg border-b sticky top-0 z-50 transition-colors duration-300">
     <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
-      <h1 class="text-2xl font-bold text-white tracking-wide">📊 Báo Cáo & Thống Kê</h1>
+      <h1 class="text-2xl font-bold tracking-wide"></h1>
       <div class="flex items-center gap-4">
-        <button id="refreshBtn" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+        <div class="theme-toggle" id="themeToggle" title="Chuyển đổi sáng/tối"></div>
+        <button id="refreshBtn" class="btn-primary px-4 py-2 rounded-lg transition">
           🔄 Làm Mới
         </button>
-        <a href="recruiter.html" class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+        <a href="recruiter.html" class="btn-secondary px-4 py-2 rounded-lg transition">
           ← Quay Lại
         </a>
       </div>
@@ -54,169 +106,285 @@
   <!-- Main Content -->
   <main class="max-w-7xl mx-auto p-6">
 
-    <!-- Statistics Overview Cards -->
-    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="stat-card bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-6 shadow-xl">
-        <div class="flex justify-between items-start mb-4">
-          <h3 class="text-white/80 text-sm font-medium">Tổng Số Bài Thi</h3>
-          <span class="text-3xl">📝</span>
-        </div>
-        <p id="totalTests" class="text-4xl font-bold text-white">0</p>
-        <p class="text-blue-200 text-sm mt-2">Tất cả các bài thi</p>
-      </div>
-
-      <div class="stat-card bg-gradient-to-br from-green-500 to-emerald-700 rounded-2xl p-6 shadow-xl">
-        <div class="flex justify-between items-start mb-4">
-          <h3 class="text-white/80 text-sm font-medium">Hoàn Thành</h3>
-          <span class="text-3xl">✅</span>
-        </div>
-        <p id="completedTests" class="text-4xl font-bold text-white">0</p>
-        <p class="text-green-200 text-sm mt-2">Đã nộp bài</p>
-      </div>
-
-      <div class="stat-card bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-6 shadow-xl">
-        <div class="flex justify-between items-start mb-4">
-          <h3 class="text-white/80 text-sm font-medium">Vi Phạm</h3>
-          <span class="text-3xl">⚠️</span>
-        </div>
-        <p id="totalViolations" class="text-4xl font-bold text-white">0</p>
-        <p class="text-orange-200 text-sm mt-2">Tổng số vi phạm</p>
-      </div>
-
-      <div class="stat-card bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 shadow-xl">
-        <div class="flex justify-between items-start mb-4">
-          <h3 class="text-white/80 text-sm font-medium">Điểm Trung Bình</h3>
-          <span class="text-3xl">📈</span>
-        </div>
-        <p id="avgScore" class="text-4xl font-bold text-white">0.0</p>
-        <p class="text-purple-200 text-sm mt-2">Trên tổng số 100</p>
-      </div>
-    </section>
-
-    <!-- Charts Section - Combined Chart -->
-    <section class="mb-8">
-      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-400/30">
-        <h3 class="text-xl font-semibold text-white mb-6">📊 Phân Bố Trạng Thái & Điểm Số</h3>
-        <div class="max-w-4xl mx-auto">
-          <canvas id="combinedChart" class="max-h-96"></canvas>
-        </div>
-      </div>
-    </section>
-
-    <!-- Tab Navigation - Only Violations and Notifications -->
-    <div class="bg-white/10 backdrop-blur-md rounded-t-2xl border-b border-purple-400/30">
-      <div class="flex gap-2 px-6 pt-4">
-        <button class="tab-button active px-6 py-3 rounded-t-lg font-medium" data-tab="violations">
-          ⚠️ Vi Phạm
+    <!-- Recruiter: Violations Section Only -->
+    <div id="recruiterSection" class="content-card rounded-2xl p-6 min-h-[500px]" style="display: none;">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-semibold flex items-center gap-2">
+          Báo Cáo Vi Phạm Công Ty
+        </h3>
+        <button onclick="loadRecruiterViolations()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition font-semibold text-sm shadow-lg flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          Làm Mới
         </button>
-        <button class="tab-button px-6 py-3 rounded-t-lg font-medium" data-tab="notifications">
-          📧 Thông Báo
+      </div>
+      
+      <!-- Date Filter Section -->
+      <div class="flex flex-wrap gap-3 mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
+        <div class="flex items-center gap-2">
+          <label class="font-semibold text-sm">📅 Từ ngày:</label>
+          <input type="date" id="recruiterStartDate" class="bg-white px-3 py-2 rounded-lg border border-gray-300 hover:border-blue-500 transition cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="font-semibold text-sm">📅 Đến ngày:</label>
+          <input type="date" id="recruiterEndDate" class="bg-white px-3 py-2 rounded-lg border border-gray-300 hover:border-blue-500 transition cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="font-semibold text-sm">🏷️ Loại:</label>
+          <select id="recruiterViolationTypeFilter" class="bg-white px-4 py-2 rounded-lg border border-gray-300 hover:border-blue-500 transition cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Tất cả loại vi phạm</option>
+            <option value="TAB_SWITCH">Chuyển tab</option>
+            <option value="COPY_PASTE">Sao chép dán</option>
+            <option value="SCREENSHOT">Chụp màn hình</option>
+            <option value="CAMERA_OFF">Tắt camera</option>
+            <option value="LOST_FOCUS">Mất focus</option>
+            <option value="MULTIPLE_FACES">Nhiều khuôn mặt</option>
+            <option value="NO_FACE">Không phát hiện khuôn mặt</option>
+            <option value="NONE">Không vi phạm</option>
+          </select>
+        </div>
+        <button id="applyRecruiterFilter" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-semibold text-sm shadow-lg">
+          🔍 Lọc Dữ Liệu
         </button>
+        <button id="resetRecruiterFilter" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition font-semibold text-sm">
+          🔄 Đặt Lại
+        </button>
+      </div>
+      
+      <!-- Violations Table -->
+      <div class="overflow-x-auto rounded-lg border border-gray-200">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-blue-600 text-white">
+            <tr>
+              <th class="px-4 py-3 font-semibold">ID</th>
+              <th class="px-4 py-3 font-semibold">Tên Ứng Viên</th>
+              <th class="px-4 py-3 font-semibold">Bài Thi</th>
+              <th class="px-4 py-3 font-semibold">Ngày Giờ</th>
+              <th class="px-4 py-3 font-semibold">Loại Vi Phạm</th>
+              <th class="px-4 py-3 font-semibold">Điểm Số</th>
+              <th class="px-4 py-3 font-semibold">Điểm Tự Chấm</th>
+              <th class="px-4 py-3 font-semibold">Kết Quả</th>
+              <th class="px-4 py-3 font-semibold">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody id="recruiterViolationsList" class="bg-white">
+            <tr>
+              <td colspan="9" class="text-center text-gray-500 py-8">
+                <div class="flex flex-col items-center gap-2">
+                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span>Đang tải dữ liệu vi phạm...</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- Tab Content -->
-    <div class="bg-white/10 backdrop-blur-md rounded-b-2xl rounded-tr-2xl p-6 border border-t-0 border-purple-400/30 min-h-[500px]">
+    <!-- Admin: All Reports from Database Only -->
+    <div id="adminSection" class="content-card rounded-2xl p-6" style="display: none;">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-semibold flex items-center gap-2">
+          Quản Lý Tất Cả Báo Cáo
+        </h3>
+      </div>
       
-      <!-- Violations Tab - Enhanced Table -->
-      <div id="violationsTab" class="tab-content">
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="text-xl font-semibold text-white flex items-center gap-2">
-            <span class="text-2xl">⚠️</span>
-            Báo Cáo Vi Phạm
-          </h3>
-          <div class="flex gap-2">
-            <select id="violationTypeFilter" class="bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30 hover:border-orange-400/50 transition cursor-pointer">
-              <option value="">Tất cả loại vi phạm</option>
-              <option value="tab_switch">🔄 Chuyển tab</option>
-              <option value="camera_off">📷 Tắt camera</option>
-              <option value="lost_focus">👁️ Mất focus</option>
-              <option value="other">⚠️ Khác</option>
-            </select>
-          </div>
+      <!-- Date Filter Section -->
+      <div class="flex flex-wrap gap-3 mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
+        <div class="flex items-center gap-2">
+          <label class="font-semibold text-sm">📅 Từ ngày:</label>
+          <input type="date" id="adminStartDate" class="bg-white px-3 py-2 rounded-lg border border-gray-300 hover:border-blue-500 transition cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
-        
-        <!-- Violations Table -->
-        <div class="overflow-x-auto rounded-lg border border-orange-400/20">
-          <table class="w-full text-left border-collapse">
-            <thead class="bg-gradient-to-r from-orange-500/30 to-red-500/30 text-orange-100">
-              <tr>
-                <th class="px-4 py-3 font-semibold">ID</th>
-                <th class="px-4 py-3 font-semibold">Tên Ứng Viên</th>
-                <th class="px-4 py-3 font-semibold">Bài Thi</th>
-                <th class="px-4 py-3 font-semibold">Ngày Giờ</th>
-                <th class="px-4 py-3 font-semibold">Loại Vi Phạm</th>
-                <th class="px-4 py-3 font-semibold">Điểm Số</th>
-                <th class="px-4 py-3 font-semibold">Kết Quả</th>
-              </tr>
-            </thead>
-            <tbody id="violationsList" class="text-white bg-purple-900/20">
-              <tr>
-                <td colspan="7" class="text-center text-purple-300 py-8">
-                  <div class="flex flex-col items-center gap-2">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400"></div>
-                    <span>Đang tải dữ liệu vi phạm...</span>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="flex items-center gap-2">
+          <label class="font-semibold text-sm">📅 Đến ngày:</label>
+          <input type="date" id="adminEndDate" class="bg-white px-3 py-2 rounded-lg border border-gray-300 hover:border-blue-500 transition cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
+        <div class="flex items-center gap-2">
+          <label class="font-semibold text-sm">🏷️ Loại Vi Phạm:</label>
+          <select id="dbReportTypeFilter" class="bg-white px-4 py-2 rounded-lg border border-gray-300 hover:border-blue-500 transition cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Tất cả loại vi phạm</option>
+            <option value="TAB_SWITCH">Chuyển tab</option>
+            <option value="WINDOW_BLUR">Mất focus cửa sổ</option>
+            <option value="COPY_PASTE">Copy/Paste</option>
+            <option value="MULTIPLE_FACES">Nhiều khuôn mặt</option>
+            <option value="NO_FACE">Không có khuôn mặt</option>
+            <option value="SUSPICIOUS_ACTIVITY">Hoạt động đáng ngờ</option>
+          </select>
+        </div>
+        <button id="applyAdminFilter" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-semibold text-sm shadow-lg">
+          🔍 Lọc Dữ Liệu
+        </button>
+        <button id="resetAdminFilter" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition font-semibold text-sm">
+          🔄 Đặt Lại
+        </button>
+        <button id="refreshDbReportsBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition font-semibold text-sm">
+          🔄 Làm Mới
+        </button>
       </div>
 
-      <!-- Notifications Tab -->
-      <div id="notificationsTab" class="tab-content hidden">
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="text-xl font-semibold text-white">Gửi Thông Báo</h3>
-        </div>
-        
-        <!-- Send Notification Form -->
-        <div class="bg-purple-900/30 rounded-xl p-6 mb-6 border border-purple-400/20">
-          <h4 class="text-lg font-semibold text-white mb-4">📤 Gửi Thông Báo Mới</h4>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-purple-200 text-sm mb-2">Ứng Viên</label>
-              <select id="notifyCandidateId" class="w-full bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30">
-                <option value="">Chọn ứng viên...</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-purple-200 text-sm mb-2">Bài Thi</label>
-              <select id="notifyTestId" class="w-full bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30">
-                <option value="">Chọn bài thi...</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-purple-200 text-sm mb-2">Loại Thông Báo</label>
-              <select id="notifyType" class="w-full bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30">
-                <option value="violation_warning">⚠️ Cảnh báo vi phạm</option>
-                <option value="test_reminder">📅 Nhắc nhở làm bài</option>
-                <option value="result_available">✅ Kết quả đã có</option>
-                <option value="general">💬 Thông báo chung</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-purple-200 text-sm mb-2">Nội Dung</label>
-              <textarea id="notifyMessage" rows="4" class="w-full bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30" placeholder="Nhập nội dung thông báo..."></textarea>
-            </div>
-            <button id="sendNotificationBtn" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition">
-              📧 Gửi Thông Báo
-            </button>
-          </div>
-        </div>
-
-        <!-- Notifications List -->
-        <div>
-          <h4 class="text-lg font-semibold text-white mb-4">📬 Lịch Sử Thông Báo</h4>
-          <div id="notificationsList" class="space-y-3 max-h-96 overflow-y-auto">
-            <div class="text-center text-purple-300 py-8">Đang tải...</div>
-          </div>
-        </div>
+      <!-- Database Reports Table -->
+      <div class="overflow-x-auto rounded-lg border border-gray-200">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-blue-600 text-white">
+            <tr>
+              <th class="px-4 py-3 font-semibold">ID</th>
+              <th class="px-4 py-3 font-semibold">Ứng Viên</th>
+              <th class="px-4 py-3 font-semibold">Loại Vi Phạm</th>
+              <th class="px-4 py-3 font-semibold">Công Ty</th>
+              <th class="px-4 py-3 font-semibold">Thời Gian</th>
+              <th class="px-4 py-3 font-semibold text-center">Xem Bài Làm</th>
+              <th class="px-4 py-3 font-semibold text-center">Điểm</th>
+            </tr>
+          </thead>
+          <tbody id="dbReportsList" class="bg-white">
+            <tr>
+              <td colspan="6" class="text-center text-gray-500 py-8">
+                <div class="flex flex-col items-center gap-2">
+                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span>Đang tải danh sách báo cáo từ database...</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-
     </div>
 
   </main>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">Xác Nhận Xóa Báo Cáo</h3>
+        <p class="text-gray-600 mb-4">Bạn có chắc chắn muốn xóa báo cáo này?</p>
+        
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <p class="text-sm font-semibold text-red-800 mb-2" id="deleteReportName"></p>
+          <p class="text-xs text-red-600">⚠️ Hành động này không thể hoàn tác!</p>
+        </div>
+      </div>
+
+      <div id="deleteModalContent">
+        <div class="flex gap-3">
+          <button id="cancelDeleteBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-lg transition duration-200">
+            Hủy Bỏ
+          </button>
+          <button id="confirmDeleteBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition duration-200">
+            Xóa Báo Cáo
+          </button>
+        </div>
+      </div>
+
+      <div id="deleteModalLoading" class="hidden">
+        <div class="spinner"></div>
+        <p class="text-center text-gray-600 mt-4">Đang xóa báo cáo...</p>
+      </div>
+
+      <div id="deleteModalSuccess" class="hidden">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <p class="text-lg font-semibold text-green-600 mb-4">Đã xóa báo cáo thành công!</p>
+          <button id="closeSuccessBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+            Đóng
+          </button>
+        </div>
+      </div>
+
+      <div id="deleteModalError" class="hidden">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </div>
+          <p class="text-lg font-semibold text-red-600 mb-2">Không thể xóa báo cáo!</p>
+          <p class="text-sm text-gray-600 mb-4" id="deleteErrorMessage"></p>
+          <button id="closeErrorBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">Sửa Tên Báo Cáo</h3>
+      </div>
+
+      <div id="editModalContent">
+        <div class="mb-4">
+          <label class="block text-gray-700 font-semibold mb-2">Tên báo cáo hiện tại:</label>
+          <p class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-4" id="editCurrentName"></p>
+          
+          <label class="block text-gray-700 font-semibold mb-2">Tên báo cáo mới:</label>
+          <input type="text" id="editReportNameInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Nhập tên báo cáo mới...">
+          <p class="text-xs text-gray-500 mt-2">💡 Tên báo cáo không được để trống</p>
+        </div>
+
+        <div class="flex gap-3">
+          <button id="cancelEditBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-lg transition duration-200">
+            Hủy Bỏ
+          </button>
+          <button id="confirmEditBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
+            Lưu Thay Đổi
+          </button>
+        </div>
+      </div>
+
+      <div id="editModalLoading" class="hidden">
+        <div class="spinner"></div>
+        <p class="text-center text-gray-600 mt-4">Đang cập nhật báo cáo...</p>
+      </div>
+
+      <div id="editModalSuccess" class="hidden">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <p class="text-lg font-semibold text-green-600 mb-4">Đã cập nhật báo cáo thành công!</p>
+          <button id="closeEditSuccessBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+            Đóng
+          </button>
+        </div>
+      </div>
+
+      <div id="editModalError" class="hidden">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </div>
+          <p class="text-lg font-semibold text-red-600 mb-2">Không thể cập nhật báo cáo!</p>
+          <p class="text-sm text-gray-600 mb-4" id="editErrorMessage"></p>
+          <button id="closeEditErrorBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     // API Configuration
@@ -229,198 +397,66 @@
       window.location.href = 'login.html';
     }
     
-    // Get user info to check role
-    const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
-    if (userInfo.role === 'CANDIDATE') {
-      alert('❌ Chỉ có Nhà tuyển dụng (RECRUITER) và Quản trị viên (ADMIN) mới được xem báo cáo.\n\nỨng viên không có quyền truy cập trang này.');
+    // ✅ ĐÚNG: Đọc role từ session_user (không phải user)
+    const sessionUser = JSON.parse(localStorage.getItem('session_user') || '{}');
+    const userRole = sessionUser.role;
+    
+    console.log('👤 Session User:', sessionUser);
+    console.log('👤 User Role:', userRole);
+    
+    // Allow ADMIN and RECRUITER, block CANDIDATE and undefined
+    if (!userRole) {
+      alert('❌ Không tìm thấy thông tin quyền truy cập.\n\nVui lòng đăng nhập lại!');
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+    
+    if (userRole === 'CANDIDATE') {
+      alert('❌ Ứng viên không có quyền truy cập trang báo cáo.\n\nChỉ dành cho Quản trị viên và Nhà tuyển dụng!');
       window.location.href = 'index.html';
     }
+    
+    console.log('✅ Access granted for role:', userRole);
 
-    // Chart instances
-    let combinedChart;
+    // Global variables for modals
+    let currentDeleteReportId = null;
+    let currentEditReportId = null;
 
-    // ========== TAB NAVIGATION ==========
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
 
-    tabButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const tabName = button.dataset.tab;
-        
-        // Update active button
-        tabButtons.forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-        
-        // Show corresponding content
-        tabContents.forEach(content => content.classList.add('hidden'));
-        document.getElementById(`${tabName}Tab`).classList.remove('hidden');
-        
-        // Load data for active tab
-        loadTabData(tabName);
-      });
-    });
 
-    // ========== LOAD STATISTICS ==========
-    async function loadStatistics() {
+    // ========== LOAD RECRUITER VIOLATIONS (Company Only) ==========
+    async function loadRecruiterViolations() {
       try {
-        console.log('📊 Loading statistics from API...');
-        const response = await fetch(`${API_BASE_URL}/reports/statistics`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        console.log('📊 Statistics API Response Status:', response.status);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ Statistics API Error:', errorText);
-          throw new Error('Failed to load statistics');
-        }
-
-        const result = await response.json();
-        console.log('📊 Statistics Data:', result);
+        console.log('⚠️ [RECRUITER] Loading violations from API...');
         
-        const stats = result.data;
-
-        if (!stats) {
-          console.warn('⚠️ No statistics data returned');
-          return;
-        }
-
-        console.log('📊 Processing statistics:', {
-          totalTests: stats.totalTests,
-          completedTests: stats.completedTests,
-          totalViolations: stats.totalViolations,
-          avgScore: stats.averageScore
-        });
-
-        // Update stat cards
-        document.getElementById('totalTests').textContent = stats.totalTests || 0;
-        document.getElementById('completedTests').textContent = stats.completedTests || 0;
-        document.getElementById('totalViolations').textContent = stats.totalViolations || 0;
-        document.getElementById('avgScore').textContent = (stats.averageScore || 0).toFixed(1);
-
-        // Update combined chart
-        updateCombinedChart(stats.statusDistribution || {}, stats.scoreDistribution || {});
-
-        console.log('✅ Statistics loaded successfully');
-
-      } catch (error) {
-        console.error('❌ Error loading statistics:', error);
-        console.error('Error details:', error.message, error.stack);
+        // Get filter values
+        const violationType = document.getElementById('recruiterViolationTypeFilter').value;
+        const startDate = document.getElementById('recruiterStartDate').value;
+        const endDate = document.getElementById('recruiterEndDate').value;
         
-        // Show default values instead of error message
-        document.getElementById('totalTests').textContent = '0';
-        document.getElementById('completedTests').textContent = '0';
-        document.getElementById('totalViolations').textContent = '0';
-        document.getElementById('avgScore').textContent = '0.0';
-      }
-    }
-
-    // ========== CHARTS ==========
-    function updateCombinedChart(statusData, scoreData) {
-      const ctx = document.getElementById('combinedChart').getContext('2d');
-      
-      if (combinedChart) {
-        combinedChart.destroy();
-      }
-
-      combinedChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ['Hoàn Thành', 'Đang Làm', 'Chưa Làm', '0-20đ', '21-40đ', '41-60đ', '61-80đ', '81-100đ'],
-          datasets: [
-            {
-              label: 'Trạng Thái',
-              data: [
-                statusData.completed || 0,
-                statusData.in_progress || 0,
-                statusData.not_started || 0,
-                null, null, null, null, null
-              ],
-              backgroundColor: 'rgba(34, 197, 94, 0.7)',
-              borderColor: 'rgba(34, 197, 94, 1)',
-              borderWidth: 2,
-              borderRadius: 5
-            },
-            {
-              label: 'Phân Bố Điểm',
-              data: [
-                null, null, null,
-                scoreData['0-20'] || 0,
-                scoreData['21-40'] || 0,
-                scoreData['41-60'] || 0,
-                scoreData['61-80'] || 0,
-                scoreData['81-100'] || 0
-              ],
-              backgroundColor: 'rgba(139, 92, 246, 0.7)',
-              borderColor: 'rgba(139, 92, 246, 1)',
-              borderWidth: 2,
-              borderRadius: 5
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { 
-                color: 'white', 
-                stepSize: 1,
-                font: { size: 12 }
-              },
-              grid: { color: 'rgba(255, 255, 255, 0.1)' },
-              title: {
-                display: true,
-                text: 'Số Lượng',
-                color: 'white',
-                font: { size: 14, weight: 'bold' }
-              }
-            },
-            x: {
-              ticks: { 
-                color: 'white',
-                font: { size: 11 }
-              },
-              grid: { color: 'rgba(255, 255, 255, 0.1)' }
-            }
-          },
-          plugins: {
-            legend: {
-              position: 'top',
-              labels: { 
-                color: 'white', 
-                font: { size: 13, weight: 'bold' },
-                padding: 15,
-                usePointStyle: true
-              }
-            },
-            tooltip: {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              titleColor: 'white',
-              bodyColor: 'white',
-              borderColor: 'rgba(139, 92, 246, 0.5)',
-              borderWidth: 1,
-              padding: 12,
-              displayColors: true
-            }
-          }
-        }
-      });
-    }
-
-    // ========== LOAD VIOLATIONS ==========
-    async function loadViolations() {
-      try {
-        console.log('⚠️ Loading violations from API...');
-        const filter = document.getElementById('violationTypeFilter').value;
+        // Build URL with filters
         let url = `${API_BASE_URL}/reports/violations`;
-        if (filter) url += `?violationType=${filter}`;
+        const params = [];
+        
+        if (violationType) params.push(`violationType=${violationType}`);
+        if (startDate) params.push(`startDate=${startDate}`);
+        if (endDate) params.push(`endDate=${endDate}`);
+        
+        // Add timestamp to prevent caching
+        params.push(`_t=${Date.now()}`);
+        
+        if (params.length > 0) {
+          url += '?' + params.join('&');
+        }
 
         console.log('⚠️ Fetching from:', url);
         const response = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
         });
 
         console.log('⚠️ Violations API Response Status:', response.status);
@@ -437,17 +473,17 @@
         const violations = result.data || [];
         console.log(`⚠️ Found ${violations.length} violations`);
 
-        const violationsList = document.getElementById('violationsList');
+        const violationsList = document.getElementById('recruiterViolationsList');
         
         if (violations.length === 0) {
           console.log('ℹ️ No violations found, showing empty message');
           violationsList.innerHTML = `
             <tr>
-              <td colspan="7" class="text-center text-purple-300 py-12">
+              <td colspan="9" class="text-center text-gray-500 py-12">
                 <div class="flex flex-col items-center gap-3">
                   <span class="text-5xl">✅</span>
                   <span class="text-lg font-semibold">Không có vi phạm nào được ghi nhận</span>
-                  <span class="text-sm text-purple-400">Tất cả ứng viên đang tuân thủ quy định</span>
+                  <span class="text-sm text-gray-400">Tất cả ứng viên đang tuân thủ quy định</span>
                 </div>
               </td>
             </tr>
@@ -468,47 +504,83 @@
           let resultBadge = '';
           const score = parseInt(v.score) || 0;
           if (v.result === 'passed' || v.passed || score >= 50) {
-            resultBadge = '<span class="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-xs font-semibold">✅ Đạt</span>';
+            resultBadge = '<span class="px-3 py-1 text-gray-800 text-xs font-medium">✅ Đạt</span>';
           } else if (v.result === 'failed' || v.passed === false || score < 50) {
-            resultBadge = '<span class="px-3 py-1 bg-red-500/20 text-red-300 rounded-full text-xs font-semibold">❌ Không đạt</span>';
+            resultBadge = '<span class="px-3 py-1 text-gray-800 text-xs font-medium">❌ Không đạt</span>';
           } else {
-            resultBadge = '<span class="px-3 py-1 bg-gray-500/20 text-gray-300 rounded-full text-xs font-semibold">⏳ Đang làm</span>';
+            resultBadge = '<span class="px-3 py-1 text-gray-800 text-xs font-medium">⏳ Đang làm</span>';
           }
 
-          // Format violation type display with color coding
+          // Format violation type display - plain text only
           const typeDisplay = {
-            'tab_switch': '<span class="px-2 py-1 bg-orange-500/20 text-orange-300 rounded text-xs">🔄 Chuyển tab</span>',
-            'camera_off': '<span class="px-2 py-1 bg-red-500/20 text-red-300 rounded text-xs">📷 Tắt camera</span>',
-            'lost_focus': '<span class="px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded text-xs">👁️ Mất focus</span>',
-            'other': '<span class="px-2 py-1 bg-gray-500/20 text-gray-300 rounded text-xs">⚠️ Khác</span>'
-          }[v.violation_type] || `<span class="px-2 py-1 bg-gray-500/20 text-gray-300 rounded text-xs">${v.violation_type || 'N/A'}</span>`;
+            'TAB_SWITCH': '<span class="text-gray-800 text-xs font-medium">Chuyển tab</span>',
+            'tab_switch': '<span class="text-gray-800 text-xs font-medium">Chuyển tab</span>',
+            'COPY_PASTE': '<span class="text-gray-800 text-xs font-medium">Sao chép</span>',
+            'SCREENSHOT': '<span class="text-gray-800 text-xs font-medium">Chụp màn hình</span>',
+            'MULTIPLE_WINDOWS': '<span class="text-gray-800 text-xs font-medium">Nhiều cửa sổ</span>',
+            'camera_off': '<span class="text-gray-800 text-xs font-medium">Tắt camera</span>',
+            'lost_focus': '<span class="text-gray-800 text-xs font-medium">Mất focus</span>',
+            'other': '<span class="text-gray-800 text-xs font-medium">Khác</span>'
+          }[v.violation_type] || `<span class="text-gray-800 text-xs font-medium">${v.violation_type || 'N/A'}</span>`;
+          
+          // Get manual score if exists
+          const manualScore = v.manual_score || v.essay_score || '';
+          const candidateTestId = v.candidate_test_id || '';
+          
+          // Debug log
+          if (!candidateTestId) {
+            console.warn('⚠️ Missing candidate_test_id for violation:', v);
+          }
           
           return `
-            <tr class="border-b border-orange-400/10 hover:bg-orange-500/10 transition-colors">
-              <td class="px-4 py-3 font-mono text-sm text-purple-300">#${v.candidateId || v.candidate_id || 'N/A'}</td>
-              <td class="px-4 py-3 font-medium">${v.candidate_name || 'Unknown'}</td>
-              <td class="px-4 py-3 text-sm text-purple-300 max-w-xs truncate" title="${v.test_name || 'N/A'}">${v.test_name || 'N/A'}</td>
-              <td class="px-4 py-3 text-xs text-purple-300">${timestamp}</td>
+            <tr class="border-b border-gray-200 hover:bg-blue-50 transition-colors">
+              <td class="px-4 py-3 font-mono text-sm text-gray-600">#${v.candidateId || v.candidate_id || 'N/A'}</td>
+              <td class="px-4 py-3 font-medium text-gray-800">${v.candidate_name || 'Unknown'}</td>
+              <td class="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title="${v.test_name || 'N/A'}">${v.test_name || 'N/A'}</td>
+              <td class="px-4 py-3 text-xs text-gray-600">${timestamp}</td>
               <td class="px-4 py-3">${typeDisplay}</td>
-              <td class="px-4 py-3 font-bold text-center ${score >= 50 ? 'text-green-300' : 'text-red-300'}">${score}</td>
+              <td class="px-4 py-3 font-bold text-center ${score >= 50 ? 'text-green-600' : 'text-red-600'}">${score}</td>
+              <td class="px-4 py-3 text-center">
+                ${candidateTestId ? `
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="100" 
+                  value="${manualScore}" 
+                  placeholder="Chấm điểm"
+                  class="w-20 px-2 py-1 border border-gray-300 rounded text-center"
+                  onchange="updateManualScore(${candidateTestId}, this.value)"
+                />
+                ` : '<span class="text-gray-400 text-xs">N/A</span>'}
+              </td>
               <td class="px-4 py-3 text-center">${resultBadge}</td>
+              <td class="px-4 py-3 text-center">
+                ${candidateTestId ? `
+                <button 
+                  onclick="viewCandidateTest(${candidateTestId}, '${(v.candidate_name || 'Unknown').replace(/'/g, "\\'")}', '${(v.test_name || 'N/A').replace(/'/g, "\\'")}')"
+                  class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition text-sm"
+                >
+                  📝 Xem Bài Làm
+                </button>
+                ` : '<span class="text-gray-400 text-xs">Không có dữ liệu</span>'}
+              </td>
             </tr>
           `;
         }).join('');
 
-        console.log('✅ Violations loaded and displayed in table');
+        console.log('✅ Recruiter violations loaded and displayed in table');
 
       } catch (error) {
         console.error('❌ Error loading violations:', error);
         console.error('Error details:', error.message, error.stack);
-        document.getElementById('violationsList').innerHTML = `
+        document.getElementById('recruiterViolationsList').innerHTML = `
           <tr>
-            <td colspan="7" class="text-center text-red-300 py-12">
+            <td colspan="9" class="text-center text-red-300 py-12">
               <div class="flex flex-col items-center gap-3">
                 <span class="text-5xl">⚠️</span>
                 <span class="text-lg font-semibold">Không thể tải danh sách vi phạm</span>
                 <span class="text-sm text-red-400">${error.message}</span>
-                <button onclick="loadViolations()" class="mt-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition">
+                <button onclick="loadRecruiterViolations()" class="mt-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition">
                   🔄 Thử lại
                 </button>
               </div>
@@ -518,271 +590,569 @@
       }
     }
 
-    // ========== LOAD ACTIVITY LOGS ==========
-    async function loadActivityLogs() {
+    // ========== LOAD ALL REPORTS FROM DATABASE (ADMIN ONLY) ==========
+    async function loadDatabaseReports() {
       try {
-        console.log('📋 Loading activity logs from API...');
-        const filter = document.getElementById('activityTypeFilter').value;
-        let url = `${API_BASE_URL}/reports/activity`;
-        if (filter) url += `?activityType=${filter}`;
+        console.log('📁 [ADMIN] Loading violations from all companies...');
+        
+        // Get filter values
+        const violationType = document.getElementById('dbReportTypeFilter').value;
+        const startDate = document.getElementById('adminStartDate').value;
+        const endDate = document.getElementById('adminEndDate').value;
+        
+        // Use violations API for admin
+        let url = `${API_BASE_URL}/reports/violations`;
+        const params = [];
+        
+        if (violationType) params.push(`violation_type=${violationType}`);
+        if (startDate) params.push(`startDate=${startDate}`);
+        if (endDate) params.push(`endDate=${endDate}`);
+        
+        // Add timestamp to prevent caching
+        params.push(`_t=${Date.now()}`);
+        
+        if (params.length > 0) {
+          url += '?' + params.join('&');
+        }
 
-        console.log('📋 Fetching from:', url);
+        console.log('📁 Fetching violations from:', url);
         const response = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
         });
 
-        console.log('📋 Activity API Response Status:', response.status);
+        console.log('📁 Violations API Response Status:', response.status);
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('❌ Activity API Error:', errorText);
-          throw new Error('Failed to load activity logs');
+          console.error('❌ Violations API Error:', errorText);
+          throw new Error('Failed to load violations');
         }
 
         const result = await response.json();
-        console.log('📋 Activity Data:', result);
+        console.log('📁 Violations Data:', result);
         
-        const activities = result.data || [];
-        console.log(`📋 Found ${activities.length} activities`);
+        const violations = result.data || [];
+        console.log(`📁 Found ${violations.length} violations`);
 
-        const activityLogsList = document.getElementById('activityLogsList');
+        const reportsList = document.getElementById('dbReportsList');
         
-        if (activities.length === 0) {
-          console.log('ℹ️ No activities found');
-          activityLogsList.innerHTML = `
-            <div class="text-center text-purple-300 py-8">
-              <p>Không có hoạt động nào</p>
-            </div>
+        if (violations.length === 0) {
+          console.log('ℹ️ No violations found');
+          reportsList.innerHTML = `
+            <tr>
+              <td colspan="7" class="text-center text-gray-500 py-12">
+                <div class="flex flex-col items-center gap-3">
+                  <span class="text-5xl">📭</span>
+                  <span class="text-lg font-semibold">Chưa có vi phạm nào</span>
+                  <span class="text-sm text-gray-400">Danh sách vi phạm từ tất cả công ty sẽ xuất hiện ở đây</span>
+                </div>
+              </td>
+            </tr>
           `;
           return;
         }
 
-        activityLogsList.innerHTML = activities.map(a => {
-          const timestamp = new Date(a.event_time || a.logged_at || a.timestamp).toLocaleString('vi-VN');
-          const typeIcons = {
-            'test_start': '▶️',
-            'test_submit': '✅',
-            'question_answered': '✏️',
-            'violation': '⚠️'
+        reportsList.innerHTML = violations.map(v => {
+          // Format timestamp - use reported_at, event_time, or timestamp
+          const timestamp = v.reported_at || v.event_time || v.timestamp || v.detected_at;
+          const detectedAt = timestamp ? new Date(timestamp).toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          }) : 'N/A';
+          
+          // Format violation type badge - plain text only
+          const violationTypeText = {
+            'TAB_SWITCH': 'Chuyển tab',
+            'WINDOW_BLUR': 'Mất focus cửa sổ',
+            'COPY_PASTE': 'Sao chép',
+            'MULTIPLE_FACES': 'Nhiều khuôn mặt',
+            'NO_FACE': 'Không có khuôn mặt',
+            'SUSPICIOUS_ACTIVITY': 'Hoạt động đáng ngờ',
+            'MULTIPLE_WINDOWS': 'Nhiều cửa sổ',
+            'SCREENSHOT': 'Chụp màn hình',
+            'NONE': 'Không có'
           };
+          const violationDisplay = violationTypeText[v.violation_type] || v.violation_type || 'N/A';
+          
+          const candidateTestId = v.candidate_test_id || '';
+          const candidateName = v.candidate_name || 'Unknown';
+          const testName = v.test_name || 'N/A';
+          
+          // Get company name from Candidate object or direct property
+          let companyName = 'N/A';
+          if (v.company_name) {
+            companyName = v.company_name;
+          } else if (v.Candidate?.Company?.company_name) {
+            companyName = v.Candidate.Company.company_name;
+          }
+          
+          // Calculate total score
+          const autoScore = parseFloat(v.score) || 0;
+          const manualScore = parseFloat(v.manual_score) || 0;
+          const totalScore = autoScore + manualScore;
           
           return `
-            <div class="bg-purple-900/30 p-4 rounded-lg border border-purple-400/20 hover:border-purple-400/50 transition">
-              <div class="flex justify-between items-start mb-2">
-                <div class="flex items-center gap-2">
-                  <span class="text-xl">${typeIcons[a.event_type] || '📋'}</span>
-                  <span class="font-semibold text-white">${a.event_type || 'N/A'}</span>
+            <tr class="border-b border-gray-200 hover:bg-blue-50 transition-colors">
+              <td class="px-4 py-3 font-mono text-sm text-gray-600">#${v.log_id || v.id || 'N/A'}</td>
+              <td class="px-4 py-3 font-medium text-gray-800">${candidateName}</td>
+              <td class="px-4 py-3">
+                <span class="text-gray-800 text-xs font-medium">${violationDisplay}</span>
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600">${companyName}</td>
+              <td class="px-4 py-3 text-xs text-gray-600">${detectedAt}</td>
+              <td class="px-4 py-3 text-center">
+                ${candidateTestId ? `
+                <button onclick="viewCandidateTest(${candidateTestId}, '${candidateName.replace(/'/g, "\\'")}', '${testName.replace(/'/g, "\\'")}')" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition text-sm">
+                  📝 Xem Bài Làm
+                </button>
+                ` : '<span class="text-gray-400 text-xs">Không có dữ liệu</span>'}
+              </td>
+              <td class="px-4 py-3 text-center">
+                <div class="flex flex-col items-center gap-1">
+                  <span class="text-lg font-bold text-blue-600">${totalScore.toFixed(1)}</span>
+                  ${manualScore > 0 ? `<span class="text-xs text-gray-500">(+${manualScore} chấm tay)</span>` : ''}
                 </div>
-                <span class="text-purple-300 text-sm">${timestamp}</span>
-              </div>
-              <p class="text-white text-sm mb-2">${a.description || 'No description'}</p>
-              <div class="flex items-center gap-2 text-sm text-purple-300">
-                <span>� Test #${a.candidate_test_id}</span>
-              </div>
-            </div>
+              </td>
+            </tr>
           `;
         }).join('');
 
-        console.log('✅ Activity logs loaded and displayed');
+        console.log('✅ Admin violations loaded and displayed');
 
       } catch (error) {
-        console.error('❌ Error loading activity logs:', error);
-        console.error('Error details:', error.message, error.stack);
-        document.getElementById('activityLogsList').innerHTML = `
-          <div class="text-center text-red-300 py-8">
-            <p>⚠️ Không thể tải nhật ký hoạt động</p>
-            <p class="text-sm mt-2">${error.message}</p>
-          </div>
+        console.error('❌ Error loading database reports:', error);
+        document.getElementById('dbReportsList').innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center text-red-300 py-12">
+              <div class="flex flex-col items-center gap-3">
+                <span class="text-5xl">⚠️</span>
+                <span class="text-lg font-semibold">Không thể tải danh sách báo cáo</span>
+                <span class="text-sm text-red-400">${error.message}</span>
+                <button onclick="loadDatabaseReports()" class="mt-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition">
+                  🔄 Thử lại
+                </button>
+              </div>
+            </td>
+          </tr>
         `;
       }
     }
 
-    // ========== LOAD NOTIFICATIONS ==========
-    async function loadNotifications() {
+    // ========== EDIT REPORT ==========
+    function editReport(reportId, reportName, reportType) {
+      console.log(`✏️ Opening edit modal for report ${reportId}...`);
+      
+      currentEditReportId = reportId;
+      document.getElementById('editCurrentName').textContent = reportName;
+      document.getElementById('editReportNameInput').value = reportName;
+      
+      // Show modal
+      document.getElementById('editModal').classList.add('show');
+      
+      // Reset states
+      document.getElementById('editModalContent').classList.remove('hidden');
+      document.getElementById('editModalLoading').classList.add('hidden');
+      document.getElementById('editModalSuccess').classList.add('hidden');
+      document.getElementById('editModalError').classList.add('hidden');
+      
+      // Focus input
+      setTimeout(() => {
+        document.getElementById('editReportNameInput').focus();
+      }, 100);
+    }
+
+    async function confirmEdit() {
       try {
-        console.log('📧 Loading notifications from API...');
-        const response = await fetch(`${API_BASE_URL}/reports/notifications`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        console.log('📧 Notifications API Response Status:', response.status);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ Notifications API Error:', errorText);
-          throw new Error('Failed to load notifications');
-        }
-
-        const result = await response.json();
-        console.log('📧 Notifications Data:', result);
+        const newName = document.getElementById('editReportNameInput').value.trim();
         
-        const notifications = result.data || [];
-        console.log(`📧 Found ${notifications.length} notifications`);
-
-        const notificationsList = document.getElementById('notificationsList');
-        
-        if (notifications.length === 0) {
-          console.log('ℹ️ No notifications found');
-          notificationsList.innerHTML = `
-            <div class="text-center text-purple-300 py-8">
-              <p>Chưa có thông báo nào</p>
-            </div>
-          `;
+        if (!newName) {
+          alert('Tên báo cáo không được để trống!');
           return;
         }
 
-        notificationsList.innerHTML = notifications.map(n => {
-          const timestamp = new Date(n.sent_at || n.timestamp).toLocaleString('vi-VN');
-          const typeIcons = {
-            'violation_warning': '⚠️',
-            'test_reminder': '📅',
-            'result_available': '✅',
-            'general': '💬'
-          };
-          
-          return `
-            <div class="bg-purple-900/30 p-4 rounded-lg border border-purple-400/20">
-              <div class="flex justify-between items-start mb-2">
-                <div class="flex items-center gap-2">
-                  <span class="text-xl">${typeIcons[n.type] || '💬'}</span>
-                  <span class="font-semibold text-white">${n.test_name || 'N/A'}</span>
-                  <span class="text-xs ${n.passed ? 'bg-green-500/30 text-green-300' : 'bg-red-500/30 text-red-300'} px-2 py-1 rounded">${n.status || 'sent'}</span>
-                </div>
-                <span class="text-purple-300 text-sm">${timestamp}</span>
-              </div>
-              <p class="text-white text-sm mb-2">${n.message}</p>
-              <div class="flex items-center gap-2 text-sm text-purple-300">
-                <span>👤 ${n.candidate_name}</span>
-                <span>•</span>
-                <span>📧 ${n.candidate_email}</span>
-                <span>•</span>
-                <span>Điểm: ${n.score || 'N/A'}</span>
-              </div>
-            </div>
-          `;
-        }).join('');
+        // Show loading
+        document.getElementById('editModalContent').classList.add('hidden');
+        document.getElementById('editModalLoading').classList.remove('hidden');
 
-        console.log('✅ Notifications loaded and displayed');
+        console.log(`📤 Sending update request for report ${currentEditReportId}...`);
 
-      } catch (error) {
-        console.error('❌ Error loading notifications:', error);
-        console.error('Error details:', error.message, error.stack);
-        document.getElementById('notificationsList').innerHTML = `
-          <div class="text-center text-red-300 py-8">
-            <p>⚠️ Không thể tải thông báo</p>
-            <p class="text-sm mt-2">${error.message}</p>
-          </div>
-        `;
-      }
-    }
-
-    // ========== LOAD CANDIDATES & TESTS FOR NOTIFICATION FORM ==========
-    async function loadCandidatesAndTests() {
-      try {
-        console.log('👥 Loading candidates and tests for notification form...');
-        // Load candidates from statistics
-        const statsResponse = await fetch(`${API_BASE_URL}/reports/statistics`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (statsResponse.ok) {
-          const result = await statsResponse.json();
-          const tests = result.data.testsList || []; // Use testsList instead of topTests
-          console.log(`👥 Found ${tests.length} tests for notifications`);
-          
-          const candidateSelect = document.getElementById('notifyCandidateId');
-          const testSelect = document.getElementById('notifyTestId');
-          
-          // Extract unique candidate IDs and names
-          const uniqueCandidates = [...new Map(tests.map(t => [t.candidateId, t])).values()];
-          
-          candidateSelect.innerHTML = '<option value="">Chọn ứng viên...</option>' + 
-            uniqueCandidates.map(t => `<option value="${t.candidateId}">${t.candidateName || `Ứng viên #${t.candidateId}`}</option>`).join('');
-          
-          testSelect.innerHTML = '<option value="">Chọn bài thi...</option>' + 
-            tests.map(t => `<option value="${t.testId}">Test #${t.id || t.testId}</option>`).join('');
-          
-          console.log('✅ Candidates and tests loaded for notification form');
-        }
-
-      } catch (error) {
-        console.error('❌ Error loading candidates and tests:', error);
-      }
-    }
-
-    // ========== SEND NOTIFICATION ==========
-    async function sendNotification() {
-      const candidateId = document.getElementById('notifyCandidateId').value;
-      const testId = document.getElementById('notifyTestId').value;
-      const type = document.getElementById('notifyType').value;
-      const message = document.getElementById('notifyMessage').value.trim();
-
-      if (!candidateId || !message) {
-        alert('Vui lòng chọn ứng viên và nhập nội dung thông báo');
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/reports/notify-candidate`, {
-          method: 'POST',
+        // Send update request
+        const response = await fetch(`${API_BASE_URL}/reports/${currentEditReportId}`, {
+          method: 'PUT',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            candidateId: parseInt(candidateId),
-            testId: testId ? parseInt(testId) : undefined,
-            type: type,
-            message: message
+            report_name: newName
           })
         });
 
-        if (!response.ok) throw new Error('Failed to send notification');
+        console.log(`📡 Update response status: ${response.status}`);
 
-        alert('✅ Đã gửi thông báo thành công!');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          throw new Error(errorData.message || 'Failed to update report');
+        }
+
+        const result = await response.json();
+        console.log('✅ Report updated successfully:', result);
         
-        // Clear form
-        document.getElementById('notifyMessage').value = '';
+        // Show success
+        document.getElementById('editModalLoading').classList.add('hidden');
+        document.getElementById('editModalSuccess').classList.remove('hidden');
         
-        // Reload notifications
-        loadNotifications();
+        // Reload table after 1.5 seconds
+        setTimeout(() => {
+          closeEditModal();
+          loadDatabaseReports();
+        }, 1500);
 
       } catch (error) {
-        console.error('Error sending notification:', error);
-        alert('⚠️ Không thể gửi thông báo. Vui lòng thử lại.');
+        console.error('❌ Error updating report:', error);
+        
+        // Show error
+        document.getElementById('editModalLoading').classList.add('hidden');
+        document.getElementById('editModalError').classList.remove('hidden');
+        document.getElementById('editErrorMessage').textContent = error.message;
       }
     }
 
-    // ========== LOAD TESTS LIST ==========
-    // ========== LOAD TAB DATA ==========
-    function loadTabData(tabName) {
-      switch(tabName) {
-        case 'violations':
-          loadViolations();
-          break;
-        case 'notifications':
-          loadNotifications();
-          loadCandidatesAndTests();
-          break;
+    function closeEditModal() {
+      document.getElementById('editModal').classList.remove('show');
+      currentEditReportId = null;
+    }
+
+    // ========== DELETE REPORT ==========
+    function deleteReport(reportId, reportName) {
+      console.log(`🗑️ Opening delete modal for report ${reportId}...`);
+      console.log(`📝 Report name: ${reportName}`);
+      
+      currentDeleteReportId = reportId;
+      document.getElementById('deleteReportName').textContent = `"${reportName}"`;
+      
+      // Show modal
+      document.getElementById('deleteModal').classList.add('show');
+      
+      // Reset states
+      document.getElementById('deleteModalContent').classList.remove('hidden');
+      document.getElementById('deleteModalLoading').classList.add('hidden');
+      document.getElementById('deleteModalSuccess').classList.add('hidden');
+      document.getElementById('deleteModalError').classList.add('hidden');
+    }
+
+    async function confirmDelete() {
+      try {
+        // Show loading
+        document.getElementById('deleteModalContent').classList.add('hidden');
+        document.getElementById('deleteModalLoading').classList.remove('hidden');
+
+        console.log(`🌐 Sending DELETE request to: ${API_BASE_URL}/reports/${currentDeleteReportId}`);
+        
+        // Send delete request
+        const response = await fetch(`${API_BASE_URL}/reports/${currentDeleteReportId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        console.log(`📡 Delete response status: ${response.status}`);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          console.error('❌ Delete failed:', errorData);
+          throw new Error(errorData.message || 'Failed to delete report');
+        }
+
+        const result = await response.json();
+        console.log('✅ Report deleted successfully:', result);
+        
+        // Show success
+        document.getElementById('deleteModalLoading').classList.add('hidden');
+        document.getElementById('deleteModalSuccess').classList.remove('hidden');
+        
+        // Reload table after 1.5 seconds
+        setTimeout(() => {
+          closeDeleteModal();
+          loadDatabaseReports();
+        }, 1500);
+
+      } catch (error) {
+        console.error('❌ Error deleting report:', error);
+        console.error('❌ Error stack:', error.stack);
+        
+        // Show error
+        document.getElementById('deleteModalLoading').classList.add('hidden');
+        document.getElementById('deleteModalError').classList.remove('hidden');
+        document.getElementById('deleteErrorMessage').textContent = error.message;
+      }
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.remove('show');
+      currentDeleteReportId = null;
+    }
+
+    // ========== VIEW DATABASE REPORT DETAILS ==========
+    function viewDbReportDetails(reportId, parameters) {
+      try {
+        console.log(`👁️ Viewing database report ${reportId}...`);
+        console.log('📋 Report parameters:', parameters);
+        
+        // Check if this is a VIOLATION report with candidate_test_id
+        if (parameters && parameters.candidate_test_id) {
+          const candidateTestId = parameters.candidate_test_id;
+          const candidateName = parameters.candidate_name || 'Unknown';
+          const testName = parameters.test_name || 'N/A';
+          
+          console.log(`🎯 Opening candidate test detail: ${candidateTestId}`);
+          // Open candidate test detail page (same as recruiter)
+          window.open(`candidate-test-detail.html?id=${candidateTestId}&candidate=${encodeURIComponent(candidateName)}&test=${encodeURIComponent(testName)}`, '_blank');
+        } else {
+          // Fallback to report detail page
+          window.open(`report-detail.html?id=${reportId}`, '_blank');
+        }
+
+      } catch (error) {
+        console.error('❌ Error viewing report details:', error);
+        alert(`❌ Không thể xem chi tiết báo cáo: ${error.message}`);
       }
     }
 
     // ========== EVENT LISTENERS ==========
     document.getElementById('refreshBtn').addEventListener('click', () => {
-      loadStatistics();
-      const activeTab = document.querySelector('.tab-button.active').dataset.tab;
-      loadTabData(activeTab);
+      if (userRole === 'ADMIN') {
+        loadDatabaseReports();
+      } else if (userRole === 'RECRUITER') {
+        loadRecruiterViolations();
+      }
     });
 
-    document.getElementById('violationTypeFilter').addEventListener('change', loadViolations);
-    document.getElementById('sendNotificationBtn').addEventListener('click', sendNotification);
+    // Recruiter event listeners
+    if (userRole === 'RECRUITER') {
+      document.getElementById('applyRecruiterFilter').addEventListener('click', loadRecruiterViolations);
+      document.getElementById('resetRecruiterFilter').addEventListener('click', () => {
+        document.getElementById('recruiterStartDate').value = '';
+        document.getElementById('recruiterEndDate').value = '';
+        document.getElementById('recruiterViolationTypeFilter').value = '';
+        loadRecruiterViolations();
+      });
+      
+      // Set default date range (last 12 months to show all violations)
+      const today = new Date();
+      const oneYearAgo = new Date(today.getTime() - (365 * 24 * 60 * 60 * 1000));
+      document.getElementById('recruiterEndDate').value = today.toISOString().split('T')[0];
+      document.getElementById('recruiterStartDate').value = oneYearAgo.toISOString().split('T')[0];
+    }
+
+    // Admin event listeners
+    if (userRole === 'ADMIN') {
+      document.getElementById('refreshDbReportsBtn').addEventListener('click', loadDatabaseReports);
+      document.getElementById('applyAdminFilter').addEventListener('click', loadDatabaseReports);
+      document.getElementById('resetAdminFilter').addEventListener('click', () => {
+        document.getElementById('adminStartDate').value = '';
+        document.getElementById('adminEndDate').value = '';
+        document.getElementById('dbReportTypeFilter').value = '';
+        loadDatabaseReports();
+      });
+      
+      // Set default date range (last 12 months to show all violations)
+      const today = new Date();
+      const oneYearAgo = new Date(today.getTime() - (365 * 24 * 60 * 60 * 1000));
+      document.getElementById('adminEndDate').value = today.toISOString().split('T')[0];
+      document.getElementById('adminStartDate').value = oneYearAgo.toISOString().split('T')[0];
+      
+      // Delete modal listeners
+      document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDelete);
+      document.getElementById('cancelDeleteBtn').addEventListener('click', closeDeleteModal);
+      document.getElementById('closeSuccessBtn').addEventListener('click', closeDeleteModal);
+      document.getElementById('closeErrorBtn').addEventListener('click', closeDeleteModal);
+      
+      // Edit modal listeners
+      document.getElementById('confirmEditBtn').addEventListener('click', confirmEdit);
+      document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+      document.getElementById('closeEditSuccessBtn').addEventListener('click', closeEditModal);
+      document.getElementById('closeEditErrorBtn').addEventListener('click', closeEditModal);
+      
+      // Enter key support for edit
+      document.getElementById('editReportNameInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          confirmEdit();
+        }
+      });
+      
+      // Close modal on backdrop click
+      document.getElementById('deleteModal').addEventListener('click', (e) => {
+        if (e.target.id === 'deleteModal') {
+          closeDeleteModal();
+        }
+      });
+      
+      document.getElementById('editModal').addEventListener('click', (e) => {
+        if (e.target.id === 'editModal') {
+          closeEditModal();
+        }
+      });
+    }
 
     // ========== INITIAL LOAD ==========
-    document.addEventListener('DOMContentLoaded', () => {
-      loadStatistics();
-      loadViolations(); // Load first tab by default
+    // Show/hide sections based on role
+    if (userRole === 'ADMIN') {
+      document.getElementById('adminSection').style.display = 'block';
+      loadDatabaseReports();
+    } else if (userRole === 'RECRUITER') {
+      document.getElementById('recruiterSection').style.display = 'block';
+      loadRecruiterViolations();
+    }
+
+    // Setup theme toggle
+    if (window.ThemeManager) {
+      ThemeManager.setupToggle('themeToggle');
+    }
+
+    // ========== UPDATE MANUAL SCORE ==========
+    async function updateManualScore(candidateTestId, score) {
+      try {
+        console.log(`📝 Updating manual score for test ${candidateTestId}: ${score}`);
+        
+        if (!candidateTestId) {
+          alert('❌ Không tìm thấy ID bài thi');
+          return;
+        }
+
+        if (score === '' || score === null) {
+          console.log('ℹ️ Empty score, skipping update');
+          return;
+        }
+
+        const scoreValue = parseFloat(score);
+        if (isNaN(scoreValue) || scoreValue < 0 || scoreValue > 100) {
+          alert('❌ Điểm phải từ 0 đến 100');
+          return;
+        }
+
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          alert('❌ Vui lòng đăng nhập lại');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const response = await fetch(`http://localhost:5000/api/candidate-tests/${candidateTestId}/manual-score`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ manual_score: scoreValue })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          throw new Error(errorData.message || 'Failed to update score');
+        }
+
+        const result = await response.json();
+        console.log('✅ Manual score updated:', result);
+        
+        // Show success notification
+        showNotification('✅ Đã cập nhật điểm thành công!', 'success');
+
+      } catch (error) {
+        console.error('❌ Error updating manual score:', error);
+        alert(`❌ Không thể cập nhật điểm: ${error.message}`);
+      }
+    }
+
+    // ========== VIEW CANDIDATE TEST DETAILS ==========
+    function viewCandidateTest(candidateTestId, candidateName, testName) {
+      try {
+        console.log(`👁️ Viewing candidate test ${candidateTestId}...`);
+        
+        if (!candidateTestId) {
+          alert('❌ Không tìm thấy thông tin bài thi');
+          return;
+        }
+
+        // Open candidate test detail page in new tab
+        window.open(`candidate-test-detail.html?id=${candidateTestId}&candidate=${encodeURIComponent(candidateName)}&test=${encodeURIComponent(testName)}`, '_blank');
+
+      } catch (error) {
+        console.error('❌ Error viewing candidate test:', error);
+        alert(`❌ Không thể xem bài làm: ${error.message}`);
+      }
+    }
+
+    // ========== NOTIFICATION HELPER ==========
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-20 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 ${
+        type === 'success' ? 'bg-green-500 text-white' :
+        type === 'error' ? 'bg-red-500 text-white' :
+        'bg-blue-500 text-white'
+      }`;
+      notification.textContent = message;
+      notification.style.animation = 'slideInRight 0.3s ease';
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    // Make functions global
+    window.updateManualScore = updateManualScore;
+    window.viewCandidateTest = viewCandidateTest;
+  </script>
+
+  <style>
+    @keyframes slideInRight {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    @keyframes slideOutRight {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+  </style>
+
+  <script>
+    // Auto-refresh data when window gets focus (user returns to tab)
+    window.addEventListener('focus', function() {
+      const userRole = localStorage.getItem('user_role');
+      console.log('🔄 Window focused, refreshing data for role:', userRole);
+      
+      if (userRole === 'RECRUITER') {
+        loadRecruiterViolations();
+      } else if (userRole === 'ADMIN') {
+        loadDatabaseReports();
+      }
     });
   </script>
 
 </body>
 </html>
+

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check Role Debug</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+    pre { background: #000; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    .section { margin-bottom: 20px; border: 1px solid #333; padding: 15px; border-radius: 5px; }
+    h2 { color: #0ff; }
+    .error { color: #f00; }
+    .success { color: #0f0; }
+    .warning { color: #ff0; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Role Debug Tool</h1>
+  
+  <div class="section">
+    <h2>📦 LocalStorage Data</h2>
+    <pre id="localStorageData">Loading...</pre>
+  </div>
+  
+  <div class="section">
+    <h2>🔑 Token Decode</h2>
+    <pre id="tokenData">Loading...</pre>
+  </div>
+  
+  <div class="section">
+    <h2>👤 User Info</h2>
+    <pre id="userInfoData">Loading...</pre>
+  </div>
+  
+  <div class="section">
+    <h2>✅ Detected Role</h2>
+    <pre id="roleData">Loading...</pre>
+  </div>
+
+  <script>
+    // 1. Get all localStorage
+    const localStorageData = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      localStorageData[key] = localStorage.getItem(key);
+    }
+    document.getElementById('localStorageData').textContent = JSON.stringify(localStorageData, null, 2);
+
+    // 2. Decode token
+    const token = localStorage.getItem('token');
+    let tokenPayload = null;
+    if (token) {
+      try {
+        tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        document.getElementById('tokenData').innerHTML = '<span class="success">✅ Token decoded successfully:</span>\n' + JSON.stringify(tokenPayload, null, 2);
+      } catch (e) {
+        document.getElementById('tokenData').innerHTML = '<span class="error">❌ Failed to decode token:</span>\n' + e.message;
+      }
+    } else {
+      document.getElementById('tokenData').innerHTML = '<span class="error">❌ No token found</span>';
+    }
+
+    // 3. Get user info
+    const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+    document.getElementById('userInfoData').textContent = JSON.stringify(userInfo, null, 2);
+
+    // 4. Detect role from multiple sources
+    let detectedRole = null;
+    const roleSources = [];
+
+    if (tokenPayload?.role) {
+      detectedRole = tokenPayload.role;
+      roleSources.push('token.role');
+    }
+    if (tokenPayload?.Role?.role_name) {
+      detectedRole = detectedRole || tokenPayload.Role.role_name;
+      roleSources.push('token.Role.role_name');
+    }
+    if (tokenPayload?.roleName) {
+      detectedRole = detectedRole || tokenPayload.roleName;
+      roleSources.push('token.roleName');
+    }
+    if (userInfo.role) {
+      detectedRole = detectedRole || userInfo.role;
+      roleSources.push('userInfo.role');
+    }
+    if (userInfo.Role?.role_name) {
+      detectedRole = detectedRole || userInfo.Role.role_name;
+      roleSources.push('userInfo.Role.role_name');
+    }
+    if (userInfo.roleName) {
+      detectedRole = detectedRole || userInfo.roleName;
+      roleSources.push('userInfo.roleName');
+    }
+
+    const roleResult = {
+      detectedRole: detectedRole || null,
+      sources: roleSources,
+      canAccessReport: detectedRole && detectedRole !== 'CANDIDATE',
+      message: detectedRole 
+        ? (detectedRole === 'CANDIDATE' ? '❌ CANDIDATE không được truy cập' : '✅ Có quyền truy cập')
+        : '❌ Không tìm thấy role'
+    };
+
+    const roleClass = roleResult.canAccessReport ? 'success' : 'error';
+    document.getElementById('roleData').innerHTML = `<span class="${roleClass}">${roleResult.message}</span>\n\n` + JSON.stringify(roleResult, null, 2);
+  </script>
+</body>
+</html>

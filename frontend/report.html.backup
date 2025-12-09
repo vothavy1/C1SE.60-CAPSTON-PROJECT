@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Báo Cáo & Thống Kê - ExamPro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .stat-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    .tab-button {
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .tab-button.active {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+    }
+    .tab-button.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #fbbf24;
+    }
+    
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      animation: fadeIn 0.2s ease;
+    }
+    .modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 1rem;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      animation: slideIn 0.3s ease;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #ef4444;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-800 min-h-screen text-white font-sans">
+
+  <!-- Navigation Header -->
+  <header class="bg-white/10 backdrop-blur-md shadow-lg border-b border-purple-400/30">
+    <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
+      <h1 class="text-2xl font-bold text-white tracking-wide">📊 Báo Cáo & Thống Kê</h1>
+      <div class="flex items-center gap-4">
+        <button id="refreshBtn" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+          🔄 Làm Mới
+        </button>
+        <a href="recruiter.html" class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+          ← Quay Lại
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto p-6">
+
+    <!-- Recruiter: Violations Section Only -->
+    <div id="recruiterSection" class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-400/30 min-h-[500px]" style="display: none;">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-semibold text-white flex items-center gap-2">
+          <span class="text-2xl">⚠️</span>
+          Báo Cáo Vi Phạm Công Ty
+        </h3>
+        <div class="flex gap-2">
+          <select id="recruiterViolationTypeFilter" class="bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30 hover:border-orange-400/50 transition cursor-pointer">
+            <option value="">Tất cả loại vi phạm</option>
+            <option value="TAB_SWITCH">Chuyển tab</option>
+            <option value="COPY_PASTE">Sao chép dán</option>
+            <option value="SCREENSHOT">Chụp màn hình</option>
+            <option value="CAMERA_OFF">Tắt camera</option>
+            <option value="LOST_FOCUS">Mất focus</option>
+            <option value="MULTIPLE_FACES">Nhiều khuôn mặt</option>
+            <option value="NO_FACE">Không phát hiện khuôn mặt</option>
+            <option value="NONE">Không vi phạm</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Violations Table -->
+      <div class="overflow-x-auto rounded-lg border border-orange-400/20">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-gradient-to-r from-orange-500/30 to-red-500/30 text-orange-100">
+            <tr>
+              <th class="px-4 py-3 font-semibold">ID</th>
+              <th class="px-4 py-3 font-semibold">Tên Ứng Viên</th>
+              <th class="px-4 py-3 font-semibold">Bài Thi</th>
+              <th class="px-4 py-3 font-semibold">Ngày Giờ</th>
+              <th class="px-4 py-3 font-semibold">Loại Vi Phạm</th>
+              <th class="px-4 py-3 font-semibold">Điểm Số</th>
+              <th class="px-4 py-3 font-semibold">Kết Quả</th>
+            </tr>
+          </thead>
+          <tbody id="recruiterViolationsList" class="text-white bg-purple-900/20">
+            <tr>
+              <td colspan="7" class="text-center text-purple-300 py-8">
+                <div class="flex flex-col items-center gap-2">
+                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400"></div>
+                  <span>Đang tải dữ liệu vi phạm...</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Admin: All Reports from Database Only -->
+    <div id="adminSection" class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-400/30" style="display: none;">
+      <div class="flex justify-between items-center mb-6">
+        <div class="flex gap-2">
+          <select id="dbReportTypeFilter" class="bg-purple-900/50 text-white px-4 py-2 rounded-lg border border-purple-400/30 hover:border-blue-400/50 transition cursor-pointer">
+            <option value="">Tất cả loại báo cáo</option>
+            <option value="VIOLATION">Vi phạm</option>
+            <option value="STATISTICS">Thống kê</option>
+            <option value="ACTIVITY_LOG">Nhật ký hoạt động</option>
+            <option value="NOTIFICATION">Thông báo</option>
+            <option value="CUSTOM">Tùy chỉnh</option>
+          </select>
+          <button id="refreshDbReportsBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition">
+            🔄 Làm Mới
+          </button>
+        </div>
+      </div>
+
+      <!-- Database Reports Table -->
+      <div class="overflow-x-auto rounded-lg border border-blue-400/20">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-gradient-to-r from-blue-500/30 to-purple-500/30 text-blue-100">
+            <tr>
+              <th class="px-4 py-3 font-semibold">ID</th>
+              <th class="px-4 py-3 font-semibold">Tên Báo Cáo</th>
+              <th class="px-4 py-3 font-semibold">Loại</th>
+              <th class="px-4 py-3 font-semibold">Người Tạo</th>
+              <th class="px-4 py-3 font-semibold">Ngày Tạo</th>
+              <th class="px-4 py-3 font-semibold text-center">Chi Tiết</th>
+              <th class="px-4 py-3 font-semibold text-center">Hành Động</th>
+            </tr>
+          </thead>
+          <tbody id="dbReportsList" class="text-white bg-purple-900/20">
+            <tr>
+              <td colspan="6" class="text-center text-purple-300 py-8">
+                <div class="flex flex-col items-center gap-2">
+                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+                  <span>Đang tải danh sách báo cáo từ database...</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">Xác Nhận Xóa Báo Cáo</h3>
+        <p class="text-gray-600 mb-4">Bạn có chắc chắn muốn xóa báo cáo này?</p>
+        
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <p class="text-sm font-semibold text-red-800 mb-2" id="deleteReportName"></p>
+          <p class="text-xs text-red-600">⚠️ Hành động này không thể hoàn tác!</p>
+        </div>
+      </div>
+
+      <div id="deleteModalContent">
+        <div class="flex gap-3">
+          <button id="cancelDeleteBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-lg transition duration-200">
+            Hủy Bỏ
+          </button>
+          <button id="confirmDeleteBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition duration-200">
+            Xóa Báo Cáo
+          </button>
+        </div>
+      </div>
+
+      <div id="deleteModalLoading" class="hidden">
+        <div class="spinner"></div>
+        <p class="text-center text-gray-600 mt-4">Đang xóa báo cáo...</p>
+      </div>
+
+      <div id="deleteModalSuccess" class="hidden">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <p class="text-lg font-semibold text-green-600 mb-4">Đã xóa báo cáo thành công!</p>
+          <button id="closeSuccessBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+            Đóng
+          </button>
+        </div>
+      </div>
+
+      <div id="deleteModalError" class="hidden">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </div>
+          <p class="text-lg font-semibold text-red-600 mb-2">Không thể xóa báo cáo!</p>
+          <p class="text-sm text-gray-600 mb-4" id="deleteErrorMessage"></p>
+          <button id="closeErrorBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">Sửa Tên Báo Cáo</h3>
+      </div>
+
+      <div id="editModalContent">
+        <div class="mb-4">
+          <label class="block text-gray-700 font-semibold mb-2">Tên báo cáo hiện tại:</label>
+          <p class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-4" id="editCurrentName"></p>
+          
+          <label class="block text-gray-700 font-semibold mb-2">Tên báo cáo mới:</label>
+          <input type="text" id="editReportNameInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Nhập tên báo cáo mới...">
+          <p class="text-xs text-gray-500 mt-2">💡 Tên báo cáo không được để trống</p>
+        </div>
+
+        <div class="flex gap-3">
+          <button id="cancelEditBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-lg transition duration-200">
+            Hủy Bỏ
+          </button>
+          <button id="confirmEditBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
+            Lưu Thay Đổi
+          </button>
+        </div>
+      </div>
+
+      <div id="editModalLoading" class="hidden">
+        <div class="spinner"></div>
+        <p class="text-center text-gray-600 mt-4">Đang cập nhật báo cáo...</p>
+      </div>
+
+      <div id="editModalSuccess" class="hidden">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <p class="text-lg font-semibold text-green-600 mb-4">Đã cập nhật báo cáo thành công!</p>
+          <button id="closeEditSuccessBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+            Đóng
+          </button>
+        </div>
+      </div>
+
+      <div id="editModalError" class="hidden">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </div>
+          <p class="text-lg font-semibold text-red-600 mb-2">Không thể cập nhật báo cáo!</p>
+          <p class="text-sm text-gray-600 mb-4" id="editErrorMessage"></p>
+          <button id="closeEditErrorBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // API Configuration
+    const API_BASE_URL = 'http://localhost:5000/api';
+    
+    // Get token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Vui lòng đăng nhập để xem báo cáo');
+      window.location.href = 'login.html';
+    }
+    
+    // ✅ ĐÚNG: Đọc role từ session_user (không phải user)
+    const sessionUser = JSON.parse(localStorage.getItem('session_user') || '{}');
+    const userRole = sessionUser.role;
+    
+    console.log('👤 Session User:', sessionUser);
+    console.log('👤 User Role:', userRole);
+    
+    // Allow ADMIN and RECRUITER, block CANDIDATE and undefined
+    if (!userRole) {
+      alert('❌ Không tìm thấy thông tin quyền truy cập.\n\nVui lòng đăng nhập lại!');
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+    
+    if (userRole === 'CANDIDATE') {
+      alert('❌ Ứng viên không có quyền truy cập trang báo cáo.\n\nChỉ dành cho Quản trị viên và Nhà tuyển dụng!');
+      window.location.href = 'index.html';
+    }
+    
+    console.log('✅ Access granted for role:', userRole);
+
+    // Global variables for modals
+    let currentDeleteReportId = null;
+    let currentEditReportId = null;
+
+
+
+    // ========== LOAD RECRUITER VIOLATIONS (Company Only) ==========
+    async function loadRecruiterViolations() {
+      try {
+        console.log('⚠️ [RECRUITER] Loading violations from API...');
+        const filter = document.getElementById('recruiterViolationTypeFilter').value;
+        let url = `${API_BASE_URL}/reports/violations`;
+        if (filter) url += `?violationType=${filter}`;
+
+        console.log('⚠️ Fetching from:', url);
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        console.log('⚠️ Violations API Response Status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Violations API Error:', errorText);
+          throw new Error('Failed to load violations');
+        }
+
+        const result = await response.json();
+        console.log('⚠️ Violations Data:', result);
+        
+        const violations = result.data || [];
+        console.log(`⚠️ Found ${violations.length} violations`);
+
+        const violationsList = document.getElementById('recruiterViolationsList');
+        
+        if (violations.length === 0) {
+          console.log('ℹ️ No violations found, showing empty message');
+          violationsList.innerHTML = `
+            <tr>
+              <td colspan="7" class="text-center text-purple-300 py-12">
+                <div class="flex flex-col items-center gap-3">
+                  <span class="text-5xl">✅</span>
+                  <span class="text-lg font-semibold">Không có vi phạm nào được ghi nhận</span>
+                  <span class="text-sm text-purple-400">Tất cả ứng viên đang tuân thủ quy định</span>
+                </div>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        violationsList.innerHTML = violations.map(v => {
+          const timestamp = new Date(v.reported_at || v.timestamp).toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          
+          // Determine result badge based on score or status
+          let resultBadge = '';
+          const score = parseInt(v.score) || 0;
+          if (v.result === 'passed' || v.passed || score >= 50) {
+            resultBadge = '<span class="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-xs font-semibold">✅ Đạt</span>';
+          } else if (v.result === 'failed' || v.passed === false || score < 50) {
+            resultBadge = '<span class="px-3 py-1 bg-red-500/20 text-red-300 rounded-full text-xs font-semibold">❌ Không đạt</span>';
+          } else {
+            resultBadge = '<span class="px-3 py-1 bg-gray-500/20 text-gray-300 rounded-full text-xs font-semibold">⏳ Đang làm</span>';
+          }
+
+          // Format violation type display with color coding
+          const typeDisplay = {
+            'tab_switch': '<span class="px-2 py-1 bg-orange-500/20 text-orange-300 rounded text-xs">🔄 Chuyển tab</span>',
+            'camera_off': '<span class="px-2 py-1 bg-red-500/20 text-red-300 rounded text-xs">📷 Tắt camera</span>',
+            'lost_focus': '<span class="px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded text-xs">👁️ Mất focus</span>',
+            'other': '<span class="px-2 py-1 bg-gray-500/20 text-gray-300 rounded text-xs">⚠️ Khác</span>'
+          }[v.violation_type] || `<span class="px-2 py-1 bg-gray-500/20 text-gray-300 rounded text-xs">${v.violation_type || 'N/A'}</span>`;
+          
+          return `
+            <tr class="border-b border-orange-400/10 hover:bg-orange-500/10 transition-colors">
+              <td class="px-4 py-3 font-mono text-sm text-purple-300">#${v.candidateId || v.candidate_id || 'N/A'}</td>
+              <td class="px-4 py-3 font-medium">${v.candidate_name || 'Unknown'}</td>
+              <td class="px-4 py-3 text-sm text-purple-300 max-w-xs truncate" title="${v.test_name || 'N/A'}">${v.test_name || 'N/A'}</td>
+              <td class="px-4 py-3 text-xs text-purple-300">${timestamp}</td>
+              <td class="px-4 py-3">${typeDisplay}</td>
+              <td class="px-4 py-3 font-bold text-center ${score >= 50 ? 'text-green-300' : 'text-red-300'}">${score}</td>
+              <td class="px-4 py-3 text-center">${resultBadge}</td>
+            </tr>
+          `;
+        }).join('');
+
+        console.log('✅ Recruiter violations loaded and displayed in table');
+
+      } catch (error) {
+        console.error('❌ Error loading violations:', error);
+        console.error('Error details:', error.message, error.stack);
+        document.getElementById('recruiterViolationsList').innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center text-red-300 py-12">
+              <div class="flex flex-col items-center gap-3">
+                <span class="text-5xl">⚠️</span>
+                <span class="text-lg font-semibold">Không thể tải danh sách vi phạm</span>
+                <span class="text-sm text-red-400">${error.message}</span>
+                <button onclick="loadRecruiterViolations()" class="mt-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition">
+                  🔄 Thử lại
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // ========== LOAD ALL REPORTS FROM DATABASE (ADMIN ONLY) ==========
+    async function loadDatabaseReports() {
+      try {
+        console.log('📁 [ADMIN] Loading all reports from database...');
+        const filter = document.getElementById('dbReportTypeFilter').value;
+        let url = `${API_BASE_URL}/reports/all-reports`;
+        if (filter) url += `?report_type=${filter}`;
+
+        console.log('📁 Fetching from:', url);
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        console.log('📁 Database Reports API Response Status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Database Reports API Error:', errorText);
+          throw new Error('Failed to load database reports');
+        }
+
+        const result = await response.json();
+        console.log('📁 Database Reports Data:', result);
+        
+        const reports = result.data || [];
+        console.log(`📁 Found ${reports.length} reports in database`);
+
+        const reportsList = document.getElementById('dbReportsList');
+        
+        if (reports.length === 0) {
+          console.log('ℹ️ No reports found in database');
+          reportsList.innerHTML = `
+            <tr>
+              <td colspan="7" class="text-center text-purple-300 py-12">
+                <div class="flex flex-col items-center gap-3">
+                  <span class="text-5xl">📭</span>
+                  <span class="text-lg font-semibold">Chưa có báo cáo nào trong database</span>
+                  <span class="text-sm text-purple-400">Báo cáo sẽ tự động được tạo khi có hoạt động trong hệ thống</span>
+                </div>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        reportsList.innerHTML = reports.map(r => {
+          const createdAt = new Date(r.created_at).toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          
+          // Format report type badge
+          const typeColors = {
+            'VIOLATION': 'bg-red-500/20 text-red-300',
+            'STATISTICS': 'bg-blue-500/20 text-blue-300',
+            'ACTIVITY_LOG': 'bg-green-500/20 text-green-300',
+            'NOTIFICATION': 'bg-yellow-500/20 text-yellow-300',
+            'CUSTOM': 'bg-purple-500/20 text-purple-300',
+            'CANDIDATE_PIPELINE': 'bg-indigo-500/20 text-indigo-300',
+            'TEST_PERFORMANCE': 'bg-teal-500/20 text-teal-300',
+            'INTERVIEWER_EFFICIENCY': 'bg-orange-500/20 text-orange-300',
+            'HIRING_METRICS': 'bg-pink-500/20 text-pink-300'
+          };
+          const typeColor = typeColors[r.report_type] || 'bg-gray-500/20 text-gray-300';
+          
+          // Truncate long report names
+          const reportName = r.report_name.length > 50 ? 
+            r.report_name.substring(0, 47) + '...' : r.report_name;
+          
+          return `
+            <tr class="border-b border-blue-400/10 hover:bg-blue-500/10 transition-colors">
+              <td class="px-4 py-3 font-mono text-sm text-purple-300">#${r.report_id}</td>
+              <td class="px-4 py-3 font-medium" title="${r.report_name}">${reportName}</td>
+              <td class="px-4 py-3">
+                <span class="px-3 py-1 ${typeColor} rounded-full text-xs font-semibold">${r.report_type}</span>
+              </td>
+              <td class="px-4 py-3 text-sm text-purple-300">${r.creator_name}</td>
+              <td class="px-4 py-3 text-xs text-purple-300">${createdAt}</td>
+              <td class="px-4 py-3 text-center">
+                <button onclick="viewDbReportDetails(${r.report_id}, ${JSON.stringify(r.parameters).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 rounded transition text-sm">
+                  Xem Chi Tiết
+                </button>
+              </td>
+              <td class="px-4 py-3 text-center">
+                <div class="flex gap-2 justify-center">
+                  <button onclick="editReport(${r.report_id}, '${r.report_name.replace(/'/g, "\\'")}', '${r.report_type}')" class="px-3 py-1 bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-300 rounded transition text-sm">
+                    Sửa
+                  </button>
+                  <button onclick="deleteReport(${r.report_id}, '${r.report_name.replace(/'/g, "\\'")}')}" class="px-3 py-1 bg-red-500/20 hover:bg-red-500/40 text-red-300 rounded transition text-sm">
+                    Xóa
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        console.log('✅ Database reports loaded and displayed');
+
+      } catch (error) {
+        console.error('❌ Error loading database reports:', error);
+        document.getElementById('dbReportsList').innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center text-red-300 py-12">
+              <div class="flex flex-col items-center gap-3">
+                <span class="text-5xl">⚠️</span>
+                <span class="text-lg font-semibold">Không thể tải danh sách báo cáo</span>
+                <span class="text-sm text-red-400">${error.message}</span>
+                <button onclick="loadDatabaseReports()" class="mt-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition">
+                  🔄 Thử lại
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // ========== EDIT REPORT ==========
+    function editReport(reportId, reportName, reportType) {
+      console.log(`✏️ Opening edit modal for report ${reportId}...`);
+      
+      currentEditReportId = reportId;
+      document.getElementById('editCurrentName').textContent = reportName;
+      document.getElementById('editReportNameInput').value = reportName;
+      
+      // Show modal
+      document.getElementById('editModal').classList.add('show');
+      
+      // Reset states
+      document.getElementById('editModalContent').classList.remove('hidden');
+      document.getElementById('editModalLoading').classList.add('hidden');
+      document.getElementById('editModalSuccess').classList.add('hidden');
+      document.getElementById('editModalError').classList.add('hidden');
+      
+      // Focus input
+      setTimeout(() => {
+        document.getElementById('editReportNameInput').focus();
+      }, 100);
+    }
+
+    async function confirmEdit() {
+      try {
+        const newName = document.getElementById('editReportNameInput').value.trim();
+        
+        if (!newName) {
+          alert('Tên báo cáo không được để trống!');
+          return;
+        }
+
+        // Show loading
+        document.getElementById('editModalContent').classList.add('hidden');
+        document.getElementById('editModalLoading').classList.remove('hidden');
+
+        console.log(`📤 Sending update request for report ${currentEditReportId}...`);
+
+        // Send update request
+        const response = await fetch(`${API_BASE_URL}/reports/${currentEditReportId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            report_name: newName
+          })
+        });
+
+        console.log(`📡 Update response status: ${response.status}`);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          throw new Error(errorData.message || 'Failed to update report');
+        }
+
+        const result = await response.json();
+        console.log('✅ Report updated successfully:', result);
+        
+        // Show success
+        document.getElementById('editModalLoading').classList.add('hidden');
+        document.getElementById('editModalSuccess').classList.remove('hidden');
+        
+        // Reload table after 1.5 seconds
+        setTimeout(() => {
+          closeEditModal();
+          loadDatabaseReports();
+        }, 1500);
+
+      } catch (error) {
+        console.error('❌ Error updating report:', error);
+        
+        // Show error
+        document.getElementById('editModalLoading').classList.add('hidden');
+        document.getElementById('editModalError').classList.remove('hidden');
+        document.getElementById('editErrorMessage').textContent = error.message;
+      }
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.remove('show');
+      currentEditReportId = null;
+    }
+
+    // ========== DELETE REPORT ==========
+    function deleteReport(reportId, reportName) {
+      console.log(`🗑️ Opening delete modal for report ${reportId}...`);
+      console.log(`📝 Report name: ${reportName}`);
+      
+      currentDeleteReportId = reportId;
+      document.getElementById('deleteReportName').textContent = `"${reportName}"`;
+      
+      // Show modal
+      document.getElementById('deleteModal').classList.add('show');
+      
+      // Reset states
+      document.getElementById('deleteModalContent').classList.remove('hidden');
+      document.getElementById('deleteModalLoading').classList.add('hidden');
+      document.getElementById('deleteModalSuccess').classList.add('hidden');
+      document.getElementById('deleteModalError').classList.add('hidden');
+    }
+
+    async function confirmDelete() {
+      try {
+        // Show loading
+        document.getElementById('deleteModalContent').classList.add('hidden');
+        document.getElementById('deleteModalLoading').classList.remove('hidden');
+
+        console.log(`🌐 Sending DELETE request to: ${API_BASE_URL}/reports/${currentDeleteReportId}`);
+        
+        // Send delete request
+        const response = await fetch(`${API_BASE_URL}/reports/${currentDeleteReportId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        console.log(`📡 Delete response status: ${response.status}`);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          console.error('❌ Delete failed:', errorData);
+          throw new Error(errorData.message || 'Failed to delete report');
+        }
+
+        const result = await response.json();
+        console.log('✅ Report deleted successfully:', result);
+        
+        // Show success
+        document.getElementById('deleteModalLoading').classList.add('hidden');
+        document.getElementById('deleteModalSuccess').classList.remove('hidden');
+        
+        // Reload table after 1.5 seconds
+        setTimeout(() => {
+          closeDeleteModal();
+          loadDatabaseReports();
+        }, 1500);
+
+      } catch (error) {
+        console.error('❌ Error deleting report:', error);
+        console.error('❌ Error stack:', error.stack);
+        
+        // Show error
+        document.getElementById('deleteModalLoading').classList.add('hidden');
+        document.getElementById('deleteModalError').classList.remove('hidden');
+        document.getElementById('deleteErrorMessage').textContent = error.message;
+      }
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.remove('show');
+      currentDeleteReportId = null;
+    }
+
+    // ========== VIEW DATABASE REPORT DETAILS ==========
+    function viewDbReportDetails(reportId, parameters) {
+      try {
+        console.log(`👁️ Viewing database report ${reportId}...`);
+        
+        // Format parameters for display
+        const paramsDisplay = parameters && Object.keys(parameters).length > 0 ? 
+          JSON.stringify(parameters, null, 2) : 'Không có dữ liệu bổ sung';
+
+        alert(`Chi Tiết Báo Cáo #${reportId}\n\n` +
+              `Dữ liệu Parameters:\n${paramsDisplay}`);
+
+      } catch (error) {
+        console.error('❌ Error viewing report details:', error);
+        alert(`❌ Không thể xem chi tiết báo cáo: ${error.message}`);
+      }
+    }
+
+    // ========== EVENT LISTENERS ==========
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      if (userRole === 'ADMIN') {
+        loadDatabaseReports();
+      } else if (userRole === 'RECRUITER') {
+        loadRecruiterViolations();
+      }
+    });
+
+    // Recruiter event listeners
+    if (userRole === 'RECRUITER') {
+      document.getElementById('recruiterViolationTypeFilter').addEventListener('change', loadRecruiterViolations);
+    }
+
+    // Admin event listeners
+    if (userRole === 'ADMIN') {
+      document.getElementById('refreshDbReportsBtn').addEventListener('click', loadDatabaseReports);
+      document.getElementById('dbReportTypeFilter').addEventListener('change', loadDatabaseReports);
+      
+      // Delete modal listeners
+      document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDelete);
+      document.getElementById('cancelDeleteBtn').addEventListener('click', closeDeleteModal);
+      document.getElementById('closeSuccessBtn').addEventListener('click', closeDeleteModal);
+      document.getElementById('closeErrorBtn').addEventListener('click', closeDeleteModal);
+      
+      // Edit modal listeners
+      document.getElementById('confirmEditBtn').addEventListener('click', confirmEdit);
+      document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+      document.getElementById('closeEditSuccessBtn').addEventListener('click', closeEditModal);
+      document.getElementById('closeEditErrorBtn').addEventListener('click', closeEditModal);
+      
+      // Enter key support for edit
+      document.getElementById('editReportNameInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          confirmEdit();
+        }
+      });
+      
+      // Close modal on backdrop click
+      document.getElementById('deleteModal').addEventListener('click', (e) => {
+        if (e.target.id === 'deleteModal') {
+          closeDeleteModal();
+        }
+      });
+      
+      document.getElementById('editModal').addEventListener('click', (e) => {
+        if (e.target.id === 'editModal') {
+          closeEditModal();
+        }
+      });
+    }
+
+    // ========== INITIAL LOAD ==========
+    // Show/hide sections based on role
+    if (userRole === 'ADMIN') {
+      document.getElementById('adminSection').style.display = 'block';
+      loadDatabaseReports();
+    } else if (userRole === 'RECRUITER') {
+      document.getElementById('recruiterSection').style.display = 'block';
+      loadRecruiterViolations();
+    }
+  </script>
+
+</body>
+</html>

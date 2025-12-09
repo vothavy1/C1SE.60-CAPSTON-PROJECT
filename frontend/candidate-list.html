@@ -5,24 +5,97 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Danh Sách Ứng Viên - Recruiter</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
   <style>
     .status-badge {
       @apply px-3 py-1 rounded-full text-xs font-semibold inline-block;
     }
+    
+    /* Professional Light Mode Theme */
+    body {
+      background-color: #f3f4f6;
+      color: #1f2937;
+    }
+    
+    .card-shadow {
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    
+    .card-shadow-lg {
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    }
   </style>
 </head>
-<body class="bg-gradient-to-br from-slate-800 via-indigo-900 to-slate-900 min-h-screen text-white">
+<body class="light-mode min-h-screen transition-colors duration-300">
+  
+  <script>
+    // CRITICAL: Check token validity on page load and clear old tokens
+    (function checkTokenValidity() {
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+        const session = JSON.parse(localStorage.getItem('session_user') || 'null');
+        
+        if (!token || !session) {
+          console.warn('⚠️ No token or session found');
+          window.location.href = 'index.html';
+          return;
+        }
+
+        // Check token format and parse to verify it has company_id
+        try {
+          const tokenParts = token.split('.');
+          if (tokenParts.length === 3) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            const role = String(session.role || payload.role || '').toUpperCase();
+            
+            // For RECRUITER, company_id is MANDATORY
+            if (role === 'RECRUITER') {
+              const hasCompanyInToken = payload.company_id != null && payload.company_id !== undefined;
+              const hasCompanyInSession = session.company_id != null && session.company_id !== undefined;
+              
+              if (!hasCompanyInToken || !hasCompanyInSession) {
+                console.error('❌ OLD TOKEN DETECTED! Recruiter token missing company_id');
+                console.log('Token company_id:', payload.company_id);
+                console.log('Session company_id:', session.company_id);
+                
+                alert('🔄 HỆ THỐNG ĐÃ CẬP NHẬT!\n\nĐể đảm bảo bạn chỉ thấy dữ liệu của công ty mình, hệ thống yêu cầu bạn đăng nhập lại.\n\n✅ Dữ liệu của bạn đã được bảo vệ theo công ty.\n\n➡️ Nhấn OK để đăng nhập lại.');
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+                return;
+              }
+              
+              console.log(`✅ Valid recruiter token with company_id: ${payload.company_id}`);
+            }
+          }
+        } catch (tokenParseError) {
+          console.error('❌ Cannot parse token:', tokenParseError);
+          localStorage.clear();
+          window.location.href = 'index.html';
+          return;
+        }
+
+        console.log(`✅ Token check passed for ${session.username} (Company: ${session.company_id || 'N/A'})`);
+      } catch (error) {
+        console.error('❌ Token validation error:', error);
+        localStorage.clear();
+        window.location.href = 'index.html';
+      }
+    })();
+  </script>
   
   <!-- Header -->
-  <header class="bg-white/10 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-indigo-400/30">
+  <header class="header-bg shadow-md sticky top-0 z-50 border-b transition-colors duration-300">
     <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
       <div class="flex items-center gap-4">
-        <a href="recruiter.html" class="text-2xl hover:text-indigo-300 transition">←</a>
+        <a href="recruiter.html" class="text-2xl hover:opacity-70 transition">←</a>
         <h1 class="text-2xl md:text-3xl font-bold">📋 Quản Lý Ứng Viên</h1>
       </div>
       <div class="flex items-center gap-4">
-        <span id="userName" class="text-indigo-200">Xin chào!</span>
-        <button onclick="logout()" class="bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-2 rounded-lg hover:opacity-90 transition">
+        <div class="theme-toggle" id="themeToggle" title="Chuyển đổi sáng/tối"></div>
+        <span id="userName" class="font-medium">Xin chào!</span>
+        <button onclick="logout()" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition shadow-md">
           Đăng xuất
         </button>
       </div>
@@ -33,79 +106,67 @@
   <main class="max-w-7xl mx-auto mt-6 p-6">
     
     <!-- Actions Bar -->
-    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-center justify-between border border-white/20">
+    <div class="content-card rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-center justify-between border transition-all duration-300">
       <div class="flex gap-3 flex-wrap">
-        <button onclick="refreshList()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg transition">
-          🔄 Làm mới
+        <button onclick="showAddModal()" class="btn-primary px-4 py-2 rounded-lg transition shadow-md">
+          ➕ Thêm ứng viên
+        </button>
+        <button onclick="refreshList()" class="btn-secondary px-4 py-2 rounded-lg transition shadow-md">
+          Làm mới
         </button>
       </div>
       
       <!-- Search & Filter -->
-      <div class="flex gap-3 flex-wrap flex-1 max-w-2xl">
+      <div class="flex gap-3 flex-wrap flex-1 max-w-4xl">
         <input 
           id="searchInput" 
           type="text" 
-          placeholder="🔍 Tìm theo tên, email, vị trí..." 
-          class="flex-1 px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          placeholder="Tìm theo tên, email, vị trí..." 
+          class="flex-1 px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-colors duration-300"
           onkeyup="searchCandidates()"
         />
-        <select 
-          id="statusFilter" 
-          onchange="filterByStatus()" 
-          class="px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400">
-          <option value="">Tất cả trạng thái</option>
-          <option value="NEW">Mới</option>
-          <option value="SCREENING">Sàng lọc</option>
-          <option value="TESTING">Đang test</option>
-          <option value="INTERVIEWING">Phỏng vấn</option>
-          <option value="OFFERED">Đã offer</option>
-          <option value="HIRED">Đã tuyển</option>
-          <option value="REJECTED">Từ chối</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Statistics Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div class="bg-emerald-600/20 border border-emerald-500/30 rounded-xl p-4">
-        <div class="text-3xl font-bold" id="totalCandidates">0</div>
-        <div class="text-sm text-emerald-200">Tổng ứng viên</div>
-      </div>
-      <div class="bg-blue-600/20 border border-blue-500/30 rounded-xl p-4">
-        <div class="text-3xl font-bold" id="newCandidates">0</div>
-        <div class="text-sm text-blue-200">Ứng viên mới</div>
-      </div>
-      <div class="bg-yellow-600/20 border border-yellow-500/30 rounded-xl p-4">
-        <div class="text-3xl font-bold" id="testingCandidates">0</div>
-        <div class="text-sm text-yellow-200">Đang test</div>
-      </div>
-      <div class="bg-green-600/20 border border-green-500/30 rounded-xl p-4">
-        <div class="text-3xl font-bold" id="hiredCandidates">0</div>
-        <div class="text-sm text-green-200">Đã tuyển</div>
+        <div class="flex gap-2 items-center">
+          <label class="text-sm whitespace-nowrap font-medium">Từ ngày:</label>
+          <input 
+            id="fromDate" 
+            type="date" 
+            onchange="filterByDate()" 
+            class="px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-colors duration-300 text-sm"
+          />
+        </div>
+        <div class="flex gap-2 items-center">
+          <label class="text-sm whitespace-nowrap font-medium">Đến ngày:</label>
+          <input 
+            id="toDate" 
+            type="date" 
+            onchange="filterByDate()" 
+            class="px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-colors duration-300 text-sm"
+          />
+        </div>
       </div>
     </div>
 
     <!-- Candidates Table -->
-    <div class="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/20">
+    <div class="content-card rounded-xl overflow-hidden border transition-all duration-300">
       <div class="overflow-x-auto">
         <table class="w-full">
-          <thead class="bg-white/10">
+          <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th class="px-6 py-4 text-left font-semibold">ID</th>
-              <th class="px-6 py-4 text-left font-semibold">Họ tên</th>
-              <th class="px-6 py-4 text-left font-semibold">Email</th>
-              <th class="px-6 py-4 text-left font-semibold">Số điện thoại</th>
-              <th class="px-6 py-4 text-left font-semibold">Vị trí</th>
-              <th class="px-6 py-4 text-left font-semibold">Công ty</th>
-              <th class="px-6 py-4 text-left font-semibold">Kinh nghiệm</th>
-              <th class="px-6 py-4 text-left font-semibold">Trạng thái</th>
-              <th class="px-6 py-4 text-left font-semibold">Ngày tạo</th>
-              <th class="px-6 py-4 text-center font-semibold">Thao tác</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">ID</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Họ tên</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Email</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Số điện thoại</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Vị trí</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Công ty</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Kinh nghiệm</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Trạng thái</th>
+              <th class="px-6 py-4 text-left font-semibold text-gray-700">Ngày tạo</th>
+              <th class="px-6 py-4 text-center font-semibold text-gray-700">Thao tác</th>
             </tr>
           </thead>
-          <tbody id="candidatesTableBody" class="divide-y divide-white/10">
+          <tbody id="candidatesTableBody" class="divide-y divide-gray-200">
             <tr>
-              <td colspan="10" class="px-6 py-8 text-center text-gray-400">
+              <td colspan="10" class="px-6 py-8 text-center text-gray-500">
                 Đang tải dữ liệu...
               </td>
             </tr>
@@ -114,8 +175,8 @@
       </div>
       
       <!-- Pagination -->
-      <div id="paginationContainer" class="bg-white/5 px-6 py-4 flex justify-between items-center border-t border-white/10">
-        <div class="text-sm text-gray-300">
+      <div id="paginationContainer" class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-200">
+        <div class="text-sm text-gray-600 font-medium">
           Hiển thị <span id="showingFrom">0</span> - <span id="showingTo">0</span> của <span id="totalRecords">0</span> bản ghi
         </div>
         <div id="paginationButtons" class="flex gap-2">
@@ -127,11 +188,11 @@
   </main>
 
   <!-- Add/Edit Candidate Modal -->
-  <div id="candidateModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-    <div class="bg-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-indigo-400/30 shadow-2xl">
-      <div class="sticky top-0 bg-slate-800 border-b border-white/10 px-6 py-4 flex justify-between items-center">
-        <h2 id="modalTitle" class="text-2xl font-bold">Thêm Ứng Viên Mới</h2>
-        <button onclick="closeModal()" class="text-3xl hover:text-red-400 transition">&times;</button>
+  <div id="candidateModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200 card-shadow-lg">
+      <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+        <h2 id="modalTitle" class="text-2xl font-bold text-gray-900">Thêm Ứng Viên Mới</h2>
+        <button onclick="closeModal()" class="text-3xl text-gray-500 hover:text-red-500 transition">&times;</button>
       </div>
       
       <form id="candidateForm" class="p-6 space-y-4">
@@ -139,52 +200,87 @@
         
         <div class="grid md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-semibold mb-2">Họ *</label>
+            <label class="block text-sm font-semibold mb-2 text-gray-700">Họ *</label>
             <input type="text" id="firstName" required 
-              class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+              class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
           </div>
           <div>
-            <label class="block text-sm font-semibold mb-2">Tên *</label>
+            <label class="block text-sm font-semibold mb-2 text-gray-700">Tên *</label>
             <input type="text" id="lastName" required 
-              class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+              class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
           </div>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2">Email *</label>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Email *</label>
           <input type="email" id="email" required 
-            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
+            placeholder="example123@gmail.com"
+            title="Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)"
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+          <small class="text-gray-500 text-xs mt-1 block">Email phải có dạng: chữ và số @gmail.com</small>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2">Số điện thoại *</label>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Số điện thoại *</label>
           <input type="tel" id="phone" required
-            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-semibold mb-2">Vị trí ứng tuyển *</label>
-            <input type="text" id="position" required
-              class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold mb-2">Công ty</label>
-            <input type="text" id="companyName" 
-              class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-          </div>
+            pattern="[0-9]{10,11}"
+            placeholder="0912345678"
+            title="Số điện thoại chỉ được phép nhập số (10-11 chữ số)"
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+          <small class="text-gray-500 text-xs mt-1 block">Chỉ được nhập số, từ 10-11 chữ số</small>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2">Số năm kinh nghiệm *</label>
-          <input type="text" id="experienceYears" required
-            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Vị trí hiện tại</label>
+          <input type="text" id="currentPosition"
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2">Trạng thái</label>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Số năm kinh nghiệm</label>
+          <input type="number" id="yearsOfExperience" min="0"
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Học vấn</label>
+          <input type="text" id="education"
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+            placeholder="Ví dụ: Đại học Công nghệ Thông tin" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Kỹ năng</label>
+          <textarea id="skills" rows="2"
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            placeholder="JavaScript, React, Node.js, ..."></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Nguồn ứng tuyển *</label>
+          <select id="source" required
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <option value="">-- Chọn nguồn --</option>
+            <option value="WEBSITE">Website</option>
+            <option value="LINKEDIN">LinkedIn</option>
+            <option value="REFERRAL">Giới thiệu</option>
+            <option value="JOB_BOARD">Trang tuyển dụng</option>
+            <option value="OTHER">Khác</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Ghi chú</label>
+          <textarea id="notes" rows="3"
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            placeholder="Ghi chú về ứng viên..."></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2 text-gray-700">Trạng thái</label>
           <select id="status" 
-            class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
             <option value="NEW">Mới</option>
             <option value="SCREENING">Sàng lọc</option>
             <option value="TESTING">Đang test</option>
@@ -196,10 +292,10 @@
         </div>
 
         <div class="flex gap-3 pt-4">
-          <button type="submit" class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 px-6 py-3 rounded-lg font-semibold transition">
+          <button type="submit" class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-semibold transition shadow-md">
             💾 Lưu
           </button>
-          <button type="button" onclick="closeModal()" class="flex-1 bg-gray-600 hover:bg-gray-500 px-6 py-3 rounded-lg font-semibold transition">
+          <button type="button" onclick="closeModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition shadow-md">
             Hủy
           </button>
         </div>
@@ -208,6 +304,22 @@
   </div>
 
   <script>
+    // 🔥 FORCE CLEAR CACHE ON NEW LOGIN
+    (function checkCacheBust() {
+      const lastPageLoad = sessionStorage.getItem('candidate_page_loaded');
+      const loginTime = localStorage.getItem('login_timestamp');
+      
+      if (loginTime && (!lastPageLoad || parseInt(lastPageLoad) < parseInt(loginTime))) {
+        console.log('🔄 New login detected, clearing page cache...');
+        sessionStorage.setItem('candidate_page_loaded', Date.now().toString());
+        // Force reload without cache
+        if (!window.location.search.includes('nocache')) {
+          window.location.href = window.location.pathname + '?nocache=' + Date.now();
+          return;
+        }
+      }
+    })();
+
     const API_BASE_URL = 'http://localhost:5000/api';
     let allCandidates = [];
     let filteredCandidates = [];
@@ -215,6 +327,12 @@
     const itemsPerPage = 10;
 
     // Get auth headers
+    // Add timestamp to URL to prevent caching
+    function addCacheBuster(url) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}_t=${new Date().getTime()}`;
+    }
+
     function getAuthHeaders() {
       const token = localStorage.getItem('token');
       console.log('📤 Getting auth headers, token exists:', !!token);
@@ -228,16 +346,34 @@
       
       const headers = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       };
       
-      console.log('✅ Auth headers prepared:', { 
+      console.log('✅ Auth headers prepared with cache-busting:', { 
         hasContentType: !!headers['Content-Type'],
         hasAuthorization: !!headers['Authorization'],
+        hasCacheControl: !!headers['Cache-Control'],
         authPrefix: headers['Authorization'].substring(0, 20) + '...'
       });
       
       return headers;
+    }
+
+    // Parse JWT token
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        return null;
+      }
     }
 
     // Check authentication
@@ -255,6 +391,34 @@
         alert('Vui lòng đăng nhập lại');
         window.location.href = 'login.html';
         return false;
+      }
+
+      // Parse token to check company_id
+      const tokenPayload = parseJwt(token);
+      if (tokenPayload) {
+        console.log('🔍 Token Payload:', tokenPayload);
+        
+        // Check if token has company_id (for recruiter role)
+        if (tokenPayload.role && tokenPayload.role.toUpperCase() === 'RECRUITER' && !tokenPayload.company_id) {
+          console.error('⚠️ Token không có company_id - cần login lại!');
+          
+          // Show warning banner
+          const warningBanner = document.createElement('div');
+          warningBanner.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-4 rounded-lg shadow-2xl border-2 border-red-500';
+          warningBanner.innerHTML = `
+            <div class="flex items-center gap-4">
+              <span class="text-3xl">⚠️</span>
+              <div>
+                <p class="font-bold text-lg text-white">CẢNH BÁO: Token cũ không có Company ID!</p>
+                <p class="text-sm mt-1 text-white">Bạn đang thấy dữ liệu của TẤT CẢ công ty. Vui lòng đăng xuất và đăng nhập lại!</p>
+              </div>
+              <button onclick="logout()" class="ml-4 bg-white text-red-600 px-4 py-2 rounded font-bold hover:bg-gray-100 shadow-md">
+                Đăng xuất ngay
+              </button>
+            </div>
+          `;
+          document.body.appendChild(warningBanner);
+        }
       }
 
       const session = JSON.parse(localStorage.getItem('session_user') || 'null');
@@ -279,10 +443,17 @@
 
     // Logout
     function logout() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('session_user');
-      window.location.href = 'index.html';
+      // 🔥 XÓA TẤT CẢ DỮ LIỆU
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear cookies nếu có
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      });
+      
+      // Force reload to clear cache
+      window.location.href = 'index.html?t=' + Date.now();
     }
 
     // Get status text only (no colored badges)
@@ -317,13 +488,25 @@
         const headers = getAuthHeaders();
         if (!headers) return; // Already redirected to login
         
-        const response = await fetch(`${API_BASE_URL}/candidates`, {
-          headers: headers
+        // Add timestamp to prevent caching
+        const timestamp = new Date().getTime();
+        const response = await fetch(`${API_BASE_URL}/apply/candidates?_t=${timestamp}`, {
+          headers: headers,
+          cache: 'no-store' // Force no caching
         });
 
         if (response.status === 401 || response.status === 403) {
-          alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
-          window.location.href = 'login.html';
+          const errorData = await response.json().catch(() => ({}));
+          if (errorData.error_code === 'OLD_TOKEN') {
+            alert('⚠️ TOKEN CŨ KHÔNG HỢP LỆ!\n\nHệ thống đã được cập nhật để bảo mật dữ liệu theo công ty.\n\nBạn đang dùng token cũ không có company_id.\n\n➡️ VUI LÒNG ĐĂNG XUẤT VÀ ĐĂNG NHẬP LẠI!');
+            logout();
+          } else if (errorData.error_code === 'COMPANY_MISMATCH' || errorData.force_logout) {
+            alert('🚨 PHÁT HIỆN THAY ĐỔI CÔNG TY!\n\n' + (errorData.message || 'Công ty của bạn đã được thay đổi trong hệ thống.') + '\n\n➡️ VUI LÒNG ĐĂNG NHẬP LẠI để cập nhật quyền truy cập!');
+            logout();
+          } else {
+            alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+            window.location.href = 'login.html';
+          }
           return;
         }
 
@@ -346,7 +529,6 @@
         
         filteredCandidates = [...allCandidates];
         
-        updateStatistics();
         renderTable();
         console.log('✅ Loaded candidates:', allCandidates.length);
       } catch (error) {
@@ -355,7 +537,7 @@
         filteredCandidates = [];
         document.getElementById('candidatesTableBody').innerHTML = `
           <tr>
-            <td colspan="10" class="px-6 py-8 text-center text-red-400">
+            <td colspan="10" class="px-6 py-8 text-center text-red-600 font-medium">
               Lỗi khi tải dữ liệu: ${error.message}
             </td>
           </tr>
@@ -363,13 +545,7 @@
       }
     }
 
-    // Update statistics
-    function updateStatistics() {
-      document.getElementById('totalCandidates').textContent = allCandidates.length;
-      document.getElementById('newCandidates').textContent = allCandidates.filter(c => c.status === 'NEW').length;
-      document.getElementById('testingCandidates').textContent = allCandidates.filter(c => c.status === 'TESTING').length;
-      document.getElementById('hiredCandidates').textContent = allCandidates.filter(c => c.status === 'HIRED').length;
-    }
+    // Update statistics - removed (no longer needed)
 
     // Render table
     function renderTable() {
@@ -380,7 +556,7 @@
       if (pageData.length === 0) {
         document.getElementById('candidatesTableBody').innerHTML = `
           <tr>
-            <td colspan="10" class="px-6 py-8 text-center text-gray-400">
+            <td colspan="10" class="px-6 py-8 text-center text-gray-500">
               Không có ứng viên nào
             </td>
           </tr>
@@ -389,33 +565,53 @@
       }
 
       const html = pageData.map(candidate => `
-        <tr class="hover:bg-white/5 transition">
-          <td class="px-6 py-4">${candidate.candidate_id}</td>
-          <td class="px-6 py-4 font-semibold">${candidate.first_name} ${candidate.last_name}</td>
-          <td class="px-6 py-4 text-indigo-300">${candidate.email}</td>
-          <td class="px-6 py-4">${candidate.phone || '-'}</td>
-          <td class="px-6 py-4">${candidate.position || candidate.current_position || '-'}</td>
-          <td class="px-6 py-4">${candidate.company_name || '-'}</td>
-          <td class="px-6 py-4">${candidate.experience_years || candidate.years_of_experience || 0} năm</td>
-          <td class="px-6 py-4">${getStatusText(candidate.status)}</td>
-          <td class="px-6 py-4 text-sm text-gray-300">${formatDate(candidate.created_at)}</td>
+        <tr class="hover:bg-gray-50 transition">
+          <td class="px-6 py-4 text-gray-900">${candidate.candidate_id}</td>
+          <td class="px-6 py-4 font-semibold text-gray-900">${candidate.first_name} ${candidate.last_name}</td>
+          <td class="px-6 py-4 text-indigo-600">${candidate.email}</td>
+          <td class="px-6 py-4 text-gray-700">${candidate.phone || '-'}</td>
+          <td class="px-6 py-4 text-gray-700">${candidate.position || candidate.current_position || '-'}</td>
+          <td class="px-6 py-4 text-gray-700">${candidate.company_name || '-'}</td>
+          <td class="px-6 py-4 text-gray-700">${candidate.experience_years || candidate.years_of_experience || 0} năm</td>
+          <td class="px-6 py-4 text-gray-700">${getStatusText(candidate.status)}</td>
+          <td class="px-6 py-4 text-sm text-gray-600">${formatDate(candidate.created_at)}</td>
           <td class="px-6 py-4">
             <div class="flex justify-center gap-2 flex-wrap">
               <button onclick="viewCV(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded transition text-sm" title="Xem CV">
-                � CV
+                class="px-3 py-1 rounded transition text-sm shadow-sm font-medium" 
+                style="background-color: #2563eb !important; color: white !important;" 
+                title="Xem CV trong tab mới">
+                Xem
+              </button>
+              <button onclick="downloadCV(${candidate.candidate_id})" 
+                class="px-3 py-1 rounded transition text-sm shadow-sm font-medium" 
+                style="background-color: #4f46e5 !important; color: white !important;" 
+                title="Tải CV về máy">
+                Tải
               </button>
               <button onclick="updateStatusPass(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-green-600 hover:bg-green-500 rounded transition text-sm" title="Pass">
-                ✓ Pass
+                class="px-3 py-1 rounded transition text-sm shadow-sm font-medium" 
+                style="background-color: #16a34a !important; color: white !important;" 
+                title="Pass">
+                Pass
               </button>
               <button onclick="updateStatusFail(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-red-600 hover:bg-red-500 rounded transition text-sm" title="Fail">
-                ✗ Fail
+                class="px-3 py-1 rounded transition text-sm shadow-sm font-medium" 
+                style="background-color: #dc2626 !important; color: white !important;" 
+                title="Fail">
+                Fail
               </button>
               <button onclick="editCandidate(${candidate.candidate_id})" 
-                class="px-3 py-1 bg-yellow-600 hover:bg-yellow-500 rounded transition text-sm" title="Sửa">
-                ✏️
+                class="px-3 py-1 rounded transition text-sm shadow-sm font-medium" 
+                style="background-color: #eab308 !important; color: white !important;" 
+                title="Sửa">
+                Sửa
+              </button>
+              <button onclick="deleteCandidate(${candidate.candidate_id})" 
+                class="px-3 py-1 rounded transition text-sm shadow-sm font-medium" 
+                style="background-color: #6b7280 !important; color: white !important;" 
+                title="Xóa">
+                Xóa
               </button>
             </div>
           </td>
@@ -439,21 +635,21 @@
       let buttonsHTML = '';
       
       if (currentPage > 1) {
-        buttonsHTML += `<button onclick="goToPage(${currentPage - 1})" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded transition">← Trước</button>`;
+        buttonsHTML += `<button onclick="goToPage(${currentPage - 1})" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 rounded transition shadow-sm">← Trước</button>`;
       }
 
       for (let i = 1; i <= totalPages; i++) {
         if (i === currentPage) {
-          buttonsHTML += `<button class="px-3 py-1 bg-indigo-600 rounded font-semibold">${i}</button>`;
+          buttonsHTML += `<button class="px-3 py-1 bg-indigo-600 text-white rounded font-semibold shadow-sm">${i}</button>`;
         } else if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
-          buttonsHTML += `<button onclick="goToPage(${i})" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded transition">${i}</button>`;
+          buttonsHTML += `<button onclick="goToPage(${i})" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 rounded transition shadow-sm">${i}</button>`;
         } else if (i === currentPage - 2 || i === currentPage + 2) {
-          buttonsHTML += `<span class="px-2">...</span>`;
+          buttonsHTML += `<span class="px-2 text-gray-600">...</span>`;
         }
       }
 
       if (currentPage < totalPages) {
-        buttonsHTML += `<button onclick="goToPage(${currentPage + 1})" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded transition">Sau →</button>`;
+        buttonsHTML += `<button onclick="goToPage(${currentPage + 1})" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 rounded transition shadow-sm">Sau →</button>`;
       }
 
       document.getElementById('paginationButtons').innerHTML = buttonsHTML;
@@ -467,7 +663,8 @@
     // Search candidates
     function searchCandidates() {
       const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-      const statusFilter = document.getElementById('statusFilter').value;
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
 
       filteredCandidates = allCandidates.filter(candidate => {
         const matchesSearch = 
@@ -477,35 +674,73 @@
           (candidate.current_position && candidate.current_position.toLowerCase().includes(searchTerm)) ||
           (candidate.skills && candidate.skills.toLowerCase().includes(searchTerm));
         
-        const matchesStatus = !statusFilter || candidate.status === statusFilter;
+        // Date filtering
+        let matchesDate = true;
+        if (fromDate || toDate) {
+          const candidateDate = candidate.created_at ? new Date(candidate.created_at) : null;
+          if (candidateDate) {
+            if (fromDate) {
+              const from = new Date(fromDate);
+              from.setHours(0, 0, 0, 0);
+              matchesDate = matchesDate && candidateDate >= from;
+            }
+            if (toDate) {
+              const to = new Date(toDate);
+              to.setHours(23, 59, 59, 999);
+              matchesDate = matchesDate && candidateDate <= to;
+            }
+          } else {
+            matchesDate = false;
+          }
+        }
 
-        return matchesSearch && matchesStatus;
+        return matchesSearch && matchesDate;
       });
 
       currentPage = 1;
       renderTable();
     }
 
-    // Filter by status
-    function filterByStatus() {
+    // Filter by date
+    function filterByDate() {
       searchCandidates();
     }
 
     // Refresh list
     function refreshList() {
       document.getElementById('searchInput').value = '';
-      document.getElementById('statusFilter').value = '';
+      document.getElementById('fromDate').value = '';
+      document.getElementById('toDate').value = '';
       loadCandidates();
     }
 
     // Show add modal
+    function showAddModal() {
+      document.getElementById('modalTitle').textContent = 'Thêm Ứng Viên Mới';
+      document.getElementById('candidateId').value = '';
+      document.getElementById('firstName').value = '';
+      document.getElementById('lastName').value = '';
+      document.getElementById('email').value = '';
+      document.getElementById('phone').value = '';
+      document.getElementById('currentPosition').value = '';
+      document.getElementById('yearsOfExperience').value = '';
+      document.getElementById('education').value = '';
+      document.getElementById('skills').value = '';
+      document.getElementById('source').value = '';
+      document.getElementById('notes').value = '';
+      document.getElementById('status').value = 'NEW';
+
+      document.getElementById('candidateModal').classList.remove('hidden');
+      document.getElementById('candidateModal').classList.add('flex');
+    }
+
     // Close modal
     function closeModal() {
       document.getElementById('candidateModal').classList.add('hidden');
       document.getElementById('candidateModal').classList.remove('flex');
     }
 
-    // View CV
+    // View CV in new tab (inline display)
     function viewCV(id) {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -513,7 +748,87 @@
         window.location.href = 'login.html';
         return;
       }
-      window.open(`http://localhost:5000/api/candidates/${id}/cv?token=${token}`, '_blank');
+      
+      // Open in new tab with token in Authorization header via fetch and blob
+      const url = `${API_BASE_URL}/apply/candidates/${id}/cv`;
+      
+      fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Không thể tải CV');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        // Create a blob URL and open in new tab
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+        
+        // Clean up the blob URL after some time
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      })
+      .catch(error => {
+        console.error('Error viewing CV:', error);
+        alert('Lỗi khi xem CV: ' + error.message);
+      });
+    }
+
+    // Download CV to computer
+    function downloadCV(id) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Vui lòng đăng nhập lại');
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      const url = `${API_BASE_URL}/apply/candidates/${id}/cv/download`;
+      
+      fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Không thể tải CV');
+        }
+        
+        // Get filename from Content-Disposition header
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `CV_Candidate_${id}.pdf`;
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+          if (filenameMatch && filenameMatch[1]) {
+            filename = filenameMatch[1];
+          }
+        }
+        
+        return response.blob().then(blob => ({ blob, filename }));
+      })
+      .then(({ blob, filename }) => {
+        // Create download link
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // Clean up
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        
+        console.log('✅ CV downloaded successfully');
+      })
+      .catch(error => {
+        console.error('Error downloading CV:', error);
+        alert('Lỗi khi tải CV: ' + error.message);
+      });
     }
 
     // Update status to Pass (HIRED)
@@ -524,7 +839,7 @@
         const headers = getAuthHeaders();
         if (!headers) return; // Already redirected to login
         
-        const response = await fetch(`${API_BASE_URL}/candidates/${id}/status`, {
+        const response = await fetch(`${API_BASE_URL}/apply/candidates/${id}/status`, {
           method: 'PUT',
           headers: headers,
           body: JSON.stringify({ 
@@ -571,7 +886,7 @@
         const headers = getAuthHeaders();
         if (!headers) return; // Already redirected to login
         
-        const response = await fetch(`${API_BASE_URL}/candidates/${id}/status`, {
+        const response = await fetch(`${API_BASE_URL}/apply/candidates/${id}/status`, {
           method: 'PUT',
           headers: headers,
           body: JSON.stringify({ 
@@ -618,7 +933,7 @@
         const headers = getAuthHeaders();
         if (!headers) return; // Already redirected to login
         
-        const response = await fetch(`${API_BASE_URL}/candidates/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/apply/candidates/${id}`, {
           headers: headers
         });
 
@@ -641,9 +956,12 @@
         document.getElementById('lastName').value = candidate.last_name || '';
         document.getElementById('email').value = candidate.email || '';
         document.getElementById('phone').value = candidate.phone || '';
-        document.getElementById('position').value = candidate.position || '';
-        document.getElementById('companyName').value = candidate.company_name || '';
-        document.getElementById('experienceYears').value = candidate.experience_years || '';
+        document.getElementById('currentPosition').value = candidate.current_position || '';
+        document.getElementById('yearsOfExperience').value = candidate.years_of_experience || '';
+        document.getElementById('education').value = candidate.education || '';
+        document.getElementById('skills').value = candidate.skills || '';
+        document.getElementById('source').value = candidate.source || '';
+        document.getElementById('notes').value = candidate.notes || '';
         document.getElementById('status').value = candidate.status || 'NEW';
 
         document.getElementById('candidateModal').classList.remove('hidden');
@@ -662,7 +980,7 @@
         const headers = getAuthHeaders();
         if (!headers) return; // Already redirected to login
         
-        const response = await fetch(`${API_BASE_URL}/candidates/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/apply/candidates/${id}`, {
           method: 'DELETE',
           headers: headers
         });
@@ -683,39 +1001,108 @@
       }
     }
 
+    // Real-time validation for email
+    document.getElementById('email').addEventListener('input', function(e) {
+      const email = e.target.value;
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+      
+      if (email && !emailPattern.test(email)) {
+        e.target.setCustomValidity('Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)');
+        e.target.classList.add('border-red-500');
+        e.target.classList.remove('border-gray-300');
+      } else {
+        e.target.setCustomValidity('');
+        e.target.classList.remove('border-red-500');
+        e.target.classList.add('border-gray-300');
+      }
+    });
+
+    // Real-time validation for phone - only allow numbers
+    document.getElementById('phone').addEventListener('input', function(e) {
+      // Remove any non-digit characters
+      let phone = e.target.value.replace(/\D/g, '');
+      e.target.value = phone;
+      
+      const phonePattern = /^[0-9]{10,11}$/;
+      
+      if (phone && !phonePattern.test(phone)) {
+        e.target.setCustomValidity('Số điện thoại phải từ 10-11 chữ số');
+        e.target.classList.add('border-red-500');
+        e.target.classList.remove('border-gray-300');
+      } else {
+        e.target.setCustomValidity('');
+        e.target.classList.remove('border-red-500');
+        e.target.classList.add('border-gray-300');
+      }
+    });
+
+    // Prevent non-numeric input on phone field
+    document.getElementById('phone').addEventListener('keypress', function(e) {
+      // Allow only numbers (0-9)
+      if (e.key < '0' || e.key > '9') {
+        e.preventDefault();
+      }
+    });
+
     // Handle form submit
     document.getElementById('candidateForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const candidateId = document.getElementById('candidateId').value;
+      // Final validation before submit
+      const email = document.getElementById('email').value;
+      const phone = document.getElementById('phone').value;
       
-      if (!candidateId) {
-        alert('❌ Lỗi: Không tìm thấy ID ứng viên');
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+      const phonePattern = /^[0-9]{10,11}$/;
+      
+      if (!emailPattern.test(email)) {
+        alert('❌ Email không hợp lệ!\n\nEmail phải có dạng: chữ và số @gmail.com\nVí dụ: user123@gmail.com');
+        document.getElementById('email').focus();
+        return;
+      }
+      
+      if (!phonePattern.test(phone)) {
+        alert('❌ Số điện thoại không hợp lệ!\n\nSố điện thoại chỉ được nhập số, từ 10-11 chữ số\nVí dụ: 0912345678');
+        document.getElementById('phone').focus();
         return;
       }
 
+      const candidateId = document.getElementById('candidateId').value;
+      
+      const candidateData = {
+        first_name: document.getElementById('firstName').value,
+        last_name: document.getElementById('lastName').value,
+        email: email,
+        phone: phone,
+        current_position: document.getElementById('currentPosition').value,
+        years_of_experience: document.getElementById('yearsOfExperience').value,
+        education: document.getElementById('education').value,
+        skills: document.getElementById('skills').value,
+        source: document.getElementById('source').value,
+        notes: document.getElementById('notes').value,
+        status: document.getElementById('status').value
+      };
+
       try {
-
-        // Update candidate
-        const candidateData = {
-          first_name: document.getElementById('firstName').value,
-          last_name: document.getElementById('lastName').value,
-          email: document.getElementById('email').value,
-          phone: document.getElementById('phone').value,
-          position: document.getElementById('position').value,
-          company_name: document.getElementById('companyName').value,
-          experience_years: document.getElementById('experienceYears').value,
-          status: document.getElementById('status').value
-        };
-
         const headers = getAuthHeaders();
         if (!headers) return; // Already redirected to login
         
-        const response = await fetch(`${API_BASE_URL}/candidates/${candidateId}`, {
-          method: 'PUT',
-          headers: headers,
-          body: JSON.stringify(candidateData)
-        });
+        let response;
+        if (candidateId) {
+          // Update existing candidate
+          response = await fetch(`${API_BASE_URL}/apply/candidates/${candidateId}`, {
+            method: 'PUT',
+            headers: headers,
+            body: JSON.stringify(candidateData)
+          });
+        } else {
+          // Create new candidate
+          response = await fetch(`${API_BASE_URL}/apply/candidates`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(candidateData)
+          });
+        }
 
         if (response.status === 401 || response.status === 403) {
           alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
@@ -725,11 +1112,11 @@
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to update candidate');
+          throw new Error(errorData.message || 'Failed to save candidate');
         }
 
         const result = await response.json();
-        alert('✅ Đã cập nhật thông tin ứng viên thành công!');
+        alert(candidateId ? '✅ Đã cập nhật thông tin ứng viên thành công!' : '✅ Đã thêm ứng viên mới thành công!');
         closeModal();
         loadCandidates();
       } catch (error) {
@@ -738,9 +1125,40 @@
       }
     });
 
+    // Clear any cached data on page load
+    window.addEventListener('pageshow', function(event) {
+      // If page is loaded from cache (back/forward button), force reload
+      if (event.persisted) {
+        console.log('🔄 Page loaded from cache, forcing reload...');
+        window.location.reload();
+      }
+    });
+
+    // Check if this is a fresh login (has timestamp in localStorage)
+    const loginTimestamp = localStorage.getItem('login_timestamp');
+    if (loginTimestamp) {
+      const timeSinceLogin = Date.now() - parseInt(loginTimestamp);
+      // If logged in less than 5 seconds ago, this is likely a fresh login
+      if (timeSinceLogin < 5000) {
+        console.log('🎯 Fresh login detected, ensuring no cache...');
+        // Force reload to ensure fresh data
+        if (!sessionStorage.getItem('reloaded_after_login')) {
+          sessionStorage.setItem('reloaded_after_login', 'true');
+          window.location.reload();
+        } else {
+          sessionStorage.removeItem('reloaded_after_login');
+        }
+      }
+    }
+
     // Initialize
     if (checkAuth()) {
       loadCandidates();
+    }
+
+    // Setup theme toggle
+    if (window.ThemeManager) {
+      ThemeManager.setupToggle('themeToggle');
     }
   </script>
 

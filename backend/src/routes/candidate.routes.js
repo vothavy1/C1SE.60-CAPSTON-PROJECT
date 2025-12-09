@@ -72,6 +72,22 @@ router.get(
   candidateController.getCandidateByUserId
 );
 
+// View candidate CV (open in browser)
+router.get(
+  '/:id/cv',
+  authMiddleware.verifyToken,
+  authMiddleware.authorize([], { allowedRoles: ['ADMIN', 'RECRUITER'] }),
+  candidateController.viewCandidateCV
+);
+
+// Download candidate CV (force download)
+router.get(
+  '/:id/cv/download',
+  authMiddleware.verifyToken,
+  authMiddleware.authorize([], { allowedRoles: ['ADMIN', 'RECRUITER'] }),
+  candidateController.downloadCandidateCV
+);
+
 // Get candidate by ID
 router.get(
   '/:id',

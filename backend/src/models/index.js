@@ -4,6 +4,7 @@ const sequelize = require('../config/database');
 const Role = require('./role.model');
 const User = require('./user.model');
 const Permission = require('./permission.model');
+const Company = require('./company.model');
 const SystemLog = require('./systemLog.model');
 const Candidate = require('./candidate.model');
 const QuestionCategory = require('./questionCategory.model');
@@ -23,8 +24,17 @@ const CandidateTestAnswer = require('./candidateTestAnswer.model');
 const TestFraudLog = require('./testFraudLog.model');
 const CandidateTestResult = require('./candidateTestResult.model');
 const RecruitmentReport = require('./recruitmentReport.model');
+const AdminNotification = require('./adminNotification.model');
 
 // ===== Thiết lập quan hệ giữa các bảng =====
+
+// Company - User
+Company.hasMany(User, { foreignKey: 'company_id' });
+User.belongsTo(Company, { foreignKey: 'company_id' });
+
+// Company - Candidate
+Company.hasMany(Candidate, { foreignKey: 'company_id' });
+Candidate.belongsTo(Company, { foreignKey: 'company_id' });
 
 // User - Role
 User.belongsTo(Role, { foreignKey: 'role_id' });
@@ -43,7 +53,7 @@ User.hasOne(Candidate, { foreignKey: 'user_id' });
 Candidate.belongsTo(User, { foreignKey: 'user_id' });
 
 // Candidate - CandidateResume
-Candidate.hasMany(CandidateResume, { foreignKey: 'candidate_id' });
+Candidate.hasMany(CandidateResume, { foreignKey: 'candidate_id', as: 'CandidateResumes' });
 CandidateResume.belongsTo(Candidate, { foreignKey: 'candidate_id' });
 
 // User - Question
@@ -62,6 +72,14 @@ QuestionOption.belongsTo(Question, { foreignKey: 'question_id' });
 Question.hasMany(CodingQuestionTemplate, { foreignKey: 'question_id' });
 CodingQuestionTemplate.belongsTo(Question, { foreignKey: 'question_id' });
 
+// Company - Test
+Company.hasMany(Test, { foreignKey: 'company_id' });
+Test.belongsTo(Company, { foreignKey: 'company_id' });
+
+// Company - Question
+Company.hasMany(Question, { foreignKey: 'company_id' });
+Question.belongsTo(Company, { foreignKey: 'company_id' });
+
 // User - Test
 User.hasMany(Test, { foreignKey: 'created_by', as: 'CreatedTests' });
 Test.belongsTo(User, { foreignKey: 'created_by', as: 'Creator' });
@@ -77,6 +95,10 @@ Question.hasMany(TestQuestion, { foreignKey: 'question_id' });
 // TestQuestion - Test
 TestQuestion.belongsTo(Test, { foreignKey: 'test_id' });
 Test.hasMany(TestQuestion, { foreignKey: 'test_id' });
+
+// Company - JobPosition
+Company.hasMany(JobPosition, { foreignKey: 'company_id' });
+JobPosition.belongsTo(Company, { foreignKey: 'company_id' });
 
 // User - JobPosition
 User.hasMany(JobPosition, { foreignKey: 'created_by', as: 'CreatedPositions' });
@@ -154,6 +176,10 @@ CandidateTestResult.belongsTo(User, { foreignKey: 'reviewed_by', as: 'Reviewer' 
 User.hasMany(RecruitmentReport, { foreignKey: 'created_by', as: 'CreatedReports' });
 RecruitmentReport.belongsTo(User, { foreignKey: 'created_by', as: 'Creator' });
 
+// User - AdminNotification
+User.hasMany(AdminNotification, { foreignKey: 'related_user_id', as: 'RelatedNotifications' });
+AdminNotification.belongsTo(User, { foreignKey: 'related_user_id', as: 'RelatedUser' });
+
 // ===== Xuất đối tượng DB =====
 const db = {
   sequelize,
@@ -161,6 +187,7 @@ const db = {
   Role,
   User,
   Permission,
+  Company,
   SystemLog,
   Candidate,
   QuestionCategory,
@@ -179,7 +206,8 @@ const db = {
   CandidateTestAnswer,
   TestFraudLog,
   CandidateTestResult,
-  RecruitmentReport
+  RecruitmentReport,
+  AdminNotification
 };
 
 module.exports = db;

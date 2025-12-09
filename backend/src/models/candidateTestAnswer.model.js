@@ -24,6 +24,16 @@ const CandidateTestAnswer = sequelize.define('CandidateTestAnswer', {
       key: 'question_id'
     }
   },
+  selected_option_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: 'Selected option ID for multiple choice questions'
+  },
+  answer_text: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    comment: 'Text answer for essay questions'
+  },
   selected_options: {
     type: DataTypes.STRING(255),
     allowNull: true,
@@ -46,6 +56,11 @@ const CandidateTestAnswer = sequelize.define('CandidateTestAnswer', {
     type: DataTypes.DECIMAL(5, 2),
     allowNull: true,
     field: 'score_earned'
+  },
+  essay_score: {
+    type: DataTypes.DECIMAL(5, 2),
+    allowNull: true,
+    comment: 'Score for essay questions'
   },
   submitted_at: {
     type: DataTypes.DATE,

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>🧪 Test Company Filter</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #ffffff;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #00d4ff;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+        }
+        h1 {
+            color: #00d4ff;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
+        }
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border-left: 4px solid #00d4ff;
+        }
+        .section h2 {
+            color: #00d4ff;
+            margin-top: 0;
+        }
+        pre {
+            background: #000;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            border: 1px solid #333;
+        }
+        .success { color: #00ff88; }
+        .error { color: #ff4444; }
+        .warning { color: #ffaa00; }
+        .info { color: #00d4ff; }
+        button {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .button-danger {
+            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+            color: #fff;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        th {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            font-weight: bold;
+        }
+        tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 TEST COMPANY FILTER SYSTEM</h1>
+        
+        <div class="section">
+            <h2>🔑 1. Kiểm tra Token</h2>
+            <button onclick="checkToken()">🔍 Check Token</button>
+            <button class="button-danger" onclick="clearAndReload()">🗑️ Clear Token & Reload</button>
+            <pre id="tokenOutput"></pre>
+        </div>
+
+        <div class="section">
+            <h2>📊 2. Test API Get Candidates</h2>
+            <button onclick="testGetCandidates()">🚀 Test Get All Candidates</button>
+            <button onclick="testGetCandidateById(16)">🔍 Test Get Candidate ID 16</button>
+            
+            <div class="stats" id="stats" style="display:none;">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalCount">0</div>
+                    <div class="stat-label">Total Candidates</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="company1Count">0</div>
+                    <div class="stat-label">Company 1 (CS60)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="company2Count">0</div>
+                    <div class="stat-label">Company 2 (Other)</div>
+                </div>
+            </div>
+            
+            <pre id="apiOutput"></pre>
+        </div>
+
+        <div class="section">
+            <h2>📋 3. Danh sách Candidates</h2>
+            <div id="candidateTable"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔧 4. Actions</h2>
+            <button onclick="location.href='candidate-list.html'">📝 Mở Candidate List</button>
+            <button onclick="location.href='check-token-detail.html'">🔑 Token Detail Tool</button>
+            <button onclick="location.href='index.html'">🏠 Home</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const colors = {
+                success: '#00ff88',
+                error: '#ff4444',
+                warning: '#ffaa00',
+                info: '#00d4ff'
+            };
+            const color = colors[type] || colors.info;
+            element.innerHTML += `<span style="color: ${color}">${message}</span>\n`;
+        }
+
+        function clearLog(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+
+        async function checkToken() {
+            clearLog('tokenOutput');
+            
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                log('tokenOutput', '❌ KHÔNG TÌM THẤY TOKEN! Bạn chưa đăng nhập.', 'error');
+                return null;
+            }
+            
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                
+                log('tokenOutput', '✅ TOKEN TỒN TẠI\n', 'success');
+                log('tokenOutput', '📦 TOKEN PAYLOAD:', 'info');
+                log('tokenOutput', JSON.stringify(payload, null, 2), 'info');
+                log('tokenOutput', '\n📋 CHI TIẾT:', 'info');
+                log('tokenOutput', `User ID: ${payload.id}`, 'info');
+                log('tokenOutput', `Username: ${payload.username}`, 'info');
+                log('tokenOutput', `Role: ${payload.role}`, 'info');
+                
+                if (payload.company_id) {
+                    log('tokenOutput', `Company ID: ${payload.company_id} ✅`, 'success');
+                } else {
+                    log('tokenOutput', `Company ID: KHÔNG CÓ ❌`, 'error');
+                    log('tokenOutput', '\n⚠️ CẢNH BÁO: Token thiếu company_id!', 'warning');
+                    log('tokenOutput', 'Bạn cần đăng xuất và đăng nhập lại!', 'warning');
+                }
+                
+                return payload;
+            } catch (error) {
+                log('tokenOutput', `❌ LỖI DECODE TOKEN: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        async function testGetCandidates() {
+            clearLog('apiOutput');
+            document.getElementById('stats').style.display = 'none';
+            document.getElementById('candidateTable').innerHTML = '';
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                log('apiOutput', '❌ Không tìm thấy token. Vui lòng đăng nhập!', 'error');
+                return;
+            }
+            
+            log('apiOutput', '🚀 Testing GET /api/candidates...\\n', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/candidates?limit=100`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                log('apiOutput', `📡 Status: ${response.status} ${response.statusText}\\n`, 
+                    response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    log('apiOutput', '✅ API CALL SUCCESS!\\n', 'success');
+                    log('apiOutput', `Total candidates: ${data.data.length}\\n`, 'info');
+                    
+                    // Count by company
+                    const company1 = data.data.filter(c => c.company_id === 1);
+                    const company2 = data.data.filter(c => c.company_id === 2);
+                    const others = data.data.filter(c => c.company_id > 2);
+                    
+                    document.getElementById('stats').style.display = 'grid';
+                    document.getElementById('totalCount').textContent = data.data.length;
+                    document.getElementById('company1Count').textContent = company1.length;
+                    document.getElementById('company2Count').textContent = company2.length;
+                    
+                    log('apiOutput', `📊 BREAKDOWN BY COMPANY:`, 'info');
+                    log('apiOutput', `  Company 1 (CS60): ${company1.length} candidates`, 'info');
+                    log('apiOutput', `  Company 2: ${company2.length} candidates`, 'info');
+                    log('apiOutput', `  Others: ${others.length} candidates\\n`, 'info');
+                    
+                    // Check if recruiter sees wrong data
+                    const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+                    if (tokenPayload.role === 'RECRUITER') {
+                        if (tokenPayload.company_id === 1 && company2.length > 0) {
+                            log('apiOutput', '❌ BUG PHÁT HIỆN! Recruiter company 1 thấy dữ liệu company 2!', 'error');
+                        } else if (tokenPayload.company_id === 2 && company1.length > 0) {
+                            log('apiOutput', '❌ BUG PHÁT HIỆN! Recruiter company 2 thấy dữ liệu company 1!', 'error');
+                        } else {
+                            log('apiOutput', '✅ Company filter hoạt động đúng!', 'success');
+                        }
+                    }
+                    
+                    // Show table
+                    renderTable(data.data);
+                    
+                } else {
+                    log('apiOutput', `❌ API ERROR: ${data.message}\\n`, 'error');
+                    log('apiOutput', JSON.stringify(data, null, 2), 'error');
+                }
+                
+            } catch (error) {
+                log('apiOutput', `❌ FETCH ERROR: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGetCandidateById(id) {
+            clearLog('apiOutput');
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                log('apiOutput', '❌ Không tìm thấy token. Vui lòng đăng nhập!', 'error');
+                return;
+            }
+            
+            log('apiOutput', `🚀 Testing GET /api/candidates/${id}...\\n`, 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/candidates/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                log('apiOutput', `📡 Status: ${response.status} ${response.statusText}\\n`, 
+                    response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    log('apiOutput', '✅ API CALL SUCCESS!\\n', 'success');
+                    log('apiOutput', `Candidate ID: ${data.data.candidate_id}`, 'info');
+                    log('apiOutput', `Name: ${data.data.first_name} ${data.data.last_name}`, 'info');
+                    log('apiOutput', `Company ID: ${data.data.company_id}\\n`, 'info');
+                    
+                    // Check permission
+                    const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+                    if (tokenPayload.role === 'RECRUITER' && tokenPayload.company_id !== data.data.company_id) {
+                        log('apiOutput', `❌ BUG! Recruiter company ${tokenPayload.company_id} thấy candidate company ${data.data.company_id}!`, 'error');
+                    } else {
+                        log('apiOutput', '✅ Permission check đúng!', 'success');
+                    }
+                    
+                    log('apiOutput', '\\n📦 FULL DATA:\\n', 'info');
+                    log('apiOutput', JSON.stringify(data.data, null, 2), 'info');
+                } else {
+                    if (response.status === 403) {
+                        log('apiOutput', '✅ ĐÚNG! API chặn truy cập (403 Forbidden)', 'success');
+                    }
+                    log('apiOutput', `Response: ${data.message}\\n`, response.status === 403 ? 'success' : 'error');
+                    log('apiOutput', JSON.stringify(data, null, 2), 'info');
+                }
+                
+            } catch (error) {
+                log('apiOutput', `❌ FETCH ERROR: ${error.message}`, 'error');
+            }
+        }
+
+        function renderTable(candidates) {
+            if (candidates.length === 0) {
+                document.getElementById('candidateTable').innerHTML = '<p>Không có candidates.</p>';
+                return;
+            }
+            
+            let html = '<table><thead><tr>';
+            html += '<th>ID</th><th>Name</th><th>Email</th><th>Company</th><th>Position</th><th>Status</th>';
+            html += '</tr></thead><tbody>';
+            
+            candidates.forEach(c => {
+                const companyClass = c.company_id === 1 ? 'success' : c.company_id === 2 ? 'warning' : 'info';
+                html += `<tr>`;
+                html += `<td>${c.candidate_id}</td>`;
+                html += `<td>${c.first_name} ${c.last_name}</td>`;
+                html += `<td>${c.email}</td>`;
+                html += `<td><span class="${companyClass}">${c.company_id}</span></td>`;
+                html += `<td>${c.position || '-'}</td>`;
+                html += `<td>${c.status}</td>`;
+                html += `</tr>`;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('candidateTable').innerHTML = html;
+        }
+
+        function clearAndReload() {
+            if (confirm('⚠️ Xóa token và reload?')) {
+                localStorage.clear();
+                sessionStorage.clear();
+                location.reload();
+            }
+        }
+
+        // Auto check on load
+        window.addEventListener('DOMContentLoaded', () => {
+            checkToken();
+        });
+    </script>
+</body>
+</html>

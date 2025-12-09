@@ -81,6 +81,48 @@ const testController = {
 
       const offset = (page - 1) * limit;
       const whereConditions = {};
+      
+      // 🔒 COMPANY FILTER - Filter tests theo company_id
+      const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+      console.log(`👤 User: ${req.user?.username}, Role: ${userRole}, Company ID: ${req.user?.company_id}`);
+      console.log(`🔍 Request Query Params:`, req.query);
+      console.log(`🛡️ Request Headers Context:`, req.headers['x-company-context'] || 'none');
+      
+      if (userRole === 'RECRUITER') {
+        // Recruiter chỉ xem được đề thi của công ty mình
+        if (req.user.company_id) {
+          whereConditions.company_id = req.user.company_id;
+          console.log(`🔒 RECRUITER FILTER APPLIED: Only showing tests with company_id = ${req.user.company_id}`);
+        } else {
+          return res.status(403).json({
+            success: false,
+            message: 'Tài khoản recruiter chưa được gán vào công ty nào. Vui lòng liên hệ admin.'
+          });
+        }
+      } else if (userRole === 'CANDIDATE') {
+        // 🔒 CRITICAL: Candidate chỉ xem được đề thi của công ty mình
+        // Get candidate info to find company_id
+        const { Candidate } = require('../models');
+        const candidate = await Candidate.findOne({ where: { user_id: req.user.user_id } });
+        
+        if (!candidate) {
+          return res.status(404).json({
+            success: false,
+            message: 'Không tìm thấy hồ sơ ứng viên'
+          });
+        }
+        
+        if (!candidate.company_id) {
+          return res.status(403).json({
+            success: false,
+            message: 'Hồ sơ ứng viên chưa được gán vào công ty nào. Vui lòng liên hệ HR.'
+          });
+        }
+        
+        whereConditions.company_id = candidate.company_id;
+        console.log(`🔒 CANDIDATE FILTER APPLIED: Only showing tests with company_id = ${candidate.company_id}`);
+      }
+      
       if (isActive !== undefined) whereConditions.is_active = isActive === 'true';
       if (search) {
         whereConditions[sequelize.Op.or] = [
@@ -103,6 +145,7 @@ const testController = {
           'passing_score',
           'is_active',
           'created_by',
+          'company_id',
           'created_at',
           'updated_at'
         ],
@@ -111,12 +154,39 @@ const testController = {
             model: User,
             as: 'Creator',
             attributes: ['user_id', 'username', 'full_name']
+          },
+          {
+            model: require('../models').Company,
+            attributes: ['company_id', 'companyName', 'companyCode']
           }
         ],
         order: [['created_at', 'DESC']]
       });
 
       const totalPages = Math.ceil(count / limit);
+
+      // 🛡️ SECURITY VALIDATION: Verify all returned tests belong to correct company
+      if (tests.length > 0) {
+        const companyIds = [...new Set(tests.map(test => test.company_id))];
+        const expectedCompanyId = req.user?.company_id || 'NO_COMPANY';
+        
+        console.log(`🔍 RESPONSE VALIDATION:`, {
+          userRole,
+          expectedCompanyId,
+          returnedCompanyIds: companyIds,
+          testCount: tests.length,
+          queryParams: req.query
+        });
+        
+        if (userRole === 'RECRUITER' && companyIds.some(id => id !== expectedCompanyId)) {
+          console.error(`🚨 SECURITY BREACH: Recruiter ${req.user?.username} (Company: ${expectedCompanyId}) attempted to access tests from companies: ${companyIds.join(', ')}`);
+          return res.status(403).json({
+            success: false,
+            message: 'Phát hiện lỗi bảo mật: Truy cập dữ liệu công ty không được phép',
+            error_code: 'UNAUTHORIZED_COMPANY_ACCESS'
+          });
+        }
+      }
 
       return res.status(200).json({
         success: true,
@@ -171,7 +241,37 @@ const testController = {
         return res.status(404).json({ success: false, message: 'Không tìm thấy bài test' });
       }
       
-      return res.status(200).json({
+    // 🔒 COMPANY CHECK - Filter theo company_id
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    
+    if (userRole === 'RECRUITER') {
+      if (test.company_id !== req.user.company_id) {
+        console.log(`🚫 ACCESS DENIED: Recruiter company_id=${req.user.company_id} tried to access test company_id=${test.company_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xem đề thi này'
+        });
+      }
+    } else if (userRole === 'CANDIDATE') {
+      // 🔒 CRITICAL: Candidate chỉ xem được đề thi của công ty mình
+      const { Candidate } = require('../models');
+      const candidate = await Candidate.findOne({ where: { user_id: req.user.user_id } });
+      
+      if (!candidate || !candidate.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Hồ sơ ứng viên chưa được gán vào công ty'
+        });
+      }
+      
+      if (test.company_id !== candidate.company_id) {
+        console.log(`🚫 ACCESS DENIED: Candidate company_id=${candidate.company_id} tried to access test company_id=${test.company_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xem đề thi này'
+        });
+      }
+    }      return res.status(200).json({
         success: true,
         data: test
       });
@@ -218,6 +318,7 @@ const testController = {
         passing_score: passing_score || null,
         is_active: true,
         created_by: req.user.user_id,
+        company_id: req.user.company_id || null,
         created_at: new Date(),
         updated_at: new Date()
       }, { transaction });
@@ -320,6 +421,17 @@ const testController = {
         return res.status(404).json({ success: false, message: 'Không tìm thấy bài test' });
       }
       
+      // 🔒 COMPANY CHECK - Recruiter chỉ cập nhật được đề thi của công ty mình
+      const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+      if (userRole === 'RECRUITER' && test.company_id !== req.user.company_id) {
+        await transaction.rollback();
+        console.log(`🚫 UPDATE DENIED: Recruiter company_id=${req.user.company_id} tried to update test company_id=${test.company_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền cập nhật đề thi này'
+        });
+      }
+      
       // Update test
       await test.update({
         test_name: test_name || test.test_name,
@@ -418,6 +530,17 @@ const testController = {
       if (!test) {
         await transaction.rollback();
         return res.status(404).json({ success: false, message: 'Không tìm thấy bài test' });
+      }
+      
+      // 🔒 COMPANY CHECK - Recruiter chỉ xóa được đề thi của công ty mình
+      const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+      if (userRole === 'RECRUITER' && test.company_id !== req.user.company_id) {
+        await transaction.rollback();
+        console.log(`🚫 DELETE DENIED: Recruiter company_id=${req.user.company_id} tried to delete test company_id=${test.company_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xóa đề thi này'
+        });
       }
       
       // Check if test is being used by any candidate tests

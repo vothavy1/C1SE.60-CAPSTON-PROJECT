@@ -58,6 +58,14 @@ const Test = sequelize.define('Test', {
       key: 'user_id'
     }
   },
+  company_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'companies',
+      key: 'company_id'
+    }
+  },
   created_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW

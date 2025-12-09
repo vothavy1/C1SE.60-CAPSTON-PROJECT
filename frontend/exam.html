@@ -7,41 +7,102 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-800 min-h-screen text-white font-sans">
+<body class="bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 min-h-screen text-gray-800 font-sans">
   <script>
     // Guard: yêu cầu đăng nhập và phải là CANDIDATE; nếu là RECRUITER chuyển qua trang recruiter
     (function guardRole() {
       try {
-        const session = JSON.parse(localStorage.getItem('session_user') || 'null');
-        if (!session) {
+        // Check for authentication token
+        const token = localStorage.getItem('token') || 
+                     localStorage.getItem('auth_token') || 
+                     localStorage.getItem('authToken');
+        
+        if (!token) {
+          console.log('🔐 No authentication token found, redirecting to login');
           location.replace('index.html');
           return;
         }
-        const role = String(session.role || '').toUpperCase();
-        if (role === 'RECRUITER') {
-          location.replace('recruiter.html');
+        
+        // Validate token format
+        try {
+          const parts = token.split('.');
+          if (parts.length !== 3) {
+            console.error('❌ Invalid JWT token format');
+            localStorage.clear();
+            location.replace('index.html');
+            return;
+          }
+          
+          // Parse token payload to get user info
+          const payload = JSON.parse(atob(parts[1]));
+          console.log('👤 Token payload:', { id: payload.id, role: payload.role, username: payload.username });
+          
+          // Check if token is expired
+          if (payload.exp && Date.now() >= payload.exp * 1000) {
+            console.error('⏰ Token has expired');
+            localStorage.clear();
+            location.replace('index.html');
+            return;
+          }
+          
+        } catch (tokenError) {
+          console.error('❌ Token parsing error:', tokenError);
+          localStorage.clear();
+          location.replace('index.html');
           return;
         }
-        // Set header name if present
-        const nameEl = document.getElementById('userName');
-        if (nameEl && session.name) nameEl.textContent = `Xin chào, ${session.name}!`;
-      } catch (_) {
+        
+        const session = JSON.parse(localStorage.getItem('session_user') || 'null');
+        if (!session) {
+          console.log('📝 No session data found, but token exists - continuing');
+        } else {
+          const role = String(session.role || '').toUpperCase();
+          if (role === 'ADMIN') {
+            console.log('👨‍💼 Admin detected, redirecting to admin dashboard');
+            location.replace('admin-dashboard.html');
+            return;
+          }
+          if (role === 'RECRUITER') {
+            console.log('👨‍💼 Recruiter detected, redirecting to recruiter dashboard');
+            location.replace('recruiter.html');
+            return;
+          }
+          
+          // Set header name if present
+          setTimeout(() => {
+            const nameEl = document.getElementById('userName');
+            if (nameEl && session.name) {
+              nameEl.textContent = `Xin chào, ${session.name}!`;
+            }
+          }, 100);
+        }
+        
+      } catch (error) {
+        console.error('❌ Authentication guard error:', error);
+        localStorage.clear();
         location.replace('index.html');
       }
     })();
   </script>
 
   <!-- Header -->
-  <header class="bg-white/10 backdrop-blur-md shadow-lg sticky top-0 z-10 border-b border-purple-400/30">
+  <header class="bg-white shadow-md sticky top-0 z-10 border-b border-blue-200">
   <div class="max-w-6xl mx-auto flex justify-between items-center py-4 px-6">
     <!-- Logo / Tên App -->
-    <h1 class="text-3xl font-bold text-white tracking-wide">Tuyển dụng</h1>
+    <h1 class="text-3xl font-bold text-blue-600 tracking-wide">Tuyển dụng</h1>
 
     <!-- Thông tin người dùng và đăng xuất -->
-    <div class="flex items-center gap-4">
-      <span id="userName" class="font-medium text-purple-200">Xin chào, học viên!</span>
+    <div class="flex items-center gap-3">
+      <span id="userName" class="font-medium text-gray-700">Xin chào, học viên!</span>
       
-      <button id="logoutBtn" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition">
+      <button id="profileBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg transition shadow-md flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+        </svg>
+        Hồ sơ
+      </button>
+      
+      <button id="logoutBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition shadow-md">
         Đăng xuất
       </button>
     </div>
@@ -60,24 +121,10 @@
 </script>
 
 
-  <!-- Hero -->
-  <section class="text-center py-12 bg-gradient-to-r from-indigo-600 to-purple-700 shadow-lg">
-    <h2 class="text-4xl font-semibold mb-3">Hệ thống thi trực tuyến thông minh</h2>
-    <p class="text-purple-100 mb-6 text-lg">Thực hiện bài thi có giám sát khuôn mặt bằng AI – an toàn, tiện lợi và chuyên nghiệp</p>
-
-    <button
-      id="startExamBtn"
-      class="bg-gradient-to-r from-yellow-400 to-amber-300 text-indigo-900 px-8 py-3 rounded-lg font-bold hover:scale-105 hover:shadow-lg transition"
-      onclick="scrollToExamList()"
-    >
-      🚀 Xem danh sách đề thi
-    </button>
-  </section>
-
   <!-- Main content -->
-  <main class="max-w-5xl mx-auto mt-10 p-8 bg-white/10 rounded-2xl shadow-xl border border-purple-300/30 backdrop-blur-md">
+  <main class="max-w-5xl mx-auto mt-6 p-8 bg-white rounded-2xl shadow-xl border border-blue-200">
     <div class="flex justify-between items-center mb-6">
-      <h3 class="text-2xl font-semibold flex items-center gap-2 text-white">
+      <h3 class="text-2xl font-semibold flex items-center gap-2 text-blue-700">
         📝 Danh sách bài test tuyển dụng
       </h3>
       <div class="flex items-center gap-4">
@@ -94,9 +141,40 @@
   </main>
 
   <!-- Footer -->
-  <footer class="text-center py-6 text-purple-200 mt-12 border-t border-purple-500/30">
-    © 2025 <span class="text-white font-semibold">ExamPro</span>. All rights reserved.
+  <footer class="text-center py-6 text-gray-600 mt-12 border-t border-blue-200 bg-white">
+    © 2025 <span class="text-blue-600 font-semibold">ExamPro</span>. All rights reserved.
   </footer>
+
+  <!-- Profile Modal -->
+  <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6 rounded-t-2xl">
+        <div class="flex justify-between items-center">
+          <h2 class="text-2xl font-bold flex items-center gap-2">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            Hồ Sơ Ứng Viên
+          </h2>
+          <button onclick="closeProfileModal()" class="text-white hover:bg-white/20 rounded-full p-2 transition">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <div class="p-6">
+        <div id="profileContent" class="space-y-4">
+          <!-- Loading -->
+          <div class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p class="text-gray-700 mt-2">Đang tải thông tin...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- JS -->
   <script>
@@ -105,10 +183,52 @@
 
     // Get auth headers with JWT token
     function getAuthHeaders() {
-      const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+      // Try multiple possible token storage keys
+      const token = localStorage.getItem('token') || 
+                   localStorage.getItem('auth_token') || 
+                   localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.warn('⚠️ No authentication token found');
+        return {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        };
+      }
+      
+      // Validate token format
+      try {
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+          console.error('❌ Invalid JWT token format');
+          localStorage.removeItem('token');
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('authToken');
+          return {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          };
+        }
+      } catch (error) {
+        console.error('❌ Token validation error:', error);
+        return {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        };
+      }
+      
       return {
         'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` })
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Authorization': `Bearer ${token}`
       };
     }
 
@@ -118,22 +238,30 @@
       const list = document.getElementById("examList");
       list.innerHTML = `
         <div class="col-span-full text-center py-8">
-          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-          <p class="text-white mt-2">Đang tải danh sách đề thi...</p>
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p class="text-gray-700 mt-2">Đang tải danh sách đề thi...</p>
         </div>
       `;
     }
 
-    // Show error message
-    function showError(message) {
+    // Show error message with optional retry button
+    function showError(message, showRetry = false) {
       const list = document.getElementById("examList");
       list.innerHTML = `
         <div class="col-span-full text-center py-8">
-          <div class="bg-red-500/20 border border-red-400 rounded-lg p-6">
-            <h4 class="text-red-200 text-lg font-semibold mb-2">Lỗi tải dữ liệu</h4>
-            <p class="text-red-300">${message}</p>
-            <button onclick="loadExams()" class="mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">
-              Thử lại
+          <div class="bg-red-50 border border-red-300 rounded-lg p-6">
+            <h4 class="text-red-600 text-lg font-semibold mb-2">⚠️ Có lỗi xảy ra</h4>
+            <p class="text-red-700 mb-4">${message}</p>
+            ${showRetry ? `
+              <button onclick="loadExams()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition shadow-md">
+                🔄 Thử lại
+              </button>
+            ` : ''}
+            <button onclick="loadExams()" class="mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition shadow-md">
+              🔄 Tải lại
+            </button>
+            <button onclick="testConnection()" class="mt-4 ml-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition shadow-md">
+              🔧 Test kết nối
             </button>
           </div>
         </div>
@@ -142,23 +270,47 @@
 
     // Fetch exams from API
     async function loadExams() {
-      console.log('loadExams function called');
+      console.log('🔄 loadExams function called');
       showLoading();
       
       try {
+        // Check authentication first
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) {
+          console.error('❌ No valid authentication token, redirecting to login');
+          localStorage.clear();
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        console.log('🔗 Making API request to:', `${API_BASE_URL}/tests`);
         const response = await fetch(`${API_BASE_URL}/tests`, {
-          headers: getAuthHeaders()
+          method: 'GET',
+          headers: headers,
+          cache: 'no-cache'
         });
 
+        console.log('📡 Response status:', response.status, response.statusText);
+        
         if (!response.ok) {
           if (response.status === 401) {
-            // Token expired or invalid, redirect to login
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('session_user');
+            console.error('❌ 401 Unauthorized - Token expired or invalid');
+            localStorage.clear();
+            alert('⚠️ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
             window.location.href = 'index.html';
             return;
           }
-          throw new Error(`Lỗi ${response.status}: ${response.statusText}`);
+          if (response.status === 403) {
+            console.error('❌ 403 Forbidden - Access denied');
+            alert('⚠️ Bạn không có quyền truy cập. Vui lòng liên hệ quản trị viên!');
+            return;
+          }
+          if (response.status === 0 || response.status >= 500) {
+            throw new Error('Lỗi kết nối server. Vui lòng thử lại sau.');
+          }
+          
+          const errorText = await response.text();
+          throw new Error(`Lỗi ${response.status}: ${errorText || response.statusText}`);
         }
 
         const result = await response.json();
@@ -196,8 +348,16 @@
         renderExams(tests);
 
       } catch (error) {
-        console.error('Error loading exams:', error);
-        showError(error.message);
+        console.error('❌ Error loading exams:', error);
+        
+        // Check if it's a network error
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+          showError('❌ Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet và thử lại.', true);
+        } else if (error.message.includes('ERR_CONNECTION_RESET')) {
+          showError('❌ Server đang bảo trì. Vui lòng thử lại sau ít phút.', true);
+        } else {
+          showError(`❌ ${error.message}`, true);
+        }
       }
     }
 
@@ -208,9 +368,9 @@
       if (!Array.isArray(tests) || tests.length === 0) {
         list.innerHTML = `
           <div class="col-span-full text-center py-8">
-            <div class="bg-yellow-500/20 border border-yellow-400 rounded-lg p-6">
-              <h4 class="text-yellow-200 text-lg font-semibold mb-2">Chưa có đề thi</h4>
-              <p class="text-yellow-300">Hiện tại chưa có đề thi nào khả dụng.</p>
+            <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-6">
+              <h4 class="text-yellow-700 text-lg font-semibold mb-2">Chưa có đề thi</h4>
+              <p class="text-yellow-600">Hiện tại chưa có đề thi nào khả dụng.</p>
             </div>
           </div>
         `;
@@ -238,7 +398,7 @@
       
       sortedTests.forEach(test => {
         const div = document.createElement("div");
-        div.className = "p-6 rounded-xl bg-gradient-to-br from-purple-800/40 to-indigo-800/40 border border-purple-400/30 hover:shadow-2xl hover:scale-[1.02] transition";
+        div.className = "p-6 rounded-xl bg-white border border-blue-200 hover:shadow-2xl hover:scale-[1.02] transition";
         
         // Format test data
         const testName = test.test_name || test.name || 'Đề thi không có tên';
@@ -258,18 +418,18 @@
 
         div.innerHTML = `
           <div class="mb-3">
-            <h4 class="text-lg font-semibold text-white mb-2">${testName}</h4>
-            <p class="text-purple-200 text-sm mb-2">${testDesc}</p>
+            <h4 class="text-lg font-semibold text-blue-700 mb-2">${testName}</h4>
+            <p class="text-gray-600 text-sm mb-2">${testDesc}</p>
             <div class="flex flex-wrap gap-2 text-xs">
-              <span class="bg-blue-500/30 text-blue-200 px-2 py-1 rounded">⏱️ ${duration} phút</span>
-              <span class="bg-purple-500/30 text-purple-200 px-2 py-1 rounded">📊 ${difficulty}</span>
-              <span class="bg-${status === 'ACTIVE' ? 'green' : 'orange'}-500/30 text-${status === 'ACTIVE' ? 'green' : 'orange'}-200 px-2 py-1 rounded">
+              <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded">⏱️ ${duration} phút</span>
+              <span class="bg-cyan-100 text-cyan-700 px-2 py-1 rounded">📊 ${difficulty}</span>
+              <span class="bg-${status === 'ACTIVE' ? 'green' : 'orange'}-100 text-${status === 'ACTIVE' ? 'green' : 'orange'}-700 px-2 py-1 rounded">
                 📋 ${status} (ID: ${testId})
               </span>
             </div>
           </div>
           <button
-            class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition w-full"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition w-full shadow-md"
             onclick="startTest('${testId}', '${testName}')"
           >
             🚀 Làm bài thi
@@ -405,20 +565,287 @@
       }
     }
 
-    // Scroll to exam list
-    function scrollToExamList() {
-      document.getElementById('examList').scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
-      });
+    // Load exams when page loads
+    // Test connection function for debugging
+    async function testConnection() {
+      console.log('🔧 Testing connection...');
+      const list = document.getElementById("examList");
+      list.innerHTML = `
+        <div class="col-span-full text-center py-8">
+          <div class="bg-blue-500/20 border border-blue-400 rounded-lg p-6">
+            <h4 class="text-blue-200 text-lg font-semibold mb-2">🔧 Đang test kết nối...</h4>
+            <p class="text-blue-300">Kiểm tra kết nối đến server...</p>
+          </div>
+        </div>
+      `;
+      
+      try {
+        // Test basic connection without auth
+        console.log('Testing basic server connection...');
+        const healthResponse = await fetch(`${API_BASE_URL}/health`, {
+          method: 'GET',
+          cache: 'no-cache'
+        });
+        
+        console.log('Health check response:', healthResponse.status);
+        
+        // Test with auth
+        console.log('Testing authenticated request...');
+        const headers = getAuthHeaders();
+        console.log('Auth headers:', headers);
+        
+        const testResponse = await fetch(`${API_BASE_URL}/tests`, {
+          method: 'GET',
+          headers: headers,
+          cache: 'no-cache'
+        });
+        
+        console.log('Tests API response:', testResponse.status);
+        
+        if (testResponse.ok) {
+          const data = await testResponse.json();
+          console.log('Response data:', data);
+          
+          list.innerHTML = `
+            <div class="col-span-full text-center py-8">
+              <div class="bg-green-500/20 border border-green-400 rounded-lg p-6">
+                <h4 class="text-green-200 text-lg font-semibold mb-2">✅ Kết nối thành công!</h4>
+                <p class="text-green-300">Server: ${healthResponse.ok ? 'Online' : 'Offline'}</p>
+                <p class="text-green-300">API: ${testResponse.status} ${testResponse.statusText}</p>
+                <p class="text-green-300">Tests found: ${data.data?.tests?.length || data.data?.length || 'N/A'}</p>
+                <button onclick="loadExams()" class="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition">
+                  Tải danh sách đề thi
+                </button>
+              </div>
+            </div>
+          `;
+        } else {
+          throw new Error(`API Error: ${testResponse.status} ${testResponse.statusText}`);
+        }
+        
+      } catch (error) {
+        console.error('Connection test failed:', error);
+        list.innerHTML = `
+          <div class="col-span-full text-center py-8">
+            <div class="bg-red-500/20 border border-red-400 rounded-lg p-6">
+              <h4 class="text-red-200 text-lg font-semibold mb-2">❌ Test kết nối thất bại</h4>
+              <p class="text-red-300">Error: ${error.message}</p>
+              <p class="text-red-300 text-sm mt-2">Kiểm tra console để xem chi tiết</p>
+              <button onclick="testConnection()" class="mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">
+                Thử lại
+              </button>
+            </div>
+          </div>
+        `;
+      }
     }
 
-
-
-    // Load exams when page loads
     document.addEventListener('DOMContentLoaded', function() {
       console.log('DOM loaded, calling loadExams...');
       loadExams();
+    });
+
+    // Profile Modal Functions
+    function openProfileModal() {
+      document.getElementById('profileModal').classList.remove('hidden');
+      document.getElementById('profileModal').classList.add('flex');
+      loadCandidateProfile();
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+      document.getElementById('profileModal').classList.remove('flex');
+    }
+
+    async function loadCandidateProfile() {
+      const profileContent = document.getElementById('profileContent');
+      
+      try {
+        const session = JSON.parse(localStorage.getItem('session_user') || 'null');
+        if (!session || !session.userId) {
+          profileContent.innerHTML = `
+            <div class="text-center py-8">
+              <p class="text-red-600">Không tìm thấy thông tin phiên đăng nhập</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Fetch candidate info
+        const candidateResponse = await fetch(`${API_BASE_URL}/candidates/by-user/${session.userId}`, {
+          headers: getAuthHeaders()
+        });
+
+        if (!candidateResponse.ok) {
+          throw new Error('Không tìm thấy thông tin ứng viên');
+        }
+
+        const candidateData = await candidateResponse.json();
+        const candidate = candidateData.data;
+
+        // Fetch test results
+        const testsResponse = await fetch(`${API_BASE_URL}/candidate-tests/my-tests`, {
+          headers: getAuthHeaders()
+        });
+
+        let completedTests = [];
+        let totalScore = 0;
+        let passedTests = 0;
+
+        if (testsResponse.ok) {
+          const testsData = await testsResponse.json();
+          completedTests = (testsData.data || []).filter(t => t.status === 'COMPLETED');
+          
+          completedTests.forEach(test => {
+            const score = test.manual_score || test.score || 0;
+            totalScore += score;
+            if (score >= 50) passedTests++;
+          });
+        }
+
+        const avgScore = completedTests.length > 0 ? (totalScore / completedTests.length).toFixed(1) : 0;
+
+        // Render profile
+        profileContent.innerHTML = `
+          <div class="space-y-6">
+            <!-- Thông tin cá nhân -->
+            <div class="bg-blue-50 rounded-lg p-6">
+              <h3 class="text-lg font-bold text-blue-800 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Thông Tin Cá Nhân
+              </h3>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label class="text-sm font-medium text-gray-600">Họ và tên</label>
+                  <p class="text-gray-800 font-semibold">${candidate.first_name || ''} ${candidate.last_name || ''}</p>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-gray-600">Email</label>
+                  <p class="text-gray-800 font-semibold">${candidate.email || 'N/A'}</p>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-gray-600">Số điện thoại</label>
+                  <p class="text-gray-800">${candidate.phone || 'Chưa cập nhật'}</p>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-gray-600">Vị trí ứng tuyển</label>
+                  <p class="text-gray-800">${candidate.position || 'Chưa xác định'}</p>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-gray-600">Kinh nghiệm</label>
+                  <p class="text-gray-800">${candidate.experience_years || candidate.years_of_experience || 0} năm</p>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-gray-600">Trạng thái</label>
+                  <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold ${
+                    candidate.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                  }">
+                    ${candidate.status || 'N/A'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thống kê bài thi -->
+            <div class="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-lg p-6">
+              <h3 class="text-lg font-bold text-blue-800 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Thống Kê Bài Thi
+              </h3>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                  <div class="text-3xl font-bold text-blue-600">${completedTests.length}</div>
+                  <div class="text-sm text-gray-600">Bài đã làm</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-3xl font-bold text-green-600">${passedTests}</div>
+                  <div class="text-sm text-gray-600">Đạt yêu cầu</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-3xl font-bold text-red-600">${completedTests.length - passedTests}</div>
+                  <div class="text-sm text-gray-600">Chưa đạt</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-3xl font-bold text-purple-600">${avgScore}</div>
+                  <div class="text-sm text-gray-600">Điểm TB</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lịch sử bài thi -->
+            ${completedTests.length > 0 ? `
+              <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <h3 class="text-lg font-bold text-blue-800 p-4 bg-gray-50 border-b flex items-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  Lịch Sử Bài Thi (${completedTests.length} bài)
+                </h3>
+                <div class="max-h-64 overflow-y-auto">
+                  ${completedTests.map(test => {
+                    const score = test.manual_score || test.score || 0;
+                    const isPassed = score >= 50;
+                    return `
+                      <div class="p-4 border-b hover:bg-gray-50 transition">
+                        <div class="flex justify-between items-start">
+                          <div class="flex-1">
+                            <p class="font-semibold text-gray-800">${test.Test?.test_name || 'Bài thi'}</p>
+                            <p class="text-sm text-gray-600">${new Date(test.end_time).toLocaleString('vi-VN')}</p>
+                          </div>
+                          <div class="text-right">
+                            <div class="text-2xl font-bold ${isPassed ? 'text-green-600' : 'text-red-600'}">
+                              ${score}
+                            </div>
+                            <span class="text-xs px-2 py-1 rounded-full ${isPassed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                              ${isPassed ? '✓ Đạt' : '✗ Chưa đạt'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            ` : `
+              <div class="text-center py-8 bg-gray-50 rounded-lg">
+                <svg class="w-16 h-16 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <p class="text-gray-600">Bạn chưa hoàn thành bài thi nào</p>
+              </div>
+            `}
+          </div>
+        `;
+
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        profileContent.innerHTML = `
+          <div class="text-center py-8">
+            <svg class="w-16 h-16 mx-auto text-red-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p class="text-red-600 font-semibold">Không thể tải thông tin</p>
+            <p class="text-gray-600 text-sm mt-2">${error.message}</p>
+            <button onclick="loadCandidateProfile()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+              Thử lại
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // Profile button click handler
+    document.getElementById('profileBtn').addEventListener('click', openProfileModal);
+
+    // Close modal when clicking outside
+    document.getElementById('profileModal').addEventListener('click', function(e) {
+      if (e.target.id === 'profileModal') {
+        closeProfileModal();
+      }
     });
   </script>
 </body>

@@ -43,11 +43,44 @@ const authenticate = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
     }
 
+    // IMPORTANT: Always use company_id from database, not from token
+    // This ensures we always have the latest company_id even if token is old
+    const userRole = user.Role?.role_name?.toUpperCase();
+    
+    // CRITICAL: Enforce company_id requirement for recruiters
+    if (userRole === 'RECRUITER') {
+      // Check if user has no company_id in database
+      if (!user.company_id) {
+        logger.error(`❌ Recruiter ${user.username} (ID: ${user.user_id}) không có company_id!`);
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Tài khoản recruiter chưa được gán vào công ty nào. Vui lòng liên hệ admin để được hỗ trợ.',
+          error_code: 'NO_COMPANY'
+        });
+      }
+      
+      // CRITICAL: Check if token company_id doesn't match database company_id
+      // This prevents user from accessing wrong company data after being reassigned
+      if (decoded.company_id && decoded.company_id !== user.company_id) {
+        logger.warn(`🚨 SECURITY: User ${user.username} token có company_id=${decoded.company_id} nhưng database có company_id=${user.company_id}. Buộc đăng nhập lại!`);
+        return res.status(401).json({ 
+          success: false, 
+          message: '⚠️ Phát hiện thay đổi công ty trong hệ thống. Vui lòng đăng xuất và đăng nhập lại để cập nhật quyền truy cập.',
+          error_code: 'COMPANY_MISMATCH',
+          force_logout: true
+        });
+      }
+      
+      // Log for security audit
+      logger.info(`✅ Auth OK: ${user.username} (Company: ${user.company_id})`);
+    }
+
     // Add user info to request with standardized userId
     req.user = {
       ...user.toJSON(),
       userId: user.user_id,  // Standardize key
-      user_id: user.user_id  // Keep for backward compatibility
+      user_id: user.user_id,  // Keep for backward compatibility
+      company_id: user.company_id  // Always use company_id from database
     };
     next();
   } catch (error) {

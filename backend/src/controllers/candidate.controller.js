@@ -166,6 +166,42 @@ exports.getAllCandidates = async (req, res) => {
     const offset = (page - 1) * limit;
     const whereClause = {};
     
+    // Filter by company for recruiters - ONLY ADMIN can see all
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    console.log('\n' + '='.repeat(80));
+    console.log(`📍 GET ALL CANDIDATES REQUEST`);
+    console.log(`👤 User: ${req.user?.username} (ID: ${req.user?.user_id})`);
+    console.log(`🎭 Role: ${userRole}`);
+    console.log(`🏢 Company ID from user: ${req.user?.company_id}`);
+    console.log('='.repeat(80));
+    
+    if (userRole === 'RECRUITER') {
+      // CRITICAL: Recruiters MUST have company_id and can ONLY see their company's candidates
+      if (!req.user.company_id) {
+        console.error(`❌ BLOCKED: Recruiter ${req.user?.username} has NO company_id!`);
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty. Vui lòng liên hệ admin.',
+          error_code: 'NO_COMPANY'
+        });
+      }
+      
+      // Force filter by company_id
+      whereClause.company_id = req.user.company_id;
+      console.log(`🔒 RECRUITER FILTER APPLIED: company_id = ${req.user.company_id}`);
+      
+    } else if (userRole === 'ADMIN') {
+      // Only ADMIN can see all candidates from all companies
+      console.log(`👑 ADMIN ACCESS: Showing ALL candidates from ALL companies`);
+    } else {
+      // Other roles (like CANDIDATE) should not access this endpoint
+      console.warn(`⚠️ BLOCKED: Role ${userRole} tried to access candidate list`);
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền truy cập danh sách ứng viên'
+      });
+    }
+    
     // Add filter by status if provided
     if (status) {
       whereClause.status = status;
@@ -182,6 +218,9 @@ exports.getAllCandidates = async (req, res) => {
       ];
     }
     
+    // DEBUG: Log final whereClause before query
+    console.log(`\n🔍 WHERE CLAUSE FOR QUERY:`, JSON.stringify(whereClause, null, 2));
+    
     // Get candidates with pagination
     const { count, rows: candidates } = await Candidate.findAndCountAll({
       where: whereClause,
@@ -191,12 +230,43 @@ exports.getAllCandidates = async (req, res) => {
       include: [
         {
           model: CandidateResume,
+          as: 'CandidateResumes',
           attributes: ['resume_id', 'file_name', 'is_primary'],
           where: { is_primary: true },
           required: false
         }
       ]
     });
+    
+    console.log(`📊 QUERY RESULT: Found ${count} candidates (page ${page}, showing ${candidates.length} items)`);
+    if (candidates.length > 0) {
+      console.log(`📋 First candidate: ID=${candidates[0].candidate_id}, Company=${candidates[0].company_id}, Name=${candidates[0].first_name} ${candidates[0].last_name}`);
+    }
+    console.log('='.repeat(80) + '\n');
+    
+    // CRITICAL SECURITY CHECK: Double-verify no candidates from wrong company leak through
+    if (userRole === 'RECRUITER' && req.user.company_id) {
+      const wrongCompanyCandidates = candidates.filter(c => c.company_id !== req.user.company_id);
+      if (wrongCompanyCandidates.length > 0) {
+        console.error(`🚨 SECURITY BREACH DETECTED! User company ${req.user.company_id} received candidates from other companies:`);
+        wrongCompanyCandidates.forEach(c => {
+          console.error(`  ❌ Candidate ID ${c.candidate_id} has company_id ${c.company_id}`);
+        });
+        // FILTER OUT wrong company candidates as safety net
+        const filteredCandidates = candidates.filter(c => c.company_id === req.user.company_id);
+        return res.status(200).json({
+          success: true,
+          message: 'Candidates retrieved successfully',
+          data: filteredCandidates,
+          pagination: {
+            total: filteredCandidates.length,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalPages: Math.ceil(filteredCandidates.length / limit)
+          }
+        });
+      }
+    }
     
     return res.status(200).json({
       success: true,
@@ -224,33 +294,54 @@ exports.getAllCandidates = async (req, res) => {
 exports.getCandidateById = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log('🔍 getCandidateById called with id:', id);
     
-    const candidate = await Candidate.findByPk(id, {
-      include: [
-        {
-          model: CandidateResume,
-          attributes: ['resume_id', 'file_name', 'file_path', 'file_type', 'uploaded_at', 'is_primary']
-        },
-        {
-          model: User,
-          attributes: ['user_id', 'username', 'email']
-        },
-        {
-          model: CandidateJobApplication,
-          include: [
-            {
-              model: JobPosition,
-              attributes: ['position_id', 'title', 'department']
-            }
-          ]
-        }
-      ]
+    // Use raw SQL query to avoid association issues
+    const sequelize = require('../config/database');
+    const [candidates] = await sequelize.query(`
+      SELECT 
+        c.*,
+        u.username,
+        u.email as user_email,
+        comp.companyName
+      FROM candidates c
+      LEFT JOIN users u ON c.user_id = u.user_id
+      LEFT JOIN companies comp ON c.company_id = comp.company_id
+      WHERE c.candidate_id = ?
+    `, {
+      replacements: [id]
     });
+
+    const candidate = candidates[0];
+    console.log('📦 Found candidate:', candidate);
     
     if (!candidate) {
       return res.status(404).json({
         success: false,
         message: 'Candidate not found'
+      });
+    }
+
+    // Check if recruiter can access this candidate
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
+      if (candidate.company_id !== req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xem ứng viên của công ty khác'
+        });
+      }
+    } else if (userRole !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền truy cập'
       });
     }
     
@@ -262,6 +353,7 @@ exports.getCandidateById = async (req, res) => {
     
   } catch (error) {
     logger.error(`Error retrieving candidate: ${error.message}`);
+    console.error('❌ getCandidateById Error Stack:', error.stack);
     return res.status(500).json({
       success: false,
       message: 'Failed to retrieve candidate',
@@ -335,6 +427,32 @@ exports.updateCandidate = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Candidate not found'
+      });
+    }
+
+    // Check if recruiter can update this candidate
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        await t.rollback();
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
+      if (candidate.company_id !== req.user.company_id) {
+        await t.rollback();
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền chỉnh sửa ứng viên của công ty khác'
+        });
+      }
+    } else if (userRole !== 'ADMIN') {
+      await t.rollback();
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền chỉnh sửa ứng viên'
       });
     }
     
@@ -542,6 +660,229 @@ exports.setPrimaryResume = async (req, res) => {
 };
 
 // Delete candidate
+// View candidate CV (open in browser)
+exports.viewCandidateCV = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const candidate = await Candidate.findByPk(id, {
+      include: [{
+        model: CandidateResume,
+        as: 'CandidateResumes',
+        where: { is_primary: true },
+        required: false
+      }]
+    });
+    
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: 'Candidate not found'
+      });
+    }
+
+    // Check if recruiter can view this candidate's CV
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
+      if (candidate.company_id !== req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xem CV của ứng viên công ty khác'
+        });
+      }
+    } else if (userRole !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền xem CV'
+      });
+    }
+
+    // Get primary resume
+    const primaryResume = candidate.CandidateResumes && candidate.CandidateResumes.length > 0 
+      ? candidate.CandidateResumes[0] 
+      : null;
+
+    if (!primaryResume) {
+      return res.status(404).json({
+        success: false,
+        message: 'CV not found for this candidate'
+      });
+    }
+
+    // Build file path
+    const filePath = path.join(__dirname, '../../uploads/cv', path.basename(primaryResume.file_path));
+    
+    console.log('📄 Viewing CV:', {
+      candidate_id: id,
+      file_name: primaryResume.file_name,
+      file_path: primaryResume.file_path,
+      resolved_path: filePath,
+      file_exists: fs.existsSync(filePath)
+    });
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      logger.error(`CV file not found: ${filePath}`);
+      return res.status(404).json({
+        success: false,
+        message: 'CV file not found on server',
+        debug: {
+          expected_path: filePath,
+          file_name: primaryResume.file_name
+        }
+      });
+    }
+
+    // Determine content type based on file extension
+    const ext = path.extname(primaryResume.file_name).toLowerCase();
+    let contentType = 'application/pdf';
+    let disposition = 'inline'; // Default to inline for PDF
+    
+    if (ext === '.docx' || ext === '.doc') {
+      contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      disposition = 'attachment'; // Word files should be downloaded
+    } else if (ext === '.pdf') {
+      contentType = 'application/pdf';
+      disposition = 'inline'; // PDF can be viewed inline
+    }
+
+    // Set headers
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `${disposition}; filename="${primaryResume.file_name}"`);
+    
+    // Stream the file
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+    
+    logger.info(`CV viewed for candidate ID ${id}`);
+    
+  } catch (error) {
+    logger.error(`Error viewing candidate CV: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to view CV',
+      error: error.message
+    });
+  }
+};
+
+// Download candidate CV (force download)
+exports.downloadCandidateCV = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const candidate = await Candidate.findByPk(id, {
+      include: [{
+        model: CandidateResume,
+        as: 'CandidateResumes',
+        where: { is_primary: true },
+        required: false
+      }]
+    });
+    
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: 'Candidate not found'
+      });
+    }
+
+    // Check if recruiter can download this candidate's CV
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
+      if (candidate.company_id !== req.user.company_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền tải CV của ứng viên công ty khác'
+        });
+      }
+    } else if (userRole !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền tải CV'
+      });
+    }
+
+    // Get primary resume
+    const primaryResume = candidate.CandidateResumes && candidate.CandidateResumes.length > 0 
+      ? candidate.CandidateResumes[0] 
+      : null;
+
+    if (!primaryResume) {
+      return res.status(404).json({
+        success: false,
+        message: 'CV not found for this candidate'
+      });
+    }
+
+    // Build file path
+    const filePath = path.join(__dirname, '../../uploads/cv', path.basename(primaryResume.file_path));
+    
+    console.log('⬇️ Downloading CV:', {
+      candidate_id: id,
+      file_name: primaryResume.file_name,
+      file_path: primaryResume.file_path,
+      resolved_path: filePath,
+      file_exists: fs.existsSync(filePath)
+    });
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      logger.error(`CV file not found: ${filePath}`);
+      return res.status(404).json({
+        success: false,
+        message: 'CV file not found on server',
+        debug: {
+          expected_path: filePath,
+          file_name: primaryResume.file_name
+        }
+      });
+    }
+
+    // Determine content type
+    const ext = path.extname(primaryResume.file_name).toLowerCase();
+    let contentType = 'application/pdf';
+    
+    if (ext === '.docx' || ext === '.doc') {
+      contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    } else if (ext === '.pdf') {
+      contentType = 'application/pdf';
+    }
+
+    // Set headers to force download (attachment)
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${primaryResume.file_name}"`);
+    
+    // Stream the file
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+    
+    logger.info(`CV downloaded for candidate ID ${id}`);
+    
+  } catch (error) {
+    logger.error(`Error downloading candidate CV: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to download CV',
+      error: error.message
+    });
+  }
+};
+
 exports.deleteCandidate = async (req, res) => {
   const t = await sequelize.transaction();
   
@@ -555,6 +896,32 @@ exports.deleteCandidate = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Candidate not found'
+      });
+    }
+
+    // Check if recruiter can delete this candidate
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    if (userRole === 'RECRUITER') {
+      if (!req.user.company_id) {
+        await t.rollback();
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty',
+          error_code: 'NO_COMPANY'
+        });
+      }
+      if (candidate.company_id !== req.user.company_id) {
+        await t.rollback();
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xóa ứng viên của công ty khác'
+        });
+      }
+    } else if (userRole !== 'ADMIN') {
+      await t.rollback();
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền xóa ứng viên'
       });
     }
     

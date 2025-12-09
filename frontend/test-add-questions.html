@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thêm câu hỏi vào bài test</title>
+    <script src="config.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -97,10 +98,16 @@
 
         // Get auth headers
         function getAuthHeaders() {
-            const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            const token = localStorage.getItem('token') || localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+            if (!token) {
+                console.error('❌ No token found, redirecting to login');
+                alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+                window.location.href = 'login.html';
+                return null;
+            }
             return {
                 'Content-Type': 'application/json',
-                ...(token && { 'Authorization': `Bearer ${token}` })
+                'Authorization': `Bearer ${token}`
             };
         }
 
@@ -129,9 +136,19 @@
         // Load questions
         async function loadQuestions() {
             try {
+                const headers = getAuthHeaders();
+                if (!headers) return;
+                
                 const response = await fetch(`${API_BASE_URL}/questions?limit=100`, {
-                    headers: getAuthHeaders()
+                    headers: headers
                 });
+                
+                if (response.status === 401 || response.status === 403) {
+                    alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
                 const result = await response.json();
                 allQuestions = result.data?.questions || result.data || [];
                 renderQuestions(allQuestions);

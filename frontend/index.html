@@ -14,23 +14,14 @@
       <!-- Cột trái -->
       <div class="left">
         <h1>Đăng nhập</h1>
-        <p class="muted">Đăng nhập bằng khuôn mặt hoặc tài khoản để vào phòng thi</p>
-
-        <!-- camera -->
-        <div class="cam-wrap">
-          <video id="loginCam" autoplay playsinline muted></video>
-          <div class="cam-overlay">Camera</div>
-        </div>
+        <p class="muted">Tạo tài khoản và lưu ảnh khuôn mặt để đăng nhập nhanh</p>
 
         <!-- Hành động -->
         <div class="actions">
-          <button id="faceBtn" class="btn primary">Quét khuôn mặt &amp; Đăng nhập</button>
-          <div class="or">hoặc</div>
-
           <input id="userInput" placeholder="Tên đăng nhập hoặc Email" class="input" />
           <input id="pwInput" placeholder="Mật khẩu" type="password" class="input" />
 
-          <button id="loginBtn" class="btn ghost">Đăng nhập</button>
+          <button id="loginBtn" class="btn primary">Đăng nhập</button>
 
           <p class="note">
             Chưa có tài khoản? 
@@ -44,17 +35,7 @@
         </div>
       </div>
 
-      <!-- Cột phải -->
-      <div class="right">
-        <div class="panel">
-          <h3>Hướng dẫn nhanh</h3>
-          <ol>
-            <li>Cho phép truy cập camera.</li>
-            <li>Nhấn <strong>"Quét khuôn mặt"</strong> để đăng nhập nhanh.</li>
-            <li>Hoặc đăng nhập bằng tài khoản bên dưới.</li>
-          </ol>
-        </div>
-      </div>
+
     </section>
   </main>
 
@@ -65,6 +46,10 @@
         const session = JSON.parse(localStorage.getItem('session_user') || 'null');
         if (session && session.role) {
           const role = String(session.role).toUpperCase();
+          if (role === 'ADMIN') {
+            location.replace('admin-dashboard.html');
+            return;
+          }
           if (role === 'RECRUITER') {
             location.replace('recruiter.html');
             return;
@@ -77,42 +62,7 @@
       } catch (_) {}
     })();
 
-    const loginCam = document.getElementById('loginCam');
-    const camWrap = document.querySelector('.cam-wrap');
-    camWrap.style.display = 'none'; // Ẩn camera ban đầu
-
-    // bấm quét khuôn mặt bật camera
-    document.getElementById('faceBtn').addEventListener('click', async () => {
-      camWrap.style.display = 'block';
-      try {
-        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-        loginCam.srcObject = s;
-      } catch (e) {
-        alert('Không thể truy cập camera. Vui lòng kiểm tra quyền truy cập!');
-        console.warn(e);
-        return;
-      }
-
-      // Lưu ảnh demo (giả lập sinh faceID)
-      const c = document.createElement('canvas');
-      c.width = loginCam.videoWidth || 640;
-      c.height = loginCam.videoHeight || 480;
-      const ctx = c.getContext('2d');
-      ctx.drawImage(loginCam, 0, 0, c.width, c.height);
-      const data = c.toDataURL('image/jpeg', 0.7);
-      const id = 'face-' + Math.abs([...data].reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0));
-
-      localStorage.setItem('session_user', JSON.stringify({
-        name: 'face-user',
-        faceID: id,
-        loginAt: Date.now()
-      }));
-
-      // Hiệu ứng chuyển trang
-      document.body.classList.remove('fade-enter');
-      document.body.classList.add('fade-exit');
-      setTimeout(() => location.href = 'exam.html', 350);
-    });
+    // Removed face recognition login
 
     // Đăng nhập thủ công - Kết nối với backend API
     document.getElementById('loginBtn').addEventListener('click', async () => {
@@ -151,17 +101,20 @@
           fullName: user.fullName,
           email: user.email,
           role: user.role,
+          company_id: user.company_id,  // CRITICAL: Save company_id for recruiters
           loginAt: Date.now()
         }));
         
-        console.log('✅ User logged in:', user.userId, user.role);
+        console.log('✅ User logged in:', user.userId, user.role, 'Company:', user.company_id);
 
         // Chuyển trang theo vai trò
         document.body.classList.remove('fade-enter');
         document.body.classList.add('fade-exit');
         const role = String(user.role || '').toUpperCase();
         setTimeout(() => {
-          if (role === 'RECRUITER') {
+          if (role === 'ADMIN') {
+            location.href = 'admin-dashboard.html';
+          } else if (role === 'RECRUITER') {
             location.href = 'recruiter.html';
           } else {
             location.href = 'exam.html';

@@ -24,6 +24,23 @@ const questionController = {
       
       // Build where conditions
       const whereConditions = {};
+      
+      // 🔒 COMPANY FILTER - Recruiter chỉ xem được câu hỏi của công ty mình
+      const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+      console.log(`👤 User: ${req.user?.username}, Role: ${userRole}, Company ID: ${req.user?.company_id}`);
+      
+      if (userRole === 'RECRUITER') {
+        if (req.user.company_id) {
+          whereConditions.company_id = req.user.company_id;
+          console.log(`🔒 RECRUITER FILTER APPLIED: Only showing questions with company_id = ${req.user.company_id}`);
+        } else {
+          return res.status(403).json({
+            success: false,
+            message: 'Tài khoản recruiter chưa được gán vào công ty nào. Vui lòng liên hệ admin.'
+          });
+        }
+      }
+      
       if (categoryId) whereConditions.category_id = categoryId;
       if (type) whereConditions.question_type = type;
       if (difficulty) whereConditions.difficulty_level = difficulty;
@@ -55,6 +72,10 @@ const questionController = {
             model: User,
             as: 'Creator',
             attributes: ['user_id', 'username', 'full_name']
+          },
+          {
+            model: require('../models').Company,
+            attributes: ['company_id', 'companyName', 'companyCode']
           }
         ],
         order: [['created_at', 'DESC']]
@@ -98,6 +119,7 @@ const questionController = {
           },
           {
             model: QuestionOption,
+            as: 'QuestionOptions',
             attributes: ['option_id', 'option_text', 'is_correct']
           },
           {
@@ -113,7 +135,45 @@ const questionController = {
       });
       
       if (!question) {
+        logger.warn(`Question not found: ${questionId}`);
         return res.status(404).json({ success: false, message: 'Không tìm thấy câu hỏi' });
+      }
+      
+      // 🔒 COMPANY CHECK - Recruiter chỉ xem được câu hỏi của công ty mình
+      const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase() || 'UNKNOWN';
+      
+      logger.info(`📋 Get question ${questionId}: User ${req.user?.username || 'unknown'} (role: ${userRole}, company: ${req.user?.company_id || 'null'}) accessing question (company: ${question.company_id})`);
+      
+      // Skip company check for ADMIN
+      if (userRole === 'ADMIN') {
+        logger.info(`👑 ADMIN access granted for question ${questionId}`);
+        return res.status(200).json({
+          success: true,
+          data: question
+        });
+      }
+      
+      if (userRole === 'RECRUITER') {
+        if (!req.user.company_id) {
+          logger.error(`❌ Recruiter ${req.user.username} has no company_id`);
+          return res.status(403).json({
+            success: false,
+            message: 'Tài khoản recruiter chưa được gán vào công ty'
+          });
+        }
+        
+        if (question.company_id !== req.user.company_id) {
+          logger.warn(`🚫 ACCESS DENIED: Recruiter company_id=${req.user.company_id} tried to access question company_id=${question.company_id}`);
+          return res.status(403).json({
+            success: false,
+            message: `Bạn không có quyền xem câu hỏi này. Câu hỏi thuộc về công ty khác (Company ID: ${question.company_id}). Bạn chỉ có thể xem câu hỏi của công ty mình (Company ID: ${req.user.company_id}).`,
+            error_code: 'WRONG_COMPANY',
+            details: {
+              question_company: question.company_id,
+              user_company: req.user.company_id
+            }
+          });
+        }
       }
       
       return res.status(200).json({
@@ -123,7 +183,12 @@ const questionController = {
       
     } catch (error) {
       logger.error(`Get question by ID error: ${error.message}`);
-      return res.status(500).json({ success: false, message: 'Đã xảy ra lỗi khi lấy thông tin câu hỏi' });
+      logger.error(`Error stack: ${error.stack}`);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Đã xảy ra lỗi khi lấy thông tin câu hỏi',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   },
   
@@ -151,6 +216,7 @@ const questionController = {
         difficulty_level,
         category_id: category_id || null,
         created_by: req.user.user_id,
+        company_id: req.user.company_id || null,
         is_active: true,
         created_at: new Date(),
         updated_at: new Date()
@@ -248,6 +314,48 @@ const questionController = {
         return res.status(404).json({ success: false, message: 'Không tìm thấy câu hỏi' });
       }
       
+      // 🔒 COMPANY CHECK - Recruiter chỉ cập nhật được câu hỏi của công ty mình
+      const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase() || 'UNKNOWN';
+      
+      logger.info(`📝 Update question ${questionId}: User ${req.user?.username || 'unknown'} (role: ${userRole}, company: ${req.user?.company_id || 'null'}) updating question (company: ${question.company_id})`);
+      
+      // Skip company check for ADMIN
+      if (userRole === 'ADMIN') {
+        logger.info(`👑 ADMIN update granted for question ${questionId}`);
+        // Continue to update
+      } else if (userRole === 'RECRUITER') {
+        if (!req.user.company_id) {
+          await transaction.rollback();
+          logger.error(`❌ Recruiter ${req.user.username} has no company_id`);
+          return res.status(403).json({
+            success: false,
+            message: 'Tài khoản recruiter chưa được gán vào công ty'
+          });
+        }
+        
+        if (question.company_id !== req.user.company_id) {
+          await transaction.rollback();
+          logger.warn(`🚫 UPDATE DENIED: Recruiter company_id=${req.user.company_id} tried to update question company_id=${question.company_id}`);
+          return res.status(403).json({
+            success: false,
+            message: `Bạn không có quyền sửa câu hỏi này. Câu hỏi thuộc về công ty khác (Company ID: ${question.company_id}). Bạn chỉ có thể sửa câu hỏi của công ty mình (Company ID: ${req.user.company_id}).`,
+            error_code: 'WRONG_COMPANY',
+            details: {
+              question_company: question.company_id,
+              user_company: req.user.company_id
+            }
+          });
+        }
+      } else {
+        // Other roles cannot update questions
+        await transaction.rollback();
+        logger.warn(`🚫 UPDATE DENIED: Role ${userRole} tried to update question`);
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền cập nhật câu hỏi'
+        });
+      }
+      
       // Update question
       await question.update({
         question_title: question_title || question.question_title,
@@ -316,6 +424,7 @@ const questionController = {
           },
           {
             model: QuestionOption,
+            as: 'QuestionOptions',
             attributes: ['option_id', 'option_text', 'is_correct']
           },
           {
@@ -353,6 +462,16 @@ const questionController = {
       
       if (!question) {
         return res.status(404).json({ success: false, message: 'Không tìm thấy câu hỏi' });
+      }
+      
+      // 🔒 COMPANY CHECK - Recruiter chỉ xóa được câu hỏi của công ty mình
+      const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+      if (userRole === 'RECRUITER' && question.company_id !== req.user.company_id) {
+        console.log(`🚫 DELETE DENIED: Recruiter company_id=${req.user.company_id} tried to delete question company_id=${question.company_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xóa câu hỏi này'
+        });
       }
       
       // Delete question (options and coding templates will be cascade deleted)

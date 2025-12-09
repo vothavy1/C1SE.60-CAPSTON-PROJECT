@@ -40,18 +40,39 @@ const generateUsername = async (email) => {
 };
 
 /**
- * Auto-create account for approved candidate
- * Creates a CANDIDATE role user account
+ * Auto-create account for approved candidate OR reset password if exists
+ * Creates a CANDIDATE role user account or resets password
  */
 const createCandidateAccount = async (candidate) => {
   try {
+    const username = await generateUsername(candidate.email); // username = email
+    const plainPassword = generateRandomPassword();
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
     // Check if candidate already has a user account
     if (candidate.user_id) {
-      logger.info(`Candidate ${candidate.candidate_id} already has user account ${candidate.user_id}`);
-      return null;
+      const existingUser = await User.findByPk(candidate.user_id);
+      
+      if (existingUser) {
+        // Reset password for existing account
+        await existingUser.update({ 
+          password_hash: hashedPassword,
+          is_active: true 
+        });
+        
+        logger.info(`🔄 Reset password for user ${existingUser.user_id} (${username})`);
+        
+        return {
+          user_id: existingUser.user_id,
+          username: username,
+          password: plainPassword,
+          email: candidate.email,
+          isReset: true
+        };
+      }
     }
 
-    // Check if user with this email already exists (either by email or username)
+    // Check if user with this email already exists
     const existingUser = await User.findOne({ 
       where: { 
         email: candidate.email
@@ -59,16 +80,25 @@ const createCandidateAccount = async (candidate) => {
     });
     
     if (existingUser) {
+      // Reset password for existing user
+      await existingUser.update({ 
+        password_hash: hashedPassword,
+        is_active: true 
+      });
+      
       // Link existing user to candidate
       await candidate.update({ user_id: existingUser.user_id });
-      logger.info(`Linked existing user ${existingUser.user_id} to candidate ${candidate.candidate_id}`);
-      return null; // User already exists, don't send new credentials
+      
+      logger.info(`🔄 Reset password and linked user ${existingUser.user_id} to candidate ${candidate.candidate_id}`);
+      
+      return {
+        user_id: existingUser.user_id,
+        username: username,
+        password: plainPassword,
+        email: candidate.email,
+        isReset: true
+      };
     }
-
-    // Generate credentials
-    const username = await generateUsername(candidate.email); // username = email
-    const plainPassword = generateRandomPassword();
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     // Create new user account
     const newUser = await User.create({
@@ -89,11 +119,12 @@ const createCandidateAccount = async (candidate) => {
       user_id: newUser.user_id,
       username: username,
       password: plainPassword, // Return plain password to send via email
-      email: candidate.email
+      email: candidate.email,
+      isReset: false
     };
 
   } catch (error) {
-    logger.error(`❌ Failed to create account for candidate ${candidate.candidate_id}:`, error);
+    logger.error(`❌ Failed to create/reset account for candidate ${candidate.candidate_id}:`, error);
     throw error;
   }
 };

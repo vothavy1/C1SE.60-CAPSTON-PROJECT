@@ -1,117 +1,101 @@
-# CS60 System Health Check Script
-Write-Host "`n========================================" -ForegroundColor Cyan
-Write-Host "  CS60 System Health Check" -ForegroundColor Cyan
-Write-Host "========================================`n" -ForegroundColor Cyan
+Write-Host "=== CS60 System Health Check ===" -ForegroundColor Cyan
+Write-Host "Checking system status..." -ForegroundColor Yellow
 
-$allGood = $true
-
-# Check Node.js
-Write-Host "Checking Node.js..." -ForegroundColor Yellow
+# 1. Check Node.js
+Write-Host "`n1. Checking Node.js..." -ForegroundColor Green
 try {
     $nodeVersion = node --version
-    Write-Host "✓ Node.js: $nodeVersion" -ForegroundColor Green
+    Write-Host "✅ Node.js: $nodeVersion" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Node.js not installed!" -ForegroundColor Red
-    $allGood = $false
+    Write-Host "❌ Node.js not found. Please install Node.js" -ForegroundColor Red
 }
 
-# Check npm
-Write-Host "Checking npm..." -ForegroundColor Yellow
+# 2. Check npm
 try {
     $npmVersion = npm --version
-    Write-Host "✓ npm: v$npmVersion" -ForegroundColor Green
+    Write-Host "✅ npm: v$npmVersion" -ForegroundColor Green
 } catch {
-    Write-Host "✗ npm not installed!" -ForegroundColor Red
-    $allGood = $false
+    Write-Host "❌ npm not found" -ForegroundColor Red
 }
 
-# Check Docker
-Write-Host "Checking Docker..." -ForegroundColor Yellow
+# 3. Check Docker
+Write-Host "`n2. Checking Docker..." -ForegroundColor Green
 try {
     $dockerVersion = docker --version
-    Write-Host "✓ Docker: $dockerVersion" -ForegroundColor Green
+    Write-Host "✅ Docker: $dockerVersion" -ForegroundColor Green
+    
+    # Check MySQL container
+    $mysqlStatus = docker ps --filter "name=cs60_mysql" --format "table {{.Names}}\t{{.Status}}"
+    if ($mysqlStatus -like "*cs60_mysql*") {
+        Write-Host "✅ MySQL container is running" -ForegroundColor Green
+    } else {
+        Write-Host "⚠️  MySQL container not running" -ForegroundColor Yellow
+        Write-Host "   Run: cd database; docker-compose up -d" -ForegroundColor Gray
+    }
 } catch {
-    Write-Host "✗ Docker not installed!" -ForegroundColor Red
-    $allGood = $false
+    Write-Host "❌ Docker not found or not running" -ForegroundColor Red
 }
 
-# Check MySQL Container
-Write-Host "Checking MySQL container..." -ForegroundColor Yellow
-$mysqlContainer = docker ps --filter "name=cs60_mysql" --format "{{.Status}}"
-if ($mysqlContainer -like "*Up*") {
-    Write-Host "✓ MySQL container is running" -ForegroundColor Green
-} else {
-    Write-Host "✗ MySQL container is not running!" -ForegroundColor Red
-    Write-Host "  Run: cd database; docker-compose up -d" -ForegroundColor Yellow
-    $allGood = $false
+# 4. Check ports
+Write-Host "`n3. Checking ports..." -ForegroundColor Green
+$ports = @(3000, 5000, 3306, 8080)
+$portNames = @("Frontend", "Backend", "MySQL", "phpMyAdmin")
+
+for ($i = 0; $i -lt $ports.Length; $i++) {
+    $port = $ports[$i]
+    $name = $portNames[$i]
+    
+    $connection = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
+    if ($connection) {
+        Write-Host "⚠️  Port $port ($name) is in use" -ForegroundColor Yellow
+    } else {
+        Write-Host "✅ Port $port ($name) available" -ForegroundColor Green
+    }
 }
 
-# Check Backend port
-Write-Host "Checking Backend (port 5000)..." -ForegroundColor Yellow
-$backendPort = Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue
-if ($backendPort) {
-    Write-Host "✓ Backend is running on port 5000" -ForegroundColor Green
+# 5. Check files
+Write-Host "`n4. Checking project files..." -ForegroundColor Green
+$requiredFiles = @(
+    "backend\package.json",
+    "backend\.env",
+    "backend\src\server.js",
+    "frontend\package.json", 
+    "frontend\server.js",
+    "docker-compose.yml",
+    "start-all.ps1"
+)
+
+foreach ($file in $requiredFiles) {
+    if (Test-Path $file) {
+        Write-Host "✅ $file" -ForegroundColor Green
+    } else {
+        Write-Host "❌ $file - MISSING" -ForegroundColor Red
+    }
+}
+
+# 6. Run detailed Node.js check
+Write-Host "`n5. Running detailed system check..." -ForegroundColor Green
+if (Test-Path "check-system.js") {
     try {
-        $response = Invoke-WebRequest -Uri "http://localhost:5000" -UseBasicParsing -TimeoutSec 2
-        Write-Host "  Status: $($response.StatusCode)" -ForegroundColor Cyan
+        node check-system.js
     } catch {
-        Write-Host "  Warning: Port occupied but not responding" -ForegroundColor Yellow
+        Write-Host "❌ Error running detailed check" -ForegroundColor Red
     }
 } else {
-    Write-Host "✗ Backend is not running" -ForegroundColor Red
-    Write-Host "  Run: cd backend; npm start" -ForegroundColor Yellow
-    $allGood = $false
+    Write-Host "⚠️  check-system.js not found, skipping detailed check" -ForegroundColor Yellow
 }
 
-# Check Frontend port
-Write-Host "Checking Frontend (port 3000)..." -ForegroundColor Yellow
-$frontendPort = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue
-if ($frontendPort) {
-    Write-Host "✓ Frontend is running on port 3000" -ForegroundColor Green
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:3000" -UseBasicParsing -TimeoutSec 2
-        Write-Host "  Status: $($response.StatusCode)" -ForegroundColor Cyan
-    } catch {
-        Write-Host "  Warning: Port occupied but not responding" -ForegroundColor Yellow
-    }
-} else {
-    Write-Host "✗ Frontend is not running" -ForegroundColor Red
-    Write-Host "  Run: cd frontend; npm start" -ForegroundColor Yellow
-    $allGood = $false
-}
+Write-Host "`n=== Quick Commands ===" -ForegroundColor Cyan
+Write-Host "Start system:      .\start-all.ps1" -ForegroundColor White
+Write-Host "Start database:    cd database; docker-compose up -d" -ForegroundColor White
+Write-Host "Stop all:          docker-compose down" -ForegroundColor White
+Write-Host "View logs:         docker logs cs60_mysql" -ForegroundColor White
+Write-Host "Reset database:    docker-compose down -v; docker-compose up -d" -ForegroundColor White
 
-# Check backend dependencies
-Write-Host "Checking Backend dependencies..." -ForegroundColor Yellow
-$backendNodeModules = Test-Path "d:\CAPSTON C1SE.60\CS.60\backend\node_modules"
-if ($backendNodeModules) {
-    Write-Host "✓ Backend dependencies installed" -ForegroundColor Green
-} else {
-    Write-Host "✗ Backend dependencies not installed!" -ForegroundColor Red
-    Write-Host "  Run: cd backend; npm install" -ForegroundColor Yellow
-    $allGood = $false
-}
+Write-Host "`n=== System URLs ===" -ForegroundColor Cyan
+Write-Host "Frontend:          http://localhost:3000" -ForegroundColor White
+Write-Host "Backend:           http://localhost:5000" -ForegroundColor White
+Write-Host "phpMyAdmin:        http://localhost:8080" -ForegroundColor White
 
-# Check .env file
-Write-Host "Checking Backend .env file..." -ForegroundColor Yellow
-$envFile = Test-Path "d:\CAPSTON C1SE.60\CS.60\backend\.env"
-if ($envFile) {
-    Write-Host "✓ .env file exists" -ForegroundColor Green
-} else {
-    Write-Host "✗ .env file not found!" -ForegroundColor Red
-    $allGood = $false
-}
-
-Write-Host "`n========================================" -ForegroundColor Cyan
-if ($allGood) {
-    Write-Host "  ✅ All systems operational!" -ForegroundColor Green
-    Write-Host "========================================" -ForegroundColor Cyan
-    Write-Host "`nYou can access:" -ForegroundColor Yellow
-    Write-Host "  Frontend: http://localhost:3000" -ForegroundColor Cyan
-    Write-Host "  Backend:  http://localhost:5000" -ForegroundColor Cyan
-    Write-Host "  phpMyAdmin: http://localhost:8080`n" -ForegroundColor Cyan
-} else {
-    Write-Host "  ⚠️  Some issues detected!" -ForegroundColor Yellow
-    Write-Host "========================================" -ForegroundColor Cyan
-    Write-Host "`nTo start all services:" -ForegroundColor Yellow
-    Write-Host "  .\start-all.ps1`n" -ForegroundColor Cyan
-}
+Write-Host "`nPress any key to continue..." -ForegroundColor Gray
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

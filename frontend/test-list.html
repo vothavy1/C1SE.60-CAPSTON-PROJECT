@@ -6,15 +6,18 @@
     <title>Danh sách Đề thi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="theme.css">
+    <script src="theme.js"></script>
 </head>
-<body class="bg-dark text-light">
+<body class="light-mode">
     <!-- Header -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <nav class="navbar navbar-expand-lg header-bg mb-4 sticky-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="/recruiter.html">Recruiter Dashboard</a>
-            <div class="d-flex align-items-center ms-auto">
-                <span class="me-3">Xin chào, Recruiter!</span>
-                <a href="#" class="btn btn-pink">Đăng xuất</a>
+            <div class="d-flex align-items-center ms-auto gap-3">
+                <div class="theme-toggle" id="themeToggle" title="Chuyển đổi sáng/tối"></div>
+                <span class="me-3" id="userName">Xin chào, Recruiter!</span>
+                <a href="#" class="btn btn-pink" id="logoutBtn">Đăng xuất</a>
             </div>
         </div>
     </nav>
@@ -25,7 +28,7 @@
             <a href="create-test.html" class="btn btn-success">Tạo Đề thi mới</a>
         </div>
         <div class="table-responsive">
-            <table class="table table-dark table-hover" id="testsTable">
+            <table class="table table-hover" id="testsTable">
                 <thead>
                     <tr>
                         <th scope="col">STT</th>
@@ -44,11 +47,31 @@
     </div>
 
     <!-- Footer -->
-    <footer class="text-center mt-5 mb-3">
+    <footer class="text-center mt-5 mb-3 footer-border">
         <small>&copy; 2025 CS60 Recruitment</small>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="test-list.js"></script>
+    <script>
+        // Setup theme toggle
+        ThemeManager.setupToggle('themeToggle');
+        
+        // Setup logout
+        document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.clear();
+            sessionStorage.clear();
+            location.href = 'index.html?t=' + Date.now();
+        });
+        
+        // Display username
+        try {
+            const session = JSON.parse(localStorage.getItem('session_user') || 'null');
+            if (session && session.name) {
+                document.getElementById('userName').textContent = `Xin chào, ${session.name}!`;
+            }
+        } catch(_) {}
+    </script>
 </body>
 </html>

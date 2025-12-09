@@ -2,12 +2,16 @@ const {
   CandidateTest, 
   Test, 
   Candidate, 
+  Company,
   CandidateTestResult,
   CandidateTestAnswer,
   Question,
   User,
   TestFraudLog,
-  RecruitmentReport
+  RecruitmentReport,
+  Interview,
+  InterviewFeedback,
+  CandidateJobApplication
 } = require('../models');
 const logger = require('../utils/logger');
 const { Op } = require('sequelize');
@@ -135,6 +139,25 @@ exports.getViolations = async (req, res) => {
     const { violationType, candidateTestId, startDate, endDate } = req.query;
     
     console.log('📊 Fetching ALL candidate tests with violations info...');
+    console.log('🔍 Filters:', { violationType, candidateTestId, startDate, endDate });
+    
+    // 🔒 COMPANY FILTER - Recruiter chỉ xem báo cáo của công ty mình
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    console.log(`👤 User: ${req.user?.username}, Role: ${userRole}, Company ID: ${req.user?.company_id}`);
+    
+    // Build where clause for candidates filtering by company
+    const candidateWhereClause = {};
+    if (userRole === 'RECRUITER') {
+      if (req.user.company_id) {
+        candidateWhereClause.company_id = req.user.company_id;
+        console.log(`🔒 RECRUITER FILTER APPLIED: Only showing violations for company_id = ${req.user.company_id}`);
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty nào. Vui lòng liên hệ admin.'
+        });
+      }
+    }
     
     // Build where clause for candidate_tests filtering
     const testWhereClause = {
@@ -143,6 +166,21 @@ exports.getViolations = async (req, res) => {
     
     if (candidateTestId) {
       testWhereClause.candidate_test_id = candidateTestId;
+    }
+    
+    // Add date range filter
+    if (startDate || endDate) {
+      testWhereClause.end_time = {};
+      if (startDate) {
+        testWhereClause.end_time[Op.gte] = new Date(startDate);
+        console.log('📅 Start date filter:', startDate);
+      }
+      if (endDate) {
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999); // Include entire end date
+        testWhereClause.end_time[Op.lte] = endDateTime;
+        console.log('📅 End date filter:', endDate);
+      }
     }
     
     // Fetch ALL completed candidate tests
@@ -155,7 +193,16 @@ exports.getViolations = async (req, res) => {
         },
         {
           model: Candidate,
-          attributes: ['candidate_id', 'first_name', 'last_name', 'email']
+          attributes: ['candidate_id', 'first_name', 'last_name', 'email', 'company_id'],
+          where: candidateWhereClause,
+          required: true, // INNER JOIN - only include tests with matching company
+          include: [
+            {
+              model: Company,
+              attributes: ['company_id', 'companyName'],
+              required: false
+            }
+          ]
         },
         {
           model: CandidateTestResult,
@@ -167,13 +214,14 @@ exports.getViolations = async (req, res) => {
           required: false // LEFT JOIN - include tests even without violations
         }
       ],
-      order: [['end_time', 'DESC']]
+      order: [['end_time', 'DESC']],
+      subQuery: false
     });
 
     console.log(`📋 Found ${candidateTests.length} completed tests`);
 
     // Transform to match frontend expectations
-    const violations = candidateTests.map(ct => {
+    let violations = candidateTests.map(ct => {
       const candidate = ct.Candidate;
       const test = ct.Test;
       const result = ct.CandidateTestResult;
@@ -182,13 +230,18 @@ exports.getViolations = async (req, res) => {
       // Get primary violation (most recent or most severe)
       const primaryViolation = fraudLogs.length > 0 ? fraudLogs[0] : null;
       
+      // Get company name - use companyName field from database
+      const companyName = candidate?.Company?.companyName || 'N/A';
+      
       return {
-        id: primaryViolation?.log_id || null,
-        log_id: primaryViolation?.log_id || null,
+        id: primaryViolation?.log_id || ct.candidate_test_id, // Use candidate_test_id if no violation log
+        log_id: primaryViolation?.log_id || ct.candidate_test_id,
         candidateId: candidate?.candidate_id || 'N/A',
         candidate_id: candidate?.candidate_id || 'N/A',
         candidate_name: candidate ? `${candidate.first_name} ${candidate.last_name}` : 'Unknown',
         candidate_email: candidate?.email || '',
+        company_id: candidate?.company_id || null,
+        company_name: companyName,
         candidate_test_id: ct.candidate_test_id,
         test_id: test?.test_id || 'N/A',
         test_name: test?.test_name || 'Unknown Test',
@@ -198,6 +251,7 @@ exports.getViolations = async (req, res) => {
         description: primaryViolation?.details || 'No violations detected',
         details: primaryViolation?.details || 'No violations detected',
         score: result?.total_score || ct.score || 0,
+        manual_score: ct.manual_score || null,
         percentage: result?.percentage || 0,
         result: result?.passed ? 'passed' : 'failed',
         status: result?.passed ? 'pass' : 'fail',
@@ -212,6 +266,18 @@ exports.getViolations = async (req, res) => {
           : '✓ Clean test - no violations'
       };
     });
+
+    // For RECRUITER: Only show tests with ACTUAL violations (exclude NONE)
+    if (userRole === 'RECRUITER') {
+      violations = violations.filter(v => v.violation_type !== 'NONE' && v.has_violations);
+      console.log(`🔒 RECRUITER FILTER: Only showing tests with actual violations: ${violations.length} results`);
+    }
+
+    // Apply violation type filter if specified
+    if (violationType) {
+      violations = violations.filter(v => v.violation_type === violationType);
+      console.log(`🔍 Filtered by violation type '${violationType}': ${violations.length} results`);
+    }
 
     console.log(`⚠️ Returning ${violations.length} enhanced violations`);
 
@@ -243,7 +309,7 @@ exports.getViolationById = async (req, res) => {
           model: CandidateTest,
           include: [
             { model: Test, attributes: ['test_id', 'test_name', 'duration_minutes'] },
-            { model: Candidate, attributes: ['candidate_id', 'first_name', 'last_name', 'email'] },
+            { model: Candidate, attributes: ['candidate_id', 'first_name', 'last_name', 'email', 'company_id'] },
             { model: CandidateTestResult }
           ]
         }
@@ -254,6 +320,17 @@ exports.getViolationById = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Violation not found'
+      });
+    }
+
+    // 🔒 COMPANY CHECK - Recruiter chỉ xem được violation của công ty mình
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    const candidateCompanyId = fraudLog.CandidateTest?.Candidate?.company_id;
+    if (userRole === 'RECRUITER' && candidateCompanyId !== req.user.company_id) {
+      console.log(`🚫 ACCESS DENIED: Recruiter company_id=${req.user.company_id} tried to access violation of candidate company_id=${candidateCompanyId}`);
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền xem báo cáo vi phạm này'
       });
     }
 
@@ -378,6 +455,24 @@ exports.getStatistics = async (req, res) => {
   try {
     console.log('📊 Fetching statistics from database...');
     
+    // 🔒 COMPANY FILTER - Recruiter chỉ xem thống kê của công ty mình
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    console.log(`👤 User: ${req.user?.username}, Role: ${userRole}, Company ID: ${req.user?.company_id}`);
+    
+    // Build where clause for candidates filtering by company
+    const candidateWhereClause = {};
+    if (userRole === 'RECRUITER') {
+      if (req.user.company_id) {
+        candidateWhereClause.company_id = req.user.company_id;
+        console.log(`🔒 RECRUITER FILTER APPLIED: Only showing statistics for company_id = ${req.user.company_id}`);
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty nào. Vui lòng liên hệ admin.'
+        });
+      }
+    }
+    
     // Get all completed candidate tests with results
     const completedTests = await CandidateTest.findAll({
       where: {
@@ -390,7 +485,9 @@ exports.getStatistics = async (req, res) => {
         },
         {
           model: Candidate,
-          attributes: ['candidate_id', 'first_name', 'last_name', 'email']
+          attributes: ['candidate_id', 'first_name', 'last_name', 'email', 'company_id'],
+          where: candidateWhereClause,
+          required: true // INNER JOIN - only include tests with matching company
         },
         {
           model: CandidateTestResult,
@@ -569,11 +666,27 @@ exports.getActivityLogs = async (req, res) => {
     const { candidate_test_id, event_type, startDate, endDate } = req.query;
 
     console.log('📋 Fetching activity logs from database...');
+    console.log('🔍 Filters:', { candidate_test_id, event_type, startDate, endDate });
 
-    // Build where clause
+    // Build where clause with date filter
     const whereClause = {
       report_type: 'ACTIVITY_LOG'
     };
+    
+    // Add date range filter for created_at
+    if (startDate || endDate) {
+      whereClause.created_at = {};
+      if (startDate) {
+        whereClause.created_at[Op.gte] = new Date(startDate);
+        console.log('📅 Start date filter:', startDate);
+      }
+      if (endDate) {
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999);
+        whereClause.created_at[Op.lte] = endDateTime;
+        console.log('📅 End date filter:', endDate);
+      }
+    }
 
     // Fetch activity logs from recruitment_reports
     const activityReports = await RecruitmentReport.findAll({
@@ -766,61 +879,136 @@ exports.notifyCandidate = async (req, res) => {
   }
 };
 
-// Get notifications (for candidate dashboard)
+// Get notifications (for candidate dashboard) - UPDATED to join with test_fraud_logs and interview_feedback
 exports.getNotifications = async (req, res) => {
   try {
     const userId = req.user.userId || req.user.user_id;
 
-    console.log('📧 Fetching notifications for user:', userId);
+    console.log('📧 Fetching notifications with test_fraud_logs and interview_feedback...');
 
-    // Find candidate by user_id
-    const candidate = await Candidate.findOne({
-      where: { user_id: userId }
-    });
-
-    if (!candidate) {
-      return res.status(404).json({
-        success: false,
-        message: 'Candidate profile not found'
-      });
+    // 🔒 COMPANY FILTER - Recruiter chỉ xem thông báo của công ty mình
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    console.log(`👤 User: ${req.user?.username}, Role: ${userRole}, Company ID: ${req.user?.company_id}`);
+    
+    const candidateWhereClause = {};
+    if (userRole === 'RECRUITER') {
+      if (req.user.company_id) {
+        candidateWhereClause.company_id = req.user.company_id;
+        console.log(`🔒 RECRUITER FILTER APPLIED: Only showing notifications for company_id = ${req.user.company_id}`);
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản recruiter chưa được gán vào công ty nào. Vui lòng liên hệ admin.'
+        });
+      }
     }
 
-    // Get notifications from recruitment_reports
-    const notificationReports = await RecruitmentReport.findAll({
+    // Get all completed candidate tests with related data
+    const candidateTests = await CandidateTest.findAll({
       where: {
-        report_type: 'NOTIFICATION'
+        status: 'COMPLETED'
       },
-      order: [['created_at', 'DESC']]
+      include: [
+        {
+          model: Test,
+          attributes: ['test_id', 'test_name', 'description']
+        },
+        {
+          model: Candidate,
+          attributes: ['candidate_id', 'first_name', 'last_name', 'email', 'company_id'],
+          where: candidateWhereClause,
+          required: true // INNER JOIN - only include tests with matching company
+        },
+        {
+          model: CandidateTestResult,
+          attributes: ['total_score', 'percentage', 'passed']
+        },
+        {
+          model: TestFraudLog,
+          attributes: ['log_id', 'event_type', 'event_count', 'event_time', 'details'],
+          required: false
+        }
+      ],
+      order: [['end_time', 'DESC']]
     });
 
-    // Filter and parse notifications for this candidate
-    const candidateNotifications = notificationReports
-      .filter(report => {
-        const params = report.parameters || {};
-        return params.candidate_email === candidate.email || 
-               params.candidate_id === candidate.candidate_id;
-      })
-      .map(report => {
-        const params = report.parameters || {};
-        return {
-          report_id: report.report_id,
-          candidate_test_id: params.candidate_test_id,
-          test_name: params.test_name,
-          score: params.score,
-          percentage: params.percentage,
-          passed: params.passed,
-          message: params.message,
-          status: params.status,
-          sent_at: report.created_at
-        };
-      });
+    // Get interview feedbacks to use as notification content
+    const interviewFeedbacks = await InterviewFeedback.findAll({
+      include: [
+        {
+          model: Interview,
+          include: [
+            {
+              model: CandidateJobApplication,
+              include: [
+                {
+                  model: Candidate,
+                  attributes: ['candidate_id', 'first_name', 'last_name', 'email']
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    });
 
-    console.log(`📧 Found ${candidateNotifications.length} notifications`);
+    // Transform to notifications
+    const notifications = candidateTests.map(ct => {
+      const candidate = ct.Candidate;
+      const test = ct.Test;
+      const result = ct.CandidateTestResult;
+      const fraudLogs = ct.TestFraudLogs || [];
+      
+      // Find matching interview feedback for this candidate (if any)
+      const matchingFeedback = interviewFeedbacks.find(feedback => 
+        feedback.Interview?.CandidateJobApplication?.Candidate?.candidate_id === candidate?.candidate_id
+      );
+      
+      // Get notification type from test_fraud_logs
+      let notificationType = 'general';
+      if (fraudLogs.length > 0) {
+        notificationType = 'violation_warning';
+      } else if (result?.passed) {
+        notificationType = 'result_available';
+      }
+      
+      // Get notification message from interview_feedback or generate default
+      let message = '';
+      if (matchingFeedback) {
+        message = matchingFeedback.feedback_text || matchingFeedback.comments || '';
+      } else if (result?.passed) {
+        message = `Xin chúc mừng! Bạn đã pass bài thi "${test?.test_name}" với điểm ${result.total_score} (${result.percentage}%).`;
+      } else {
+        message = `Kết quả bài thi "${test?.test_name}": ${result?.total_score || 0} điểm (${result?.percentage || 0}%).`;
+      }
+      
+      return {
+        id: ct.candidate_test_id,
+        candidate_test_id: ct.candidate_test_id,
+        candidate_id: candidate?.candidate_id || 'N/A',
+        candidate_name: candidate ? `${candidate.first_name} ${candidate.last_name}` : 'Unknown',
+        candidate_email: candidate?.email || '',
+        test_id: test?.test_id || 'N/A',
+        test_name: test?.test_name || 'Unknown Test', // FROM tests table
+        type: notificationType, // FROM test_fraud_logs (violation_warning if has violations)
+        message: message, // FROM interview_feedback table
+        score: result?.total_score || 0,
+        percentage: result?.percentage || 0,
+        passed: result?.passed || false,
+        status: 'sent',
+        violation_count: fraudLogs.length,
+        has_violations: fraudLogs.length > 0,
+        sent_at: ct.end_time || ct.updated_at,
+        timestamp: ct.end_time || ct.updated_at
+      };
+    });
+
+    console.log(`📧 Found ${notifications.length} notifications with enhanced data`);
 
     return res.status(200).json({
       success: true,
-      count: candidateNotifications.length,
-      data: candidateNotifications
+      count: notifications.length,
+      data: notifications
     });
 
   } catch (error) {
@@ -952,6 +1140,323 @@ exports.saveTestCompletionData = async (candidateTestData) => {
     console.error('❌ Error saving test completion data:', error);
     logger.error(`Error saving test completion data: ${error.message}`);
     return false;
+  }
+};
+
+// ===== 5. RECRUITMENT REPORTS (ADMIN & RECRUITER) =====
+// Get all reports from recruitment_reports table
+exports.getAllReports = async (req, res) => {
+  try {
+    const { report_type, limit = 100, offset = 0, startDate, endDate } = req.query;
+
+    console.log('📋 Fetching reports from recruitment_reports...');
+    console.log('🔍 Filters:', { report_type, startDate, endDate, limit, offset });
+
+    // 🔒 COMPANY FILTER - Recruiter chỉ xem báo cáo của công ty mình
+    const userRole = req.user?.Role?.role_name?.toUpperCase() || req.user?.role?.toUpperCase();
+    console.log(`👤 User: ${req.user?.username}, Role: ${userRole}, Company ID: ${req.user?.company_id}`);
+
+    // Build where clause with date filter
+    const whereClause = {};
+    if (report_type) {
+      whereClause.report_type = report_type;
+    }
+    
+    // Add date range filter
+    if (startDate || endDate) {
+      whereClause.created_at = {};
+      if (startDate) {
+        whereClause.created_at[Op.gte] = new Date(startDate);
+        console.log('📅 Start date filter:', startDate);
+      }
+      if (endDate) {
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999); // Include entire end date
+        whereClause.created_at[Op.lte] = endDateTime;
+        console.log('📅 End date filter:', endDate);
+      }
+    }
+
+    // Fetch all reports with creator info
+    const reports = await RecruitmentReport.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: User,
+          as: 'Creator',
+          attributes: ['user_id', 'username', 'full_name', 'company_id']
+        }
+      ],
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    // Filter by company if recruiter
+    let filteredReports = reports;
+    if (userRole === 'RECRUITER' && req.user.company_id) {
+      filteredReports = reports.filter(report => {
+        // Check if creator belongs to same company
+        if (report.Creator?.company_id === req.user.company_id) return true;
+        
+        // Check if report parameters contain company_id
+        const params = report.parameters;
+        if (params && params.company_id === req.user.company_id) return true;
+        
+        // Check if report is related to candidate from same company
+        if (params && params.candidate_company_id === req.user.company_id) return true;
+        
+        return false;
+      });
+      console.log(`🔒 RECRUITER FILTER: ${reports.length} total, ${filteredReports.length} for company ${req.user.company_id}`);
+    }
+
+    // Format data for response
+    const reportsData = filteredReports.map(report => ({
+      report_id: report.report_id,
+      report_name: report.report_name,
+      report_type: report.report_type,
+      parameters: report.parameters, // Already parsed by getter
+      created_by: report.created_by,
+      creator_name: report.Creator?.full_name || report.Creator?.username || 'System',
+      created_at: report.created_at
+    }));
+
+    console.log(`✅ Found ${reportsData.length} reports`);
+
+    return res.status(200).json({
+      success: true,
+      count: reportsData.length,
+      data: reportsData
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching all reports:', error);
+    logger.error(`Error fetching all reports: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch reports',
+      error: error.message
+    });
+  }
+};
+
+// ===== 5B. GET SINGLE REPORT BY ID (ADMIN ONLY) =====
+exports.getReportById = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+
+    console.log(`📊 Fetching report #${reportId}...`);
+
+    // Validate reportId
+    if (!reportId || isNaN(reportId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid report ID'
+      });
+    }
+
+    // Fetch report with creator info
+    const report = await RecruitmentReport.findByPk(reportId, {
+      include: [
+        {
+          model: User,
+          as: 'Creator',
+          attributes: ['user_id', 'username', 'full_name', 'company_id']
+        }
+      ]
+    });
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
+      });
+    }
+
+    // Format response
+    const reportData = {
+      report_id: report.report_id,
+      report_name: report.report_name,
+      report_type: report.report_type,
+      description: report.description || null,
+      parameters: report.parameters, // Already parsed by getter
+      severity: report.severity || 'INFO',
+      status: report.status || 'COMPLETED',
+      created_by: report.created_by,
+      creator_name: report.Creator?.full_name || report.Creator?.username || 'System',
+      created_at: report.created_at,
+      updated_at: report.updated_at
+    };
+
+    console.log(`✅ Found report #${reportId}: ${report.report_name}`);
+
+    return res.status(200).json({
+      success: true,
+      data: reportData
+    });
+
+  } catch (error) {
+    console.error(`❌ Error fetching report #${req.params.reportId}:`, error);
+    logger.error(`Error fetching report: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch report',
+      error: error.message
+    });
+  }
+};
+
+// ===== 6. UPDATE REPORT (ADMIN ONLY) =====
+exports.updateReport = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const { report_name } = req.body;
+    const userId = req.user?.user_id || req.user?.userId;
+    const username = req.user?.username || 'Unknown';
+
+    console.log(`✏️ [ADMIN] User ${username} (ID: ${userId}) attempting to update report ${reportId}...`);
+    console.log(`📝 New name: "${report_name}"`);
+
+    // Validate reportId
+    if (!reportId || isNaN(reportId)) {
+      console.log(`❌ Invalid report ID: ${reportId}`);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid report ID'
+      });
+    }
+
+    // Validate report_name
+    if (!report_name || report_name.trim() === '') {
+      console.log(`❌ Report name is empty`);
+      return res.status(400).json({
+        success: false,
+        message: 'Tên báo cáo không được để trống'
+      });
+    }
+
+    // Find report
+    const report = await RecruitmentReport.findByPk(reportId);
+    if (!report) {
+      console.log(`❌ Report ${reportId} not found in database`);
+      return res.status(404).json({
+        success: false,
+        message: `Báo cáo #${reportId} không tồn tại`
+      });
+    }
+
+    const oldName = report.report_name;
+    console.log(`📄 Found report: "${oldName}" (Type: ${report.report_type})`);
+
+    // Check if name actually changed
+    if (oldName === report_name.trim()) {
+      console.log(`⚠️ Report name unchanged`);
+      return res.status(200).json({
+        success: true,
+        message: 'Tên báo cáo không thay đổi',
+        data: {
+          report_id: report.report_id,
+          report_name: report.report_name,
+          report_type: report.report_type
+        }
+      });
+    }
+
+    // Update report
+    report.report_name = report_name.trim();
+    await report.save();
+
+    console.log(`✅ [ADMIN] Report ${reportId} updated: "${oldName}" → "${report.report_name}" by ${username}`);
+    logger.info(`Report updated: ID=${reportId}, Old="${oldName}", New="${report.report_name}" by user ${username} (${userId})`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Đã cập nhật báo cáo thành công',
+      data: {
+        report_id: report.report_id,
+        report_name: report.report_name,
+        report_type: report.report_type,
+        updated_at: new Date(),
+        updated_by: username
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error updating report:', error);
+    console.error('❌ Error stack:', error.stack);
+    logger.error(`Error updating report: ${error.message}`, { stack: error.stack });
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi cập nhật báo cáo',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+};
+
+// ===== 7. DELETE REPORT (ADMIN ONLY) =====
+exports.deleteReport = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const userId = req.user?.user_id || req.user?.userId;
+    const username = req.user?.username || 'Unknown';
+
+    console.log(`🗑️ [ADMIN] User ${username} (ID: ${userId}) attempting to delete report ${reportId}...`);
+
+    // Validate reportId
+    if (!reportId || isNaN(reportId)) {
+      console.log(`❌ Invalid report ID: ${reportId}`);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid report ID'
+      });
+    }
+
+    // Find report
+    const report = await RecruitmentReport.findByPk(reportId);
+    if (!report) {
+      console.log(`❌ Report ${reportId} not found in database`);
+      return res.status(404).json({
+        success: false,
+        message: `Báo cáo #${reportId} không tồn tại`
+      });
+    }
+
+    console.log(`📄 Found report: "${report.report_name}" (Type: ${report.report_type})`);
+
+    // Store info for logging
+    const reportInfo = {
+      report_id: report.report_id,
+      report_name: report.report_name,
+      report_type: report.report_type,
+      created_at: report.created_at
+    };
+
+    // Delete report
+    await report.destroy();
+
+    console.log(`✅ [ADMIN] Report ${reportId} deleted successfully by ${username}`);
+    logger.info(`Report deleted: ${JSON.stringify(reportInfo)} by user ${username} (${userId})`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Đã xóa báo cáo thành công',
+      data: {
+        report_id: parseInt(reportId),
+        deleted_at: new Date(),
+        deleted_by: username
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error deleting report:', error);
+    console.error('❌ Error stack:', error.stack);
+    logger.error(`Error deleting report: ${error.message}`, { stack: error.stack });
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi xóa báo cáo',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 };
 

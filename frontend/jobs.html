@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuyển dụng - CS60 Recruitment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .job-card {
+            transition: all 0.3s ease;
+        }
+        .job-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">C</span>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">CS60 Recruitment</h1>
+                        <p class="text-sm text-gray-600">Cơ hội nghề nghiệp</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <a href="my-applications.html" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition font-medium">
+                        📋 Đơn của tôi
+                    </a>
+                    <div id="userInfo" class="flex items-center gap-3">
+                        <div class="text-right">
+                            <p id="userName" class="text-sm font-medium text-gray-900"></p>
+                            <p class="text-xs text-gray-500">Candidate</p>
+                        </div>
+                        <button onclick="logout()" class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition font-medium">
+                            Đăng xuất
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- Search & Filter -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="md:col-span-2">
+                    <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm vị trí, công ty..." 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        oninput="filterJobs()">
+                </div>
+                <div>
+                    <select id="filterCompany" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="filterJobs()">
+                        <option value="">Tất cả công ty</option>
+                    </select>
+                </div>
+                <div>
+                    <select id="filterDepartment" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="filterJobs()">
+                        <option value="">Tất cả bộ phận</option>
+                        <option value="IT">IT</option>
+                        <option value="HR">HR</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Finance">Finance</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Jobs Grid -->
+        <div id="jobsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Loading -->
+            <div class="col-span-full text-center py-12">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p class="mt-4 text-gray-600">Đang tải danh sách việc làm...</p>
+            </div>
+        </div>
+
+        <!-- No Results -->
+        <div id="noResults" class="hidden col-span-full text-center py-12">
+            <svg class="w-24 h-24 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="mt-4 text-xl text-gray-600">Không tìm thấy vị trí phù hợp</p>
+        </div>
+    </main>
+
+    <!-- Job Detail Modal -->
+    <div id="jobModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white px-6 py-4 border-b flex justify-between items-center">
+                <h2 id="modalTitle" class="text-2xl font-bold text-gray-900"></h2>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <div class="flex items-center gap-4">
+                    <div id="modalCompanyLogo" class="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-2xl"></div>
+                    <div>
+                        <p id="modalCompany" class="text-lg font-semibold text-gray-900"></p>
+                        <p id="modalDepartment" class="text-sm text-gray-600"></p>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">📝 Mô tả công việc</h3>
+                    <p id="modalDescription" class="text-gray-700 whitespace-pre-wrap"></p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">✅ Yêu cầu</h3>
+                    <p id="modalRequirements" class="text-gray-700 whitespace-pre-wrap"></p>
+                </div>
+                
+                <div class="flex gap-3 pt-4 border-t">
+                    <button onclick="closeModal()" class="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition">
+                        Đóng
+                    </button>
+                    <button id="applyButton" class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-medium transition shadow-md">
+                        🚀 Ứng tuyển ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let allJobs = [];
+        let allCompanies = new Set();
+        let currentJobId = null;
+
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Vui lòng đăng nhập để xem danh sách việc làm');
+                window.location.href = 'login.html';
+                return false;
+            }
+            
+            // Parse token to get user info
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                document.getElementById('userName').textContent = payload.full_name || payload.username;
+                
+                // Check if user is candidate
+                if (payload.role && payload.role.toUpperCase() !== 'CANDIDATE') {
+                    alert('Trang này chỉ dành cho ứng viên');
+                    window.location.href = 'index.html';
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error parsing token:', error);
+            }
+            
+            return true;
+        }
+
+        function getAuthHeaders() {
+            return {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        // Fetch jobs
+        async function fetchJobs() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/job-positions?limit=100`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    allJobs = data.data.positions || [];
+                    
+                    // Extract unique companies
+                    allJobs.forEach(job => {
+                        if (job.Company) {
+                            allCompanies.add(JSON.stringify({
+                                id: job.Company.company_id,
+                                name: job.Company.companyName
+                            }));
+                        }
+                    });
+                    
+                    // Populate company filter
+                    const companyFilter = document.getElementById('filterCompany');
+                    Array.from(allCompanies).forEach(companyStr => {
+                        const company = JSON.parse(companyStr);
+                        const option = document.createElement('option');
+                        option.value = company.id;
+                        option.textContent = company.name;
+                        companyFilter.appendChild(option);
+                    });
+                    
+                    renderJobs(allJobs);
+                } else {
+                    showError('Không thể tải danh sách việc làm');
+                }
+            } catch (error) {
+                console.error('Error fetching jobs:', error);
+                showError('Lỗi khi tải danh sách việc làm');
+            }
+        }
+
+        function renderJobs(jobs) {
+            const container = document.getElementById('jobsContainer');
+            const noResults = document.getElementById('noResults');
+            
+            if (!jobs || jobs.length === 0) {
+                container.innerHTML = '';
+                noResults.classList.remove('hidden');
+                return;
+            }
+            
+            noResults.classList.add('hidden');
+            
+            container.innerHTML = jobs.map(job => {
+                const companyColor = `hsl(${(job.position_id * 137.5) % 360}, 70%, 50%)`;
+                const companyInitial = job.Company?.companyName?.charAt(0).toUpperCase() || 'C';
+                
+                return `
+                    <div class="job-card bg-white rounded-xl shadow-md p-6 cursor-pointer" onclick="showJobDetail(${job.position_id})">
+                        <div class="flex items-start gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-xl" style="background: ${companyColor};">
+                                ${companyInitial}
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900 mb-1">${job.title}</h3>
+                                <p class="text-sm text-gray-600">${job.Company?.companyName || 'N/A'}</p>
+                            </div>
+                        </div>
+                        
+                        ${job.department ? `
+                        <div class="mb-3">
+                            <span class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                                📁 ${job.department}
+                            </span>
+                        </div>
+                        ` : ''}
+                        
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-2">${job.description || 'Không có mô tả'}</p>
+                        
+                        <div class="flex items-center justify-between pt-4 border-t">
+                            <span class="text-xs text-gray-500">
+                                📅 ${new Date(job.created_at).toLocaleDateString('vi-VN')}
+                            </span>
+                            <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition" onclick="event.stopPropagation(); showJobDetail(${job.position_id})">
+                                Xem chi tiết
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterJobs() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const companyFilter = document.getElementById('filterCompany').value;
+            const departmentFilter = document.getElementById('filterDepartment').value;
+            
+            const filtered = allJobs.filter(job => {
+                const matchSearch = !searchTerm || 
+                    job.title.toLowerCase().includes(searchTerm) ||
+                    (job.Company?.companyName || '').toLowerCase().includes(searchTerm) ||
+                    (job.description || '').toLowerCase().includes(searchTerm);
+                
+                const matchCompany = !companyFilter || job.Company?.company_id == companyFilter;
+                const matchDepartment = !departmentFilter || job.department === departmentFilter;
+                
+                return matchSearch && matchCompany && matchDepartment;
+            });
+            
+            renderJobs(filtered);
+        }
+
+        async function showJobDetail(jobId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/job-positions/${jobId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const job = data.data;
+                    currentJobId = jobId;
+                    
+                    const companyColor = `hsl(${(job.position_id * 137.5) % 360}, 70%, 50%)`;
+                    const companyInitial = job.Company?.companyName?.charAt(0).toUpperCase() || 'C';
+                    
+                    document.getElementById('modalTitle').textContent = job.title;
+                    document.getElementById('modalCompany').textContent = job.Company?.companyName || 'N/A';
+                    document.getElementById('modalDepartment').textContent = job.department || 'N/A';
+                    document.getElementById('modalDescription').textContent = job.description || 'Không có mô tả';
+                    document.getElementById('modalRequirements').textContent = job.requirements || 'Không có yêu cầu cụ thể';
+                    
+                    const logo = document.getElementById('modalCompanyLogo');
+                    logo.style.background = companyColor;
+                    logo.textContent = companyInitial;
+                    
+                    document.getElementById('jobModal').classList.remove('hidden');
+                    document.getElementById('jobModal').classList.add('flex');
+                } else {
+                    alert('Không thể tải thông tin công việc');
+                }
+            } catch (error) {
+                console.error('Error loading job detail:', error);
+                alert('Lỗi khi tải thông tin công việc');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('jobModal').classList.add('hidden');
+            document.getElementById('jobModal').classList.remove('flex');
+            currentJobId = null;
+        }
+
+        // Apply for job
+        document.getElementById('applyButton').addEventListener('click', async () => {
+            if (!currentJobId) return;
+            
+            if (!confirm('Bạn có chắc muốn ứng tuyển vị trí này?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/applications/apply`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ position_id: currentJobId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Ứng tuyển thành công! Vui lòng theo dõi email để nhận thông tin từ nhà tuyển dụng.');
+                    closeModal();
+                } else {
+                    alert(data.message || 'Không thể ứng tuyển');
+                }
+            } catch (error) {
+                console.error('Error applying for job:', error);
+                alert('Lỗi khi ứng tuyển. Vui lòng thử lại sau.');
+            }
+        });
+
+        function showError(message) {
+            document.getElementById('jobsContainer').innerHTML = `
+                <div class="col-span-full text-center py-12">
+                    <svg class="w-24 h-24 mx-auto text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <p class="mt-4 text-xl text-red-600">${message}</p>
+                </div>
+            `;
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // Initialize
+        if (checkAuth()) {
+            fetchJobs();
+        }
+    </script>
+</body>
+</html>

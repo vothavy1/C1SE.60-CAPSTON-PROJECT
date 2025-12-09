@@ -7,8 +7,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="config.js"></script>
     <style>
+        .blue-header {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
         .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
         }
         .card-shadow {
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
@@ -18,29 +21,180 @@
             transition: all 0.3s;
         }
         .file-upload-box:hover {
-            border-color: #667eea;
+            border-color: #3b82f6;
             background-color: #f7fafc;
         }
         .file-upload-box.dragover {
-            border-color: #667eea;
+            border-color: #3b82f6;
             background-color: #edf2f7;
+        }
+
+        /* Dialogflow Messenger Chatbox Styles */
+        df-messenger {
+            --df-messenger-bot-message: #0d6efd; /* màu tin nhắn bot */
+            --df-messenger-button-titlebar-color: #0d6efd; /* màu thanh trên cùng */
+            --df-messenger-chat-background-color: #f5f5f5; /* nền chat */
+            --df-messenger-font-color: #000000;
+            --df-messenger-send-icon: #0d6efd;
+            --df-messenger-user-message: #198754; /* màu tin nhắn người dùng */
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        /* ---- CSS CHO NÚT ZALO MESSENGER NỔI ---- */
+        .fab-container {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .fab-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #007bff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .fab-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+        }
+
+        .fab-button img {
+            width: 32px;
+            height: 32px;
+        }
+
+        .fab-messenger {
+            background-color: #0084ff;
+        }
+
+        .fab-zalo {
+            background-color: #0068ff;
+        }
+
+        .fab-zalo-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .zalo-contact-list {
+            position: absolute;
+            bottom: 75px;
+            right: 0;
+            width: 250px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            visibility: hidden;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .zalo-contact-list.show {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .zalo-contact-list strong {
+            padding: 15px 20px;
+            font-size: 16px;
+            color: #333;
+            background-color: #f7f7f7;
+            border-bottom: 1px solid #eee;
+        }
+
+        .zalo-contact-list a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: #222;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .zalo-contact-list a:last-child {
+            border-bottom: none;
+        }
+
+        .zalo-contact-list a:hover {
+            background-color: #f5f5f5;
+        }
+
+        .zalo-contact-list a img {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+        }
+
+        .zalo-contact-list a span {
+            font-size: 15px;
+        }
+
+        /* Responsive cho mobile */
+        @media (max-width: 640px) {
+            .fab-container {
+                bottom: 90px;
+                right: 15px;
+            }
+            
+            .fab-button {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .fab-button img {
+                width: 28px;
+                height: 28px;
+            }
+            
+            #customChatbox {
+                width: calc(100vw - 30px);
+                right: 15px;
+                left: 15px;
+            }
+            
+            .zalo-contact-list {
+                width: 220px;
+                right: 0;
+            }
         }
     </style>
 </head>
 <body class="bg-gray-50">
     <!-- Header -->
-    <header class="gradient-bg text-white py-6 shadow-lg">
+    <header class="blue-header text-white py-6 shadow-lg">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-3xl font-bold">CS60 Recruitment System</h1>
-                    <p class="text-sm opacity-90 mt-1">Hệ thống tuyển dụng và thi tuyển trực tuyến</p>
+                    <!-- Logo or minimal branding can go here if needed -->
                 </div>
                 <div class="flex gap-3">
-                    <a href="index.html" class="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-gray-100 transition">
+                    <a href="index.html" class="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition">
                         Đăng nhập
                     </a>
-                    <a href="register.html" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition">
+                    <a href="register.html" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
                         Đăng ký
                     </a>
                 </div>
@@ -79,7 +233,7 @@
                                 Họ <span class="text-red-500">*</span>
                             </label>
                             <input type="text" id="first_name" name="first_name" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="Nguyễn Văn">
                         </div>
                         <div>
@@ -87,7 +241,7 @@
                                 Tên <span class="text-red-500">*</span>
                             </label>
                             <input type="text" id="last_name" name="last_name" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="An">
                         </div>
                     </div>
@@ -98,8 +252,11 @@
                             Email <span class="text-red-500">*</span>
                         </label>
                         <input type="email" id="email" name="email" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            placeholder="nguyenvanan@example.com">
+                            pattern="[a-zA-Z0-9._%+-]+@gmail\\.com"
+                            title="Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="example123@gmail.com">
+                        <small class="text-gray-500 text-xs mt-1 block">Email phải có dạng: chữ và số @gmail.com</small>
                     </div>
 
                     <!-- Phone -->
@@ -108,8 +265,22 @@
                             Số điện thoại <span class="text-red-500">*</span>
                         </label>
                         <input type="tel" id="phone" name="phone" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            pattern="[0-9]{10,11}"
+                            title="Số điện thoại chỉ được phép nhập số (10-11 chữ số)"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="0912345678">
+                        <small class="text-gray-500 text-xs mt-1 block">Chỉ được nhập số, từ 10-11 chữ số</small>
+                    </div>
+
+                    <!-- Company to Apply -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Ứng tuyển vào công ty <span class="text-red-500">*</span>
+                        </label>
+                        <select id="apply_company_id" name="apply_company_id" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+                            <option value="">-- Chọn công ty bạn muốn ứng tuyển --</option>
+                        </select>
                     </div>
 
                     <!-- Position -->
@@ -118,7 +289,7 @@
                             Vị trí ứng tuyển <span class="text-red-500">*</span>
                         </label>
                         <input type="text" id="position" name="position" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Ví dụ: Intern, Developer, Tester...">
                     </div>
 
@@ -127,17 +298,9 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Công ty hiện tại (nếu có)
                         </label>
-                        <select id="company_name" name="company_name"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white">
-                            <option value="">-- Chọn công ty --</option>
-                            <option value="FPT Software">FPT Software</option>
-                            <option value="Enouvo IT Solutions">Enouvo IT Solutions</option>
-                            <option value="Axon Active">Axon Active</option>
-                            <option value="Rikkeisoft">Rikkeisoft</option>
-                            <option value="DTT Technology">DTT Technology</option>
-                            <option value="VNPT IT">VNPT IT</option>
-                            <option value="Other">Công ty khác</option>
-                        </select>
+                        <input type="text" id="company_name" name="company_name"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Tên công ty bạn đang làm việc">
                     </div>
 
                     <!-- Years of Experience -->
@@ -147,7 +310,7 @@
                         </label>
                         <input type="number" id="experience_years" name="experience_years" required
                             min="0" max="50"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Nhập số năm kinh nghiệm (ví dụ: 3)">
                     </div>
 
@@ -157,12 +320,12 @@
                             Upload CV <span class="text-red-500">*</span>
                         </label>
                         <div class="file-upload-box rounded-lg p-8 text-center cursor-pointer" id="fileUploadBox">
-                            <input type="file" id="cv" name="cv" accept=".pdf,.doc,.docx" required class="hidden">
+                            <input type="file" id="cv" name="cv" accept=".pdf,.doc,.docx" required style="position: absolute; opacity: 0; width: 1px; height: 1px;">
                             <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                             </svg>
                             <p class="text-gray-600 mb-1">
-                                <span class="text-purple-600 font-semibold">Click để chọn file</span> hoặc kéo thả vào đây
+                                <span class="text-blue-600 font-semibold">Click để chọn file</span> hoặc kéo thả vào đây
                             </p>
                             <p class="text-sm text-gray-500">PDF, DOC, DOCX (Tối đa 5MB)</p>
                             <p id="fileName" class="text-sm text-green-600 mt-2 hidden"></p>
@@ -215,6 +378,72 @@
         const btnLoading = document.getElementById('btnLoading');
         const successMessage = document.getElementById('successMessage');
 
+        // Load companies on page load
+        async function loadCompanies() {
+            try {
+                const response = await fetch(`${API_CONFIG.BASE_URL}/companies`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const companySelect = document.getElementById('apply_company_id');
+                    data.data.forEach(company => {
+                        const option = document.createElement('option');
+                        option.value = company.company_id;
+                        option.textContent = company.companyName;
+                        companySelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading companies:', error);
+            }
+        }
+
+        // Load companies when page loads
+        loadCompanies();
+
+        // Real-time validation for email
+        document.getElementById('email').addEventListener('input', function(e) {
+            const email = e.target.value;
+            const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+            
+            if (email && !emailPattern.test(email)) {
+                e.target.setCustomValidity('Email phải có dạng: chữ và số @gmail.com (ví dụ: user123@gmail.com)');
+                e.target.classList.add('border-red-500');
+                e.target.classList.remove('border-gray-300');
+            } else {
+                e.target.setCustomValidity('');
+                e.target.classList.remove('border-red-500');
+                e.target.classList.add('border-gray-300');
+            }
+        });
+
+        // Real-time validation for phone - only allow numbers
+        document.getElementById('phone').addEventListener('input', function(e) {
+            // Remove any non-digit characters
+            let phone = e.target.value.replace(/\D/g, '');
+            e.target.value = phone;
+            
+            const phonePattern = /^[0-9]{10,11}$/;
+            
+            if (phone && !phonePattern.test(phone)) {
+                e.target.setCustomValidity('Số điện thoại phải từ 10-11 chữ số');
+                e.target.classList.add('border-red-500');
+                e.target.classList.remove('border-gray-300');
+            } else {
+                e.target.setCustomValidity('');
+                e.target.classList.remove('border-red-500');
+                e.target.classList.add('border-gray-300');
+            }
+        });
+
+        // Prevent non-numeric input on phone field
+        document.getElementById('phone').addEventListener('keypress', function(e) {
+            // Allow only numbers (0-9)
+            if (e.key < '0' || e.key > '9') {
+                e.preventDefault();
+            }
+        });
+
         // Click to upload
         fileUploadBox.addEventListener('click', () => fileInput.click());
 
@@ -254,9 +483,29 @@
         applyForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            // Final validation before submit
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            
+            const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+            const phonePattern = /^[0-9]{10,11}$/;
+            
+            if (!email || !emailPattern.test(email)) {
+                alert('❌ Email không hợp lệ!\n\nEmail phải có dạng: chữ và số @gmail.com\nVí dụ: user123@gmail.com');
+                document.getElementById('email').focus();
+                return;
+            }
+            
+            if (!phonePattern.test(phone)) {
+                alert('❌ Số điện thoại không hợp lệ!\n\nSố điện thoại chỉ được nhập số, từ 10-11 chữ số\nVí dụ: 0912345678');
+                document.getElementById('phone').focus();
+                return;
+            }
+
             // Validate file
             if (!fileInput.files || fileInput.files.length === 0) {
-                alert('Vui lòng chọn file CV!');
+                alert('❌ Vui lòng chọn file CV!');
+                fileUploadBox.scrollIntoView({ behavior: 'smooth' });
                 return;
             }
 
@@ -283,6 +532,7 @@
                 formData.append('position', document.getElementById('position').value.trim());
                 formData.append('company_name', document.getElementById('company_name').value);
                 formData.append('experience_years', document.getElementById('experience_years').value);
+                formData.append('company_id', document.getElementById('apply_company_id').value);
                 formData.append('cv', file);
 
                 // Submit to API
@@ -320,6 +570,154 @@
                 btnLoading.classList.add('hidden');
             }
         });
+    </script>
+
+    <!-- Zalo Messenger Floating Buttons -->
+    <div class="fab-container">
+        <div class="fab-zalo-wrapper">
+            <div class="zalo-contact-list" id="zalo-list">
+                <strong>Liên hệ hỗ trợ</strong>
+                <a href="https://zalo.me/0368510502" target="_blank">
+                    <img src="https://tse4.mm.bing.net/th/id/OIP.y4IYoC5igL77E9V7e1HleQHaHa?pid=Api&P=0&h=180" alt="Zalo">
+                    <span>Đăng Bình (0368510502)</span>
+                </a>
+                <a href="https://zalo.me/0862052680" target="_blank">
+                    <img src="https://tse4.mm.bing.net/th/id/OIP.y4IYoC5igL77E9V7e1HleQHaHa?pid=Api&P=0&h=180" alt="Zalo">
+                    <span>Hà Vy (0862052680)</span>
+                </a>
+            </div>
+            <div class="fab-button fab-zalo" id="zalo-button">
+                <img src="https://tse4.mm.bing.net/th/id/OIP.y4IYoC5igL77E9V7e1HleQHaHa?pid=Api&P=0&h=180" alt="Zalo">
+            </div>
+        </div>
+        <a href="https://m.me/binhvoteamman" target="_blank" class="fab-button fab-messenger">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/b/be/Facebook_Messenger_logo_2020.svg" alt="Messenger">
+        </a>
+    </div>
+
+    <!-- Dialogflow Messenger Chatbox -->
+    <button onclick="toggleChat()" class="fixed bottom-5 right-5 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition z-30">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+    </button>
+
+    <div id="customChatbox" class="hidden fixed bottom-20 right-5 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-40 flex flex-col overflow-hidden h-96">
+        <div class="bg-blue-600 p-4 text-white flex justify-between items-center">
+            <h3 class="font-bold">Chat Hỗ Trợ AI</h3>
+            <button onclick="toggleChat()" class="hover:text-gray-200">✕</button>
+        </div>
+
+        <div id="chatMessages" class="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-3">
+            <div class="flex justify-start">
+                <div class="bg-gray-200 text-gray-800 p-2 rounded-lg rounded-tl-none max-w-[80%] text-sm">
+                    Xin chào! Tôi có thể giúp gì cho bạn?
+                </div>
+            </div>
+        </div>
+
+        <div class="p-3 border-t bg-white flex gap-2">
+            <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." 
+                class="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-500"
+                onkeypress="if(event.key === 'Enter') sendMessage()">
+            <button onclick="sendMessage()" class="text-blue-600 hover:text-blue-800 p-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Hàm bật tắt khung chat
+        function toggleChat() {
+            const chatbox = document.getElementById('customChatbox');
+            chatbox.classList.toggle('hidden');
+            if (!chatbox.classList.contains('hidden')) {
+                document.getElementById('chatInput').focus();
+            }
+        }
+
+        // JavaScript cho nút Zalo
+        document.addEventListener('DOMContentLoaded', function() {
+            const zaloButton = document.getElementById('zalo-button');
+            const zaloList = document.getElementById('zalo-list');
+
+            if (zaloButton && zaloList) {
+                zaloButton.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    zaloList.classList.toggle('show');
+                });
+
+                document.addEventListener('click', function(event) {
+                    if (!zaloButton.contains(event.target) && !zaloList.contains(event.target)) {
+                        zaloList.classList.remove('show');
+                    }
+                });
+            }
+        });
+
+        // Hàm gửi tin nhắn
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            const messagesDiv = document.getElementById('chatMessages');
+
+            if (!message) return;
+
+            // 1. Hiển thị tin nhắn người dùng
+            messagesDiv.innerHTML += `
+                <div class="flex justify-end">
+                    <div class="bg-blue-600 text-white p-2 rounded-lg rounded-tr-none max-w-[80%] text-sm">
+                        ${message}
+                    </div>
+                </div>`;
+            
+            input.value = ''; // Xóa ô nhập
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Cuộn xuống dưới
+
+            // 2. Gửi đến Python Server (Code bạn yêu cầu)
+            try {
+                // Hiển thị "Đang gõ..."
+                const loadingId = 'loading-' + Date.now();
+                messagesDiv.innerHTML += `
+                    <div id="${loadingId}" class="flex justify-start">
+                        <div class="bg-gray-200 text-gray-500 p-2 rounded-lg rounded-tl-none text-xs italic">
+                            Đang trả lời...
+                        </div>
+                    </div>`;
+
+                const response = await fetch('http://127.0.0.1:5000/webhook', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message }) 
+                });
+
+                const data = await response.json();
+                
+                // Xóa dòng "Đang trả lời..."
+                document.getElementById(loadingId).remove();
+
+                // 3. Hiển thị câu trả lời từ Gemini
+                messagesDiv.innerHTML += `
+                    <div class="flex justify-start">
+                        <div class="bg-gray-200 text-gray-800 p-2 rounded-lg rounded-tl-none max-w-[80%] text-sm">
+                            ${data.reply || "Xin lỗi, tôi không hiểu."}
+                        </div>
+                    </div>`;
+                
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            } catch (error) {
+                console.error('Lỗi:', error);
+                messagesDiv.innerHTML += `
+                    <div class="flex justify-start">
+                        <div class="bg-red-100 text-red-600 p-2 rounded-lg text-xs">
+                            Lỗi kết nối server (Hãy chắc chắn bạn đã chạy python webhook.py)
+                        </div>
+                    </div>`;
+            }
+        }
     </script>
 </body>
 </html>

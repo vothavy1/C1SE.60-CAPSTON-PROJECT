@@ -1,0 +1,579 @@
+/* Global Theme Styles for CS60 Recruitment System */
+/* Apply to all pages consistently */
+
+/* Light mode styles - Zalo-inspired: White & Blue */
+body.light-mode {
+  background: linear-gradient(135deg, #ffffff 0%, #e3f2fd 50%, #ffffff 100%);
+  color: #2c3e50;
+  transition: background 0.3s, color 0.3s;
+}
+
+body.light-mode .header-bg {
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .card-bg,
+body.light-mode .content-card {
+  background: #ffffff;
+  border: 1px solid #e8eaf6;
+  color: #2c3e50;
+  box-shadow: 0 2px 8px rgba(63, 81, 181, 0.08);
+  border-radius: 12px;
+}
+
+body.light-mode .card-bg:hover,
+body.light-mode .content-card:hover {
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(63, 81, 181, 0.15);
+  transform: translateY(-2px);
+  border-color: #3f51b5;
+}
+
+body.light-mode .text-subtitle {
+  color: #5f6368;
+}
+
+body.light-mode .footer-border {
+  border-top: 1px solid #e0e0e0;
+  color: #5f6368;
+}
+
+body.light-mode #userName {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+/* Buttons - Light Mode - Zalo style */
+body.light-mode .btn-primary {
+  background: #1976d2;
+  color: #ffffff;
+  border: none;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
+}
+
+body.light-mode .btn-primary:hover {
+  background: #1565c0;
+  color: #ffffff;
+  box-shadow: 0 4px 8px rgba(25, 118, 210, 0.4);
+}
+
+body.light-mode .btn-secondary {
+  background: #ffffff;
+  color: #1976d2;
+  border: 1px solid #1976d2;
+  font-weight: 500;
+}
+
+body.light-mode .btn-secondary:hover {
+  background: #e3f2fd;
+  color: #1565c0;
+  border-color: #1565c0;
+}
+
+body.light-mode .btn-accent {
+  background: #f5f5f5;
+  color: #2c3e50;
+  border: 1px solid #e0e0e0;
+  font-weight: 500;
+}
+
+body.light-mode .btn-accent:hover {
+  background: #eeeeee;
+  color: #2c3e50;
+  border-color: #bdbdbd;
+}
+
+/* Table - Light Mode */
+body.light-mode table {
+  background: #ffffff;
+  color: #2c3e50;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+body.light-mode th {
+  background: #1976d2;
+  color: #ffffff;
+  border-bottom: none;
+  font-weight: 500;
+  padding: 12px 16px;
+}
+
+body.light-mode td {
+  border-bottom: 1px solid #f5f5f5;
+  color: #2c3e50;
+  padding: 12px 16px;
+}
+
+body.light-mode tr:hover {
+  background: #f5f9ff;
+}
+
+/* Dark mode styles - Zalo-inspired: Dark with Blue accents */
+body.dark-mode {
+  background: linear-gradient(135deg, #1a1d29 0%, #0d1117 50%, #1a1d29 100%);
+  color: #e4e6eb;
+  transition: background 0.3s, color 0.3s;
+}
+
+body.dark-mode .header-bg {
+  background: #242526;
+  border-bottom: 1px solid #3a3b3c;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .card-bg,
+body.dark-mode .content-card {
+  background: #242526;
+  border: 1px solid #3a3b3c;
+  color: #e4e6eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+}
+
+body.dark-mode .card-bg:hover,
+body.dark-mode .content-card:hover {
+  background: #2d2e30;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+  border-color: #4a90e2;
+}
+
+body.dark-mode .text-subtitle {
+  color: #b0b3b8;
+}
+
+body.dark-mode .footer-border {
+  border-top: 1px solid #3a3b3c;
+  color: #b0b3b8;
+}
+
+body.dark-mode #userName {
+  color: #e4e6eb;
+  font-weight: 500;
+}
+
+/* Buttons - Dark Mode */
+body.dark-mode .btn-primary {
+  background: #0084ff;
+  color: #ffffff;
+  border: none;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 132, 255, 0.3);
+}
+
+body.dark-mode .btn-primary:hover {
+  background: #0073e6;
+  color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 132, 255, 0.4);
+}
+
+body.dark-mode .btn-secondary {
+  background: transparent;
+  color: #0084ff;
+  border: 1px solid #3a3b3c;
+  font-weight: 500;
+}
+
+body.dark-mode .btn-secondary:hover {
+  background: #2d2e30;
+  color: #0084ff;
+  border-color: #4a90e2;
+}
+
+body.dark-mode .btn-accent {
+  background: #3a3b3c;
+  color: #e4e6eb;
+  border: 1px solid #4a4b4c;
+  font-weight: 500;
+}
+
+body.dark-mode .btn-accent:hover {
+  background: #4a4b4c;
+  color: #ffffff;
+  border-color: #5a5b5c;
+}
+
+/* Table - Dark Mode */
+body.dark-mode table {
+  background: #242526;
+  color: #e4e6eb;
+  border: 1px solid #3a3b3c;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+body.dark-mode th {
+  background: #0084ff;
+  color: #ffffff;
+  border-bottom: none;
+  font-weight: 500;
+  padding: 12px 16px;
+}
+
+body.dark-mode td {
+  border-bottom: 1px solid #3a3b3c;
+  color: #e4e6eb;
+  padding: 12px 16px;
+}
+
+body.dark-mode tr:hover {
+  background: #2d2e30;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  width: 60px;
+  height: 30px;
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 15px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.3s;
+  display: inline-block;
+}
+
+.theme-toggle::before {
+  content: '🌙';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: transform 0.3s, content 0.3s;
+}
+
+body.light-mode .theme-toggle {
+  background: rgba(25, 118, 210, 0.2);
+}
+
+body.light-mode .theme-toggle::before {
+  content: '☀️';
+  transform: translateX(30px);
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Form inputs */
+body.light-mode input,
+body.light-mode textarea,
+body.light-mode select {
+  background: #ffffff;
+  color: #2c3e50;
+  border: 1px solid #e0e0e0;
+  font-weight: 400;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+body.light-mode input:focus,
+body.light-mode textarea:focus,
+body.light-mode select:focus {
+  border-color: #1976d2;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+  background: #ffffff;
+}
+
+body.light-mode input::placeholder {
+  color: #9e9e9e;
+}
+
+body.light-mode label {
+  color: #2c3e50;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+  background: #3a3b3c;
+  color: #e4e6eb;
+  border: 1px solid #4a4b4c;
+  font-weight: 400;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+body.dark-mode input:focus,
+body.dark-mode textarea:focus,
+body.dark-mode select:focus {
+  border-color: #0084ff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 132, 255, 0.15);
+  background: #3a3b3c;
+}
+
+body.dark-mode input::placeholder {
+  color: #8a8d91;
+}
+
+body.dark-mode label {
+  color: #e4e6eb;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+/* Question list specific styles */
+body.light-mode .question-card {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .question-card:hover {
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
+  border-color: #1976d2;
+}
+
+body.dark-mode .question-card {
+  background: #242526;
+  border: 1px solid #3a3b3c;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-mode .question-card:hover {
+  background: #2d2e30;
+  box-shadow: 0 4px 12px rgba(0, 132, 255, 0.2);
+  border-color: #0084ff;
+}
+
+body.light-mode .filter-section {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+}
+
+body.dark-mode .filter-section {
+  background: #242526;
+  border: 1px solid #3a3b3c;
+}
+
+body.light-mode .search-box {
+  background: #ffffff;
+  border-color: #e0e0e0;
+  color: #2c3e50;
+}
+
+body.dark-mode .search-box {
+  background: #3a3b3c;
+  border-color: #4a4b4c;
+  color: #e4e6eb;
+}
+
+body.light-mode .options-list {
+  background: #f5f5f5;
+}
+
+body.dark-mode .options-list {
+  background: #1a1d29;
+}
+
+body.light-mode .option-item {
+  background: #ffffff;
+  border-color: #e0e0e0;
+  color: #2c3e50;
+}
+
+body.dark-mode .option-item {
+  background: #242526;
+  color: #e4e6eb;
+}
+
+body.light-mode .option-item.correct {
+  background: #e8f5e9;
+}
+
+body.dark-mode .option-item.correct {
+  background: #1b5e20;
+}
+
+body.light-mode .btn-edit {
+  background: #1976d2;
+  color: white;
+}
+
+body.light-mode .btn-edit:hover {
+  background: #1565c0;
+}
+
+body.dark-mode .btn-edit {
+  background: #0084ff;
+  color: white;
+}
+
+body.dark-mode .btn-edit:hover {
+  background: #0073e6;
+}
+
+body.light-mode .btn-delete {
+  background: #d32f2f;
+  color: white;
+}
+
+body.light-mode .btn-delete:hover {
+  background: #c62828;
+}
+
+body.dark-mode .btn-delete {
+  background: #e53935;
+  color: white;
+}
+
+body.dark-mode .btn-delete:hover {
+  background: #d32f2f;
+}
+
+/* Bootstrap button overrides - Light Mode */
+body.light-mode .btn-success {
+  background: #1976d2 !important;
+  border-color: #1976d2 !important;
+  color: white !important;
+}
+
+body.light-mode .btn-success:hover {
+  background: #1565c0 !important;
+  border-color: #1565c0 !important;
+}
+
+body.light-mode .btn-outline-light {
+  background: transparent !important;
+  border-color: #1976d2 !important;
+  color: #1976d2 !important;
+}
+
+body.light-mode .btn-outline-light:hover {
+  background: #e3f2fd !important;
+  border-color: #1565c0 !important;
+  color: #1565c0 !important;
+}
+
+body.light-mode .btn-pink,
+body.light-mode .btn-danger {
+  background: #d32f2f !important;
+  border-color: #d32f2f !important;
+  color: white !important;
+}
+
+body.light-mode .btn-pink:hover,
+body.light-mode .btn-danger:hover {
+  background: #c62828 !important;
+  border-color: #c62828 !important;
+}
+
+/* Bootstrap button overrides - Dark Mode */
+body.dark-mode .btn-success {
+  background: #0084ff !important;
+  border-color: #0084ff !important;
+  color: white !important;
+}
+
+body.dark-mode .btn-success:hover {
+  background: #0073e6 !important;
+  border-color: #0073e6 !important;
+}
+
+body.dark-mode .btn-outline-light {
+  background: transparent !important;
+  border-color: #3a3b3c !important;
+  color: #e4e6eb !important;
+}
+
+body.dark-mode .btn-outline-light:hover {
+  background: #2d2e30 !important;
+  border-color: #0084ff !important;
+  color: #0084ff !important;
+}
+
+body.dark-mode .btn-pink,
+body.dark-mode .btn-danger {
+  background: #e53935 !important;
+  border-color: #e53935 !important;
+  color: white !important;
+}
+
+body.dark-mode .btn-pink:hover,
+body.dark-mode .btn-danger:hover {
+  background: #d32f2f !important;
+  border-color: #d32f2f !important;
+}
+
+/* Additional button colors */
+body.light-mode .btn-primary {
+  background: #1976d2 !important;
+  border-color: #1976d2 !important;
+}
+
+body.light-mode .btn-primary:hover {
+  background: #1565c0 !important;
+  border-color: #1565c0 !important;
+}
+
+body.dark-mode .btn-primary {
+  background: #0084ff !important;
+  border-color: #0084ff !important;
+}
+
+body.dark-mode .btn-primary:hover {
+  background: #0073e6 !important;
+  border-color: #0073e6 !important;
+}
+
+body.light-mode .btn-secondary {
+  background: #ffffff !important;
+  border: 1px solid #1976d2 !important;
+  color: #1976d2 !important;
+}
+
+body.light-mode .btn-secondary:hover {
+  background: #e3f2fd !important;
+  color: #1565c0 !important;
+}
+
+body.dark-mode .btn-secondary {
+  background: transparent !important;
+  border: 1px solid #3a3b3c !important;
+  color: #0084ff !important;
+}
+
+body.dark-mode .btn-secondary:hover {
+  background: #2d2e30 !important;
+  border-color: #4a90e2 !important;
+}
+
+/* Form card backgrounds */
+body.light-mode .card,
+body.light-mode .card-body {
+  background: #ffffff !important;
+  color: #2c3e50 !important;
+  border: 1px solid #e0e0e0 !important;
+}
+
+body.dark-mode .card,
+body.dark-mode .card-body {
+  background: #242526 !important;
+  color: #e4e6eb !important;
+  border: 1px solid #3a3b3c !important;
+}
+
+body.light-mode .card-header {
+  background: #f5f5f5 !important;
+  color: #2c3e50 !important;
+  border-bottom: 1px solid #e0e0e0 !important;
+}
+
+body.dark-mode .card-header {
+  background: #1a1d29 !important;
+  color: #e4e6eb !important;
+  border-bottom: 1px solid #3a3b3c !important;
+}

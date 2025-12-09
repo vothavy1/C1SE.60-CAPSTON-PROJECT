@@ -16,6 +16,7 @@ const sequelize = new Sequelize(
     dialectOptions: {
       dateStrings: true,
       typeCast: true,
+      charset: 'utf8mb4'
     },
     pool: {
       max: 1500,
