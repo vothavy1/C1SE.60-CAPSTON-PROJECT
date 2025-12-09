@@ -1,7 +1,7 @@
 import google.generativeai as genai
 
 # DÁN KEY CỦA BẠN VÀO ĐÂY
-YOUR_API_KEY = "AIzaSyAihTa6M4CuiHikmwsHDyi1g98tiWw82x8"
+YOUR_API_KEY = "...."
 genai.configure(api_key=YOUR_API_KEY)
 
 print("--- Đang lấy danh sách các Model có thể dùng... ---")
