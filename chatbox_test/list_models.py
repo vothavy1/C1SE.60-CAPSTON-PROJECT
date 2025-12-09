@@ -1,7 +1,7 @@
 import requests
 
 # 🔑 Dán API Key của bạn vào đây
-YOUR_API_KEY = "AIzaSyDV5_vIhRDZCNG49nxyt5yI79wadIMwoxI"
+YOUR_API_KEY = "AIzaSyAihTa6M4CuiHikmwsHDyi1g98tiWw82x8"
 
 url = f"https://generativelanguage.googleapis.com/v1beta/models?key={YOUR_API_KEY}"
 

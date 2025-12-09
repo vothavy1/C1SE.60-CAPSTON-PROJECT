@@ -23,6 +23,11 @@ app.use(morgan('combined', { stream: { write: message => logger.info(message.tri
 // Static folder for uploads
 app.use('/uploads', express.static(path.join(__dirname, '..', process.env.UPLOAD_DIR || 'uploads')));
 
+// Health check route
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Root route
 app.get('/', (req, res) => {
   res.json({
