@@ -16,66 +16,8 @@
     </style>
 </head>
 <body class="bg-gray-50">
-    <!-- Header -->
-    <header class="bg-white shadow-md sticky top-0 z-50">
-        <div class="container mx-auto px-6 py-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                        <span class="text-white font-bold text-xl">C</span>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">CS60 Recruitment</h1>
-                        <p class="text-sm text-gray-600">Cơ hội nghề nghiệp</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center gap-4">
-                    <a href="my-applications.html" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition font-medium">
-                        📋 Đơn của tôi
-                    </a>
-                    <div id="userInfo" class="flex items-center gap-3">
-                        <div class="text-right">
-                            <p id="userName" class="text-sm font-medium text-gray-900"></p>
-                            <p class="text-xs text-gray-500">Candidate</p>
-                        </div>
-                        <button onclick="logout()" class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition font-medium">
-                            Đăng xuất
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
     <!-- Main Content -->
     <main class="container mx-auto px-6 py-8">
-        <!-- Search & Filter -->
-        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="md:col-span-2">
-                    <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm vị trí, công ty..." 
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        oninput="filterJobs()">
-                </div>
-                <div>
-                    <select id="filterCompany" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="filterJobs()">
-                        <option value="">Tất cả công ty</option>
-                    </select>
-                </div>
-                <div>
-                    <select id="filterDepartment" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="filterJobs()">
-                        <option value="">Tất cả bộ phận</option>
-                        <option value="IT">IT</option>
-                        <option value="HR">HR</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="Sales">Sales</option>
-                        <option value="Finance">Finance</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
         <!-- Jobs Grid -->
         <div id="jobsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <!-- Loading -->
@@ -109,19 +51,40 @@
             <div class="p-6 space-y-6">
                 <div class="flex items-center gap-4">
                     <div id="modalCompanyLogo" class="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-2xl"></div>
-                    <div>
+                    <div class="flex-1">
                         <p id="modalCompany" class="text-lg font-semibold text-gray-900"></p>
                         <p id="modalDepartment" class="text-sm text-gray-600"></p>
+                        <div class="flex gap-4 mt-2 text-xs text-gray-600">
+                            <span id="modalLocation" class="flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <span></span>
+                            </span>
+                            <span id="modalDeadline" class="flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span></span>
+                            </span>
+                            <span id="modalApplicationCount" class="flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                <span></span>
+                            </span>
+                        </div>
                     </div>
                 </div>
                 
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-2">📝 Mô tả công việc</h3>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Mô tả công việc</h3>
                     <p id="modalDescription" class="text-gray-700 whitespace-pre-wrap"></p>
                 </div>
                 
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-2">✅ Yêu cầu</h3>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Yêu cầu</h3>
                     <p id="modalRequirements" class="text-gray-700 whitespace-pre-wrap"></p>
                 </div>
                 
@@ -129,8 +92,11 @@
                     <button onclick="closeModal()" class="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition">
                         Đóng
                     </button>
+                    <button id="editButton" class="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-medium transition shadow-md">
+                        Sửa
+                    </button>
                     <button id="applyButton" class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-medium transition shadow-md">
-                        🚀 Ứng tuyển ngay
+                        Ứng tuyển ngay
                     </button>
                 </div>
             </div>
@@ -139,36 +105,9 @@
 
     <script src="config.js"></script>
     <script>
-        let allJobs = [];
-        let allCompanies = new Set();
         let currentJobId = null;
 
-        // Check authentication
-        function checkAuth() {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                alert('Vui lòng đăng nhập để xem danh sách việc làm');
-                window.location.href = 'login.html';
-                return false;
-            }
-            
-            // Parse token to get user info
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                document.getElementById('userName').textContent = payload.full_name || payload.username;
-                
-                // Check if user is candidate
-                if (payload.role && payload.role.toUpperCase() !== 'CANDIDATE') {
-                    alert('Trang này chỉ dành cho ứng viên');
-                    window.location.href = 'index.html';
-                    return false;
-                }
-            } catch (error) {
-                console.error('Error parsing token:', error);
-            }
-            
-            return true;
-        }
+
 
         function getAuthHeaders() {
             return {
@@ -177,36 +116,48 @@
             };
         }
 
-        // Fetch jobs
+        // Fetch jobs with search params from URL
         async function fetchJobs() {
             try {
-                const response = await fetch(`${API_BASE_URL}/job-positions?limit=100`);
+                // Get search params from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const jobParam = urlParams.get('job');
+                const industryParam = urlParams.get('industry');
+                const locationParam = urlParams.get('location');
+                
+                // Build API URL with search params
+                const apiParams = new URLSearchParams();
+                apiParams.append('limit', '100');
+                
+                if (jobParam) {
+                    apiParams.append('title', jobParam);
+                }
+                
+                if (industryParam) {
+                    apiParams.append('department', industryParam);
+                }
+                
+                if (locationParam && locationParam !== 'danang') {
+                    apiParams.append('location', locationParam);
+                }
+                
+                const response = await fetch(`${API_BASE_URL}/job-positions?${apiParams.toString()}`);
                 const data = await response.json();
                 
                 if (data.success) {
-                    allJobs = data.data.positions || [];
+                    let jobs = data.data.positions || [];
                     
-                    // Extract unique companies
-                    allJobs.forEach(job => {
-                        if (job.Company) {
-                            allCompanies.add(JSON.stringify({
-                                id: job.Company.company_id,
-                                name: job.Company.companyName
-                            }));
+                    // If no results with filters, fetch all jobs
+                    if (jobs.length === 0 && (jobParam || industryParam || locationParam)) {
+                        console.log('No results with filters, loading all jobs...');
+                        const allResponse = await fetch(`${API_BASE_URL}/job-positions?limit=100`);
+                        const allData = await allResponse.json();
+                        if (allData.success) {
+                            jobs = allData.data.positions || [];
                         }
-                    });
+                    }
                     
-                    // Populate company filter
-                    const companyFilter = document.getElementById('filterCompany');
-                    Array.from(allCompanies).forEach(companyStr => {
-                        const company = JSON.parse(companyStr);
-                        const option = document.createElement('option');
-                        option.value = company.id;
-                        option.textContent = company.name;
-                        companyFilter.appendChild(option);
-                    });
-                    
-                    renderJobs(allJobs);
+                    renderJobs(jobs);
                 } else {
                     showError('Không thể tải danh sách việc làm');
                 }
@@ -221,16 +172,24 @@
             const noResults = document.getElementById('noResults');
             
             if (!jobs || jobs.length === 0) {
-                container.innerHTML = '';
-                noResults.classList.remove('hidden');
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <svg class="w-24 h-24 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="mt-4 text-xl text-gray-600">Không tìm thấy việc làm phù hợp</p>
+                        <button onclick="window.location.href='jobs.html'" class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            Xem tất cả việc làm
+                        </button>
+                    </div>
+                `;
                 return;
             }
             
-            noResults.classList.add('hidden');
-            
             container.innerHTML = jobs.map(job => {
                 const companyColor = `hsl(${(job.position_id * 137.5) % 360}, 70%, 50%)`;
-                const companyInitial = job.Company?.companyName?.charAt(0).toUpperCase() || 'C';
+                const companyName = job.company_name || job.Company?.companyName || 'N/A';
+                const companyInitial = companyName.charAt(0).toUpperCase();
                 
                 return `
                     <div class="job-card bg-white rounded-xl shadow-md p-6 cursor-pointer" onclick="showJobDetail(${job.position_id})">
@@ -240,7 +199,7 @@
                             </div>
                             <div class="flex-1">
                                 <h3 class="text-lg font-bold text-gray-900 mb-1">${job.title}</h3>
-                                <p class="text-sm text-gray-600">${job.Company?.companyName || 'N/A'}</p>
+                                <p class="text-sm text-gray-600">${companyName}</p>
                             </div>
                         </div>
                         
@@ -253,6 +212,31 @@
                         ` : ''}
                         
                         <p class="text-gray-600 text-sm mb-4 line-clamp-2">${job.description || 'Không có mô tả'}</p>
+                        
+                        <div class="flex items-center gap-4 mb-3 text-xs text-gray-600">
+                            ${job.deadline ? `
+                            <div class="flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span>Hạn: ${new Date(job.deadline).toLocaleDateString('vi-VN')}</span>
+                            </div>
+                            ` : ''}
+                            <div class="flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                <span>${job.applicationCount || 0} ứng tuyển</span>
+                            </div>
+                            ${job.positions_available ? `
+                            <div class="flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <span>${job.positions_available} vị trí</span>
+                            </div>
+                            ` : ''}
+                        </div>
                         
                         <div class="flex items-center justify-between pt-4 border-t">
                             <span class="text-xs text-gray-500">
@@ -267,25 +251,7 @@
             }).join('');
         }
 
-        function filterJobs() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const companyFilter = document.getElementById('filterCompany').value;
-            const departmentFilter = document.getElementById('filterDepartment').value;
-            
-            const filtered = allJobs.filter(job => {
-                const matchSearch = !searchTerm || 
-                    job.title.toLowerCase().includes(searchTerm) ||
-                    (job.Company?.companyName || '').toLowerCase().includes(searchTerm) ||
-                    (job.description || '').toLowerCase().includes(searchTerm);
-                
-                const matchCompany = !companyFilter || job.Company?.company_id == companyFilter;
-                const matchDepartment = !departmentFilter || job.department === departmentFilter;
-                
-                return matchSearch && matchCompany && matchDepartment;
-            });
-            
-            renderJobs(filtered);
-        }
+
 
         async function showJobDetail(jobId) {
             try {
@@ -297,13 +263,29 @@
                     currentJobId = jobId;
                     
                     const companyColor = `hsl(${(job.position_id * 137.5) % 360}, 70%, 50%)`;
-                    const companyInitial = job.Company?.companyName?.charAt(0).toUpperCase() || 'C';
+                    const companyName = job.company_name || job.Company?.companyName || 'N/A';
+                    const companyInitial = companyName.charAt(0).toUpperCase();
                     
                     document.getElementById('modalTitle').textContent = job.title;
-                    document.getElementById('modalCompany').textContent = job.Company?.companyName || 'N/A';
+                    document.getElementById('modalCompany').textContent = companyName;
                     document.getElementById('modalDepartment').textContent = job.department || 'N/A';
                     document.getElementById('modalDescription').textContent = job.description || 'Không có mô tả';
                     document.getElementById('modalRequirements').textContent = job.requirements || 'Không có yêu cầu cụ thể';
+                    
+                    // Update location, deadline and application count
+                    const locationSpan = document.querySelector('#modalLocation span');
+                    const deadlineSpan = document.querySelector('#modalDeadline span');
+                    const appCountSpan = document.querySelector('#modalApplicationCount span');
+                    
+                    locationSpan.textContent = job.location || 'Đà Nẵng';
+                    
+                    if (job.deadline) {
+                        deadlineSpan.textContent = `Hạn: ${new Date(job.deadline).toLocaleDateString('vi-VN')}`;
+                    } else {
+                        deadlineSpan.textContent = 'Không giới hạn';
+                    }
+                    
+                    appCountSpan.textContent = `${job.applicationCount || 0} ứng tuyển`;
                     
                     const logo = document.getElementById('modalCompanyLogo');
                     logo.style.background = companyColor;
@@ -326,30 +308,36 @@
             currentJobId = null;
         }
 
+        // Edit job
+        document.getElementById('editButton').addEventListener('click', async () => {
+            if (!currentJobId) return;
+            
+            // Save job ID to localStorage and redirect to edit page
+            localStorage.setItem('editJobId', currentJobId);
+            window.location.href = 'edit-job.html';
+        });
+
         // Apply for job
         document.getElementById('applyButton').addEventListener('click', async () => {
             if (!currentJobId) return;
             
-            if (!confirm('Bạn có chắc muốn ứng tuyển vị trí này?')) return;
-            
             try {
-                const response = await fetch(`${API_BASE_URL}/applications/apply`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ position_id: currentJobId })
-                });
-                
+                // Get job details to extract company_id
+                const response = await fetch(`${API_BASE_URL}/job-positions/${currentJobId}`);
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert('✅ Ứng tuyển thành công! Vui lòng theo dõi email để nhận thông tin từ nhà tuyển dụng.');
-                    closeModal();
+                    const job = data.data;
+                    // Save both job ID and company ID
+                    localStorage.setItem('applyJobId', currentJobId);
+                    localStorage.setItem('applyCompanyId', job.company_id || '');
+                    window.location.href = 'apply.html';
                 } else {
-                    alert(data.message || 'Không thể ứng tuyển');
+                    alert('Không thể tải thông tin công việc');
                 }
             } catch (error) {
-                console.error('Error applying for job:', error);
-                alert('Lỗi khi ứng tuyển. Vui lòng thử lại sau.');
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra. Vui lòng thử lại sau.');
             }
         });
 
@@ -364,15 +352,10 @@
             `;
         }
 
-        function logout() {
-            localStorage.clear();
-            window.location.href = 'login.html';
-        }
+
 
         // Initialize
-        if (checkAuth()) {
-            fetchJobs();
-        }
+        fetchJobs(); // Load jobs
     </script>
 </body>
 </html>

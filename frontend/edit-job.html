@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chỉnh sửa tin tuyển dụng - CS60 Recruitment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Header -->
+    <nav class="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold"></h1>
+                </div>
+                <a href="jobs.html" class="text-white hover:text-blue-200">
+                    <i class="fas fa-arrow-left mr-2"></i>Quay lại
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-edit text-green-600 mr-3"></i>
+                Chỉnh sửa tin tuyển dụng
+            </h2>
+
+            <form id="editJobForm" class="space-y-6">
+                <!-- Tiêu đề công việc -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Tiêu đề công việc <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="jobTitle" 
+                        required
+                        placeholder="VD: Senior Frontend Developer"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                </div>
+
+                <!-- Tên công ty -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Tên công ty <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="companyName" 
+                        required
+                        placeholder="VD: Công ty TNHH ABC"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                </div>
+
+                <!-- Ngành nghề -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Ngành nghề <span class="text-red-500">*</span>
+                    </label>
+                    <select 
+                        id="department" 
+                        required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                        <option value="">-- Chọn ngành nghề --</option>
+                        <option value="it">Công nghệ thông tin</option>
+                        <option value="marketing">Marketing & Truyền thông</option>
+                        <option value="construction">Xây dựng</option>
+                        <option value="finance">Tài chính & Kế toán</option>
+                        <option value="healthcare">Y tế</option>
+                        <option value="education">Giáo dục</option>
+                    </select>
+                </div>
+
+                <!-- Địa điểm -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Khu vực (Đà Nẵng) <span class="text-red-500">*</span>
+                    </label>
+                    <select 
+                        id="location" 
+                        required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                        <option value="">-- Chọn quận/huyện --</option>
+                        <option value="Đà Nẵng">Toàn thành phố Đà Nẵng</option>
+                        <option value="Quận Hải Châu">Quận Hải Châu</option>
+                        <option value="Quận Thanh Khê">Quận Thanh Khê</option>
+                        <option value="Quận Sơn Trà">Quận Sơn Trà</option>
+                        <option value="Quận Ngũ Hành Sơn">Quận Ngũ Hành Sơn</option>
+                        <option value="Quận Liên Chiểu">Quận Liên Chiểu</option>
+                        <option value="Quận Cẩm Lệ">Quận Cẩm Lệ</option>
+                        <option value="Huyện Hòa Vang">Huyện Hòa Vang</option>
+                        <option value="Huyện Hoàng Sa">Huyện Hoàng Sa</option>
+                    </select>
+                </div>
+
+                <!-- Loại hình công việc -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Loại hình công việc <span class="text-red-500">*</span>
+                    </label>
+                    <select 
+                        id="jobType" 
+                        required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                        <option value="Full-time">Full-time</option>
+                        <option value="Part-time">Part-time</option>
+                        <option value="Contract">Contract</option>
+                        <option value="Internship">Internship</option>
+                    </select>
+                </div>
+
+                <!-- Mô tả công việc -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Mô tả công việc <span class="text-red-500">*</span>
+                    </label>
+                    <textarea 
+                        id="description" 
+                        required
+                        rows="6"
+                        placeholder="Mô tả chi tiết về công việc, trách nhiệm chính..."
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    ></textarea>
+                </div>
+
+                <!-- Yêu cầu công việc -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Yêu cầu công việc <span class="text-red-500">*</span>
+                    </label>
+                    <textarea 
+                        id="requirements" 
+                        required
+                        rows="6"
+                        placeholder="Kinh nghiệm, kỹ năng, bằng cấp yêu cầu..."
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    ></textarea>
+                </div>
+
+                <!-- Thời hạn nộp -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Thời hạn nộp hồ sơ <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="date" 
+                        id="deadline" 
+                        required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                </div>
+
+                <!-- Số lượng cần tuyển -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Số lượng cần tuyển <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="number" 
+                        id="positionsAvailable" 
+                        required
+                        min="1"
+                        value="1"
+                        placeholder="VD: 5"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-4 pt-4">
+                    <button 
+                        type="button"
+                        onclick="window.location.href='jobs.html'"
+                        class="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition"
+                    >
+                        <i class="fas fa-times mr-2"></i>
+                        Hủy
+                    </button>
+                    <button 
+                        type="submit"
+                        class="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-medium transition"
+                    >
+                        <i class="fas fa-save mr-2"></i>
+                        Lưu thay đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let jobId = null;
+
+        // Load job data on page load
+        async function loadJobData() {
+            jobId = localStorage.getItem('editJobId');
+            
+            if (!jobId) {
+                alert('Không tìm thấy ID công việc!');
+                window.location.href = 'jobs.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/job-positions/${jobId}`);
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    const job = data.data;
+                    
+                    // Fill form with job data
+                    document.getElementById('jobTitle').value = job.title || '';
+                    document.getElementById('companyName').value = job.company_name || '';
+                    document.getElementById('department').value = job.department || '';
+                    document.getElementById('location').value = job.location || '';
+                    document.getElementById('jobType').value = job.job_type || 'Full-time';
+                    document.getElementById('description').value = job.description || '';
+                    document.getElementById('requirements').value = job.requirements || '';
+                    
+                    // Format deadline to YYYY-MM-DD
+                    if (job.deadline) {
+                        const deadline = new Date(job.deadline);
+                        document.getElementById('deadline').value = deadline.toISOString().split('T')[0];
+                    }
+                    
+                    document.getElementById('positionsAvailable').value = job.positions_available || 1;
+                } else {
+                    alert('Không thể tải thông tin công việc!');
+                    window.location.href = 'jobs.html';
+                }
+            } catch (error) {
+                console.error('Error loading job:', error);
+                alert('Lỗi kết nối. Vui lòng thử lại sau.');
+                window.location.href = 'jobs.html';
+            }
+        }
+
+        // Load data when page loads
+        loadJobData();
+
+        // Set min date to today
+        document.getElementById('deadline').min = new Date().toISOString().split('T')[0];
+
+        // Handle form submission
+        document.getElementById('editJobForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!jobId) {
+                alert('Không tìm thấy ID công việc!');
+                return;
+            }
+
+            // Get form data
+            const formData = {
+                title: document.getElementById('jobTitle').value,
+                company_name: document.getElementById('companyName').value,
+                department: document.getElementById('department').value,
+                location: document.getElementById('location').value,
+                job_type: document.getElementById('jobType').value,
+                description: document.getElementById('description').value,
+                requirements: document.getElementById('requirements').value,
+                deadline: document.getElementById('deadline').value,
+                positions_available: parseInt(document.getElementById('positionsAvailable').value)
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/job-positions/${jobId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Cập nhật tin tuyển dụng thành công!');
+                    localStorage.removeItem('editJobId');
+                    window.location.href = 'jobs.html';
+                } else {
+                    alert(data.message || 'Có lỗi xảy ra khi cập nhật tin');
+                }
+            } catch (error) {
+                console.error('Error updating job:', error);
+                alert('Lỗi kết nối. Vui lòng thử lại sau.');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -216,5 +216,6 @@ const sendNotificationEmail = async (to, subject, htmlContent) => {
 module.exports = {
   sendApprovalEmail,
   sendRejectionEmail,
-  sendNotificationEmail
+  sendNotificationEmail,
+  transporter
 };

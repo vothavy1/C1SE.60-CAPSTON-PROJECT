@@ -1,6 +1,8 @@
 // Cấu hình API endpoint cho backend
+const API_BASE_URL = 'http://localhost:5000/api';
+
 const API_CONFIG = {
-  BASE_URL: 'http://localhost:5000/api',
+  BASE_URL: API_BASE_URL,
   
   // Authentication endpoints
   AUTH: {

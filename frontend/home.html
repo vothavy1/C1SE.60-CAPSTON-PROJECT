@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CS60 - Tìm Kiếm Cơ Hội Mới</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .hero-gradient {
             background: linear-gradient(135deg, #0084ff 0%, #00a8ff 100%);
@@ -35,9 +35,9 @@
 
                 <!-- Action Buttons -->
                 <div class="hidden md:flex items-center space-x-4">
-                    <a href="apply.html" class="bg-white text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-blue-50 transition">
-                        <i class="fas fa-file-alt mr-2"></i>
-                        Apply
+                    <a href="post-job.html" class="bg-green-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-600 transition">
+                        <i class="fas fa-bullhorn mr-2"></i>
+                        Đăng tin
                     </a>
                     <a href="login.html" class="border border-white px-6 py-2 rounded-lg hover:bg-white hover:text-blue-600 transition">
                         Đăng Nhập / Đăng Ký
@@ -56,9 +56,9 @@
         <!-- Mobile Menu -->
         <div id="mobile-menu" class="md:hidden hidden bg-blue-800 px-4 py-4">
             <div class="space-y-2">
-                <a href="apply.html" class="block py-2 hover:text-blue-200">
-                    <i class="fas fa-file-alt mr-2"></i>
-                    Apply
+                <a href="post-job.html" class="block py-2 hover:text-blue-200">
+                    <i class="fas fa-bullhorn mr-2"></i>
+                    Đăng tin
                 </a>
                 <a href="login.html" class="block py-2 hover:text-blue-200">
                     <i class="fas fa-sign-in-alt mr-2"></i>
@@ -145,6 +145,35 @@
         </div>
     </section>
 
+    <!-- Jobs Listing Section -->
+    <section class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Jobs Count -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900">
+                    Hiện có <span id="jobCount" class="text-blue-600">0</span> việc làm được tìm thấy:
+                </h2>
+            </div>
+
+            <!-- Jobs Grid -->
+            <div id="jobsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Loading -->
+                <div class="col-span-full text-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p class="mt-4 text-gray-600">Đang tải danh sách việc làm...</p>
+                </div>
+            </div>
+
+            <!-- View More Button -->
+            <div class="text-center mt-12">
+                <a href="jobs.html" class="inline-flex items-center bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition shadow-md">
+                    Xem Tất Cả Việc Làm
+                    <i class="fas fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
     <!-- Stats Section -->
     <section class="py-16 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -164,162 +193,6 @@
                 <div class="card-hover">
                     <div class="text-4xl font-bold text-blue-600 mb-2">95%</div>
                     <div class="text-gray-600">Tỷ lệ hài lòng</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Featured Jobs Section -->
-    <section class="py-16 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    Việc Làm Nổi Bật
-                </h2>
-                <p class="text-xl text-gray-600">
-                    Khám phá những cơ hội nghề nghiệp tốt nhất tại Đà Nẵng
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Job Card 1 -->
-                <div class="bg-white rounded-xl p-6 shadow-md card-hover">
-                    <div class="flex items-center mb-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-code text-blue-600"></i>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="font-semibold text-gray-900">Lập Trình Viên Frontend</h3>
-                            <p class="text-gray-600 text-sm">FPT Software</p>
-                        </div>
-                    </div>
-                    <div class="space-y-2 mb-4">
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-map-marker-alt mr-2"></i>
-                            Quận Hải Châu, Đà Nẵng
-                        </div>
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-dollar-sign mr-2"></i>
-                            15-25 triệu VND
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">React</span>
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">JavaScript</span>
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">CSS</span>
-                    </div>
-                    <button class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition">
-                        Xem Chi Tiết
-                    </button>
-                </div>
-
-                <!-- Job Card 2 -->
-                <div class="bg-white rounded-xl p-6 shadow-md card-hover">
-                    <div class="flex items-center mb-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-bullhorn text-blue-600"></i>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="font-semibold text-gray-900">Marketing Manager</h3>
-                            <p class="text-gray-600 text-sm">Công ty TNHH ABC</p>
-                        </div>
-                    </div>
-                    <div class="space-y-2 mb-4">
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-map-marker-alt mr-2"></i>
-                            Quận Thanh Khê, Đà Nẵng
-                        </div>
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-dollar-sign mr-2"></i>
-                            12-18 triệu VND
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Digital Marketing</span>
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">SEO</span>
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Social Media</span>
-                    </div>
-                    <button class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition">
-                        Xem Chi Tiết
-                    </button>
-                </div>
-
-                <!-- Job Card 3 -->
-                <div class="bg-white rounded-xl p-6 shadow-md card-hover">
-                    <div class="flex items-center mb-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-chart-line text-blue-600"></i>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="font-semibold text-gray-900">Business Analyst</h3>
-                            <p class="text-gray-600 text-sm">Vietcombank</p>
-                        </div>
-                    </div>
-                    <div class="space-y-2 mb-4">
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-map-marker-alt mr-2"></i>
-                            Quận Hải Châu, Đà Nẵng
-                        </div>
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-dollar-sign mr-2"></i>
-                            18-28 triệu VND
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">SQL</span>
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Excel</span>
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Power BI</span>
-                    </div>
-                    <button class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition">
-                        Xem Chi Tiết
-                    </button>
-                </div>
-            </div>
-
-            <div class="text-center mt-12">
-                <a href="#" class="inline-flex items-center bg-blue-500 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-600 transition">
-                    Xem Tất Cả Việc Làm
-                    <i class="fas fa-arrow-right ml-2"></i>
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- How It Works Section -->
-    <section class="py-16 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    Cách Thức Hoạt Động
-                </h2>
-                <p class="text-xl text-gray-600">
-                    Chỉ với 3 bước đơn giản để tìm được công việc mơ ước
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="text-center">
-                    <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-user-plus text-3xl text-blue-600"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-2">1. Tạo Hồ Sơ</h3>
-                    <p class="text-gray-600">Đăng ký tài khoản và tạo hồ sơ cá nhân với thông tin chi tiết về kinh nghiệm và kỹ năng của bạn.</p>
-                </div>
-
-                <div class="text-center">
-                    <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-search text-3xl text-blue-600"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-2">2. Tìm Việc Làm</h3>
-                    <p class="text-gray-600">Sử dụng công cụ tìm kiếm thông minh để tìm những công việc phù hợp nhất với bạn.</p>
-                </div>
-
-                <div class="text-center">
-                    <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-paper-plane text-3xl text-blue-600"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-2">3. Ứng Tuyển</h3>
-                    <p class="text-gray-600">Gửi hồ sơ ứng tuyển cho những vị trí mà bạn quan tâm và chờ đợi phản hồi từ nhà tuyển dụng.</p>
                 </div>
             </div>
         </div>
@@ -424,6 +297,87 @@
                 searchBtn.click();
             }
         });
+
+        // Map department code to Vietnamese name
+        const departmentNames = {
+            'it': 'Công nghệ thông tin',
+            'marketing': 'Marketing & Truyền thông',
+            'finance': 'Tài chính - Ngân hàng',
+            'healthcare': 'Y tế - Sức khỏe',
+            'education': 'Giáo dục - Đào tạo',
+            'manufacturing': 'Sản xuất - Chế tạo',
+            'retail': 'Bán lẻ - Thương mại',
+            'hospitality': 'Du lịch - Khách sạn',
+            'logistics': 'Logistics - Vận tải',
+            'construction': 'Xây dựng - Kiến trúc'
+        };
+
+        // Fetch and display jobs on home page
+        async function loadHomeJobs() {
+            try {
+                const response = await fetch('http://localhost:5000/api/job-positions?limit=12');
+                const data = await response.json();
+                
+                if (data.success && data.data.positions) {
+                    const jobs = data.data.positions;
+                    const jobCount = document.getElementById('jobCount');
+                    const jobsGrid = document.getElementById('jobsGrid');
+                    
+                    // Update count
+                    jobCount.textContent = data.data.pagination.total;
+                    
+                    // Render jobs
+                    jobsGrid.innerHTML = jobs.map(job => {
+                        const companyColor = `hsl(${(job.position_id * 137.5) % 360}, 70%, 50%)`;
+                        const companyName = job.company_name || job.Company?.companyName || 'Công ty';
+                        const companyInitial = companyName.charAt(0).toUpperCase();
+                        const location = job.location || job.Company?.address || 'Đà Nẵng';
+                        const departmentName = departmentNames[job.department] || 'Toàn thời gian';
+                        
+                        return `
+                            <div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-lg transition cursor-pointer" onclick="window.location.href='jobs.html'">
+                                <div class="flex items-start gap-4 mb-4">
+                                    <div class="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-2xl flex-shrink-0" style="background: ${companyColor};">
+                                        ${companyInitial}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-semibold text-gray-900 mb-1 line-clamp-1">${companyName}</h3>
+                                        <p class="text-sm text-gray-600">${departmentName}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="flex items-start gap-2 mb-2">
+                                        <i class="fas fa-briefcase text-red-500 mt-1 flex-shrink-0"></i>
+                                        <h4 class="font-medium text-gray-900 line-clamp-2">${job.title}</h4>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-2 text-sm text-gray-600">
+                                        <i class="fas fa-map-marker-alt text-blue-500"></i>
+                                        <span>${location}</span>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-2 text-sm mt-2">
+                                        <i class="fas fa-dollar-sign text-orange-500"></i>
+                                        <span class="text-orange-600 font-medium">Thỏa thuận</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Error loading jobs:', error);
+                document.getElementById('jobsGrid').innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <p class="text-red-600">Không thể tải danh sách việc làm</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load jobs when page loads
+        loadHomeJobs();
 
         // Smooth scrolling for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {

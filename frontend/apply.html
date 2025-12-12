@@ -368,6 +368,10 @@
     </div>
 
     <script>
+        // Get job and company info from localStorage
+        const applyJobId = localStorage.getItem('applyJobId');
+        const applyCompanyId = localStorage.getItem('applyCompanyId');
+        
         // File upload handling
         const fileInput = document.getElementById('cv');
         const fileUploadBox = document.getElementById('fileUploadBox');
@@ -377,6 +381,38 @@
         const btnText = document.getElementById('btnText');
         const btnLoading = document.getElementById('btnLoading');
         const successMessage = document.getElementById('successMessage');
+
+        // Load job details and pre-fill form
+        async function loadJobDetails() {
+            if (!applyJobId) {
+                console.warn('No job ID found');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_CONFIG.BASE_URL}/job-positions/${applyJobId}`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const job = data.data;
+                    // Pre-fill position field
+                    document.getElementById('position').value = job.title || '';
+                    document.getElementById('company_name').value = job.company_name || job.Company?.companyName || '';
+                    
+                    // Set company_id if available
+                    if (job.company_id || applyCompanyId) {
+                        const companySelect = document.getElementById('apply_company_id');
+                        companySelect.value = job.company_id || applyCompanyId;
+                        
+                        // Disable company dropdown since user is applying for specific job
+                        companySelect.disabled = true;
+                        companySelect.classList.add('bg-gray-100', 'cursor-not-allowed');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading job details:', error);
+            }
+        }
 
         // Load companies on page load
         async function loadCompanies() {
@@ -392,6 +428,9 @@
                         option.textContent = company.companyName;
                         companySelect.appendChild(option);
                     });
+                    
+                    // After loading companies, load job details
+                    loadJobDetails();
                 }
             } catch (error) {
                 console.error('Error loading companies:', error);
@@ -532,7 +571,8 @@
                 formData.append('position', document.getElementById('position').value.trim());
                 formData.append('company_name', document.getElementById('company_name').value);
                 formData.append('experience_years', document.getElementById('experience_years').value);
-                formData.append('company_id', document.getElementById('apply_company_id').value);
+                formData.append('company_id', document.getElementById('apply_company_id').value || applyCompanyId || '');
+                formData.append('job_id', applyJobId || '');
                 formData.append('cv', file);
 
                 // Submit to API

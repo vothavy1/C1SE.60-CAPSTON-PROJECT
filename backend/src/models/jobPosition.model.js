@@ -51,6 +51,26 @@ const JobPosition = sequelize.define('JobPosition', {
   updated_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  location: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  job_type: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  deadline: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  positions_available: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1
+  },
+  company_name: {
+    type: DataTypes.STRING(255),
+    allowNull: true
   }
 }, {
   tableName: 'job_positions',

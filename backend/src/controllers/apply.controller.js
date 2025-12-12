@@ -1,7 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { Candidate, CandidateResume, User } = require('../models');
+const { Candidate, CandidateResume, User, Company } = require('../models');
 const { Op } = require('sequelize');
 const emailService = require('../services/email.service');
 const accountService = require('../services/account.service');
@@ -51,7 +51,7 @@ const upload = multer({
 // @access  Public (no authentication required)
 const applyJob = async (req, res) => {
   try {
-    const { first_name, last_name, email, phone, position, company_name, experience_years, company_id } = req.body;
+    const { first_name, last_name, email, phone, position, company_name, experience_years, company_id, job_id } = req.body;
 
     // Validation
     if (!first_name || !last_name || !email || !phone || !position || !experience_years) {
@@ -113,6 +113,33 @@ const applyJob = async (req, res) => {
       uploaded_at: new Date()
     });
 
+    logger.info(`New application: ${first_name} ${last_name} for ${position} at company_id ${company_id}`);
+
+    // Get company email and send notification
+    try {
+      const company = await Company.findByPk(company_id);
+      if (company && company.email) {
+        const fullFilePath = path.join(__dirname, '../../uploads/cv', req.file.filename);
+        
+        await sendApplicationEmailToCompany(
+          company.email,
+          company.companyName,
+          { first_name, last_name, email, phone, position, experience_years },
+          {
+            filename: req.file.originalname,
+            path: fullFilePath
+          }
+        );
+        
+        logger.info(`Application email sent to company: ${company.email}`);
+      } else {
+        logger.warn(`No company email found for company_id: ${company_id}`);
+      }
+    } catch (emailError) {
+      logger.error(`Failed to send email to company: ${emailError.message}`);
+      // Don't fail the request if email fails
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Nộp CV thành công! Chúng tôi sẽ liên hệ với bạn sớm.',
@@ -142,6 +169,64 @@ const applyJob = async (req, res) => {
     });
   }
 };
+
+// Helper function to send email to company
+async function sendApplicationEmailToCompany(companyEmail, companyName, candidateInfo, cvFile) {
+  const { first_name, last_name, email, phone, position, experience_years } = candidateInfo;
+  
+  const mailOptions = {
+    from: process.env.SMTP_USER,
+    to: companyEmail,
+    subject: `Hồ sơ ứng tuyển mới - ${position}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">Hồ sơ ứng tuyển mới</h2>
+        <p>Xin chào <strong>${companyName}</strong>,</p>
+        <p>Bạn có một hồ sơ ứng tuyển mới từ hệ thống CS60 Recruitment:</p>
+        
+        <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #1f2937;">Thông tin ứng viên</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0;"><strong>Họ và tên:</strong></td>
+              <td style="padding: 8px 0;">${first_name} ${last_name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0;"><strong>Email:</strong></td>
+              <td style="padding: 8px 0;">${email}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0;"><strong>Điện thoại:</strong></td>
+              <td style="padding: 8px 0;">${phone}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0;"><strong>Vị trí ứng tuyển:</strong></td>
+              <td style="padding: 8px 0;">${position}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0;"><strong>Kinh nghiệm:</strong></td>
+              <td style="padding: 8px 0;">${experience_years || 0} năm</td>
+            </tr>
+          </table>
+        </div>
+        
+        <p>CV của ứng viên đã được đính kèm trong email này.</p>
+        
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+          <em>Email này được gửi tự động từ hệ thống CS60 Recruitment</em>
+        </p>
+      </div>
+    `,
+    attachments: [
+      {
+        filename: cvFile.filename,
+        path: cvFile.path
+      }
+    ]
+  };
+
+  return emailService.transporter.sendMail(mailOptions);
+}
 
 // @route   GET /api/candidates
 // @desc    Get list of all candidates with their resumes

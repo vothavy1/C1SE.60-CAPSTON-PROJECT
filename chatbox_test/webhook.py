@@ -9,7 +9,7 @@ CORS(app)  # Cho phép mọi nguồn (Frontend) gọi vào
 
 # --- CẤU HÌNH QUAN TRỌNG ---
 # 1. DÁN API KEY CỦA BẠN VÀO GIỮA DẤU NGOẶC KÉP:
-YOUR_API_KEY = "........." 
+YOUR_API_KEY = "......" 
 # ---------------------------
 
 # Cấu hình Gemini

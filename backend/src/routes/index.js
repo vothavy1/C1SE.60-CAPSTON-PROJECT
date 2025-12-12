@@ -32,7 +32,7 @@ router.use('/applications', applicationRoutes);
 router.use('/interviews', interviewRoutes);
 router.use('/candidate-tests', candidateTestRoutes);
 router.use('/reports', reportRoutes);
-router.use('/apply', applyRoutes); // Apply routes: /api/apply/apply, /api/apply/candidates
+router.use('/apply', applyRoutes); // Apply routes: /api/apply with CV upload and email to company
 router.use('/settings', settingsRoutes); // Settings routes (Admin only)
 
 // Health check endpoint
